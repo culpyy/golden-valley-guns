@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contact — Golden Valley Guns LLC</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav class="nav">
+    <a href="index.html" class="nav-logo">
+      <span class="wordmark">Golden Valley Guns LLC</span>
+      <span class="sub">Golden Valley, Arizona<span class="sub-ffl"> · FFL 07 Manufacturer</span></span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="gallery.html">Gallery</a></li>
+      <li><a href="inshop.html">In Shop</a></li>
+      <li><a href="updates.html">Updates</a></li>
+      <li><a href="contact.html" class="active">Contact</a></li>
+    </ul>
+    <a href="contact.html" class="nav-cta">Get In Touch</a>
+    <div class="hamburger" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </div>
+  </nav>
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div class="section-label">Reach Out</div>
+    <h1>Contact Us</h1>
+    <p>Questions about a build, transfer, or gunsmithing work? Get in touch — we'll get back to you.</p>
+  </div>
+
+  <!-- CONTACT SECTION -->
+  <section>
+    <div class="contact-grid">
+
+      <!-- INFO -->
+      <div class="contact-info fade-in">
+        <div class="info-block">
+          <h4>Phone</h4>
+          <p><a href="tel:9287270893">(928) 727-0893</a></p>
+        </div>
+        <div class="info-block">
+          <h4>Email</h4>
+          <p><a href="mailto:goldenvalleyguns@gmail.com">goldenvalleyguns@gmail.com</a></p>
+        </div>
+        <div class="info-block">
+          <h4>Location</h4>
+          <p>7088 W Jupiter Dr<br>Golden Valley, AZ 86413</p>
+          <p style="font-size: 13px; color: var(--muted); margin-top: 8px;">
+            By appointment only. Call ahead before dropping by.
+          </p>
+        </div>
+        <div class="info-block">
+          <h4>Follow Along</h4>
+          <p>
+            <a href="https://www.facebook.com/p/Golden-Valley-Guns-LLC-61565769817507/" target="_blank" style="display: block; margin-bottom: 6px;">
+              Facebook &mdash; Golden Valley Guns LLC
+            </a>
+            <a href="https://www.youtube.com/channel/UCRIezIM_qIvuAnVeTpnjD0w" target="_blank">
+              YouTube &mdash; Golden Valley Guns LLC
+            </a>
+          </p>
+        </div>
+        <div class="info-block">
+          <h4>Licenses &amp; Certifications</h4>
+          <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+            <span class="ffl-badge" style="display: inline-block; width: fit-content;">FFL 07 — Manufacturer</span>
+            <span class="ffl-badge" style="display: inline-block; width: fit-content;">By Appointment Only</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- FORM -->
+      <div class="fade-in">
+        <form id="contactForm" class="contact-form" novalidate>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="fname">First Name</label>
+              <input type="text" id="fname" name="fname" placeholder="John" required />
+            </div>
+            <div class="form-group">
+              <label for="lname">Last Name</label>
+              <input type="text" id="lname" name="lname" placeholder="Smith" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" placeholder="you@example.com" required />
+          </div>
+          <div class="form-group">
+            <label for="phone">Phone (optional)</label>
+            <input type="tel" id="phone" name="phone" placeholder="(928) 555-0100" />
+          </div>
+          <div class="form-group">
+            <label for="subject">What can we help with?</label>
+            <select id="subject" name="subject" required>
+              <option value="" disabled selected>Select a topic</option>
+              <option value="build">Custom Build Inquiry</option>
+              <option value="gunsmithing">Gunsmithing / Repair</option>
+              <option value="parts">Parts Work</option>
+              <option value="transfer">FFL Transfer</option>
+              <option value="buysell">Buy / Sell / Trade</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="message">Message</label>
+            <textarea id="message" name="message" placeholder="Tell us what you're looking for..." required></textarea>
+          </div>
+          <p class="form-note">
+            For urgent questions, call us directly at <a href="tel:9287270893" style="color: var(--gold-light);">(928) 727-0893</a>.
+            We typically respond to messages within 1–2 business days.
+          </p>
+          <button type="submit" class="btn-primary" style="margin-top: 8px; width: 100%; justify-content: center;">
+            Send Message &#8594;
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- MAP PLACEHOLDER -->
+  <section style="padding-top: 0;">
+    <div style="
+      border: 1px solid var(--border);
+      background: var(--surface);
+      padding: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 16px;
+      min-height: 220px;
+      text-align: center;
+    ">
+      <svg width="40" height="40" fill="none" stroke="var(--gold-light)" stroke-width="1.5" viewBox="0 0 24 24">
+        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+        <circle cx="12" cy="9" r="2.5"/>
+      </svg>
+      <div>
+        <p style="font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 2px; color: var(--text);">7088 W Jupiter Dr, Golden Valley, AZ 86413</p>
+        <p style="font-size: 13px; color: var(--muted); margin-top: 6px;">By appointment only — call ahead before visiting.</p>
+      </div>
+      <a
+        href="https://maps.google.com/?q=7088+W+Jupiter+Dr+Golden+Valley+AZ+86413"
+        target="_blank"
+        class="btn-secondary"
+        style="margin-top: 8px;"
+      >Open in Google Maps &#8594;</a>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <div class="wordmark">Golden Valley Guns LLC</div>
+        <div class="sub">Golden Valley, Arizona</div>
+        <p>FFL 07 Manufacturer out of Golden Valley, AZ. Custom builds, gunsmithing, parts work, and FFL transfers by appointment.</p>
+      </div>
+      <div class="footer-col">
+        <h5>Pages</h5>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="gallery.html">Gallery</a></li>
+          <li><a href="inshop.html">In Shop</a></li>
+          <li><a href="updates.html">Updates</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>Contact</h5>
+        <ul>
+          <li><a href="tel:9287270893">(928) 727-0893</a></li>
+          <li><a href="#">7088 W Jupiter Dr</a></li>
+          <li><a href="#">Golden Valley, AZ 86413</a></li>
+          <li><a href="https://www.facebook.com/p/Golden-Valley-Guns-LLC-61565769817507/" target="_blank">Facebook</a></li>
+          <li><a href="https://www.youtube.com/channel/UCRIezIM_qIvuAnVeTpnjD0w" target="_blank">YouTube</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2025 Golden Valley Guns LLC. All rights reserved.</p>
+      <span class="ffl-badge">FFL 07 · By Appointment</span>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>

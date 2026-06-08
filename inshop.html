@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>In Shop — Golden Valley Guns LLC</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    :root {
+      --s-intake:        #555555;
+      --s-parts-ordered: #8a6a00;
+      --s-in-progress:   #1a4f8a;
+      --s-testing:       #5a2d82;
+      --s-ready:         #1a5c1a;
+    }
+
+    .summary-bar {
+      display: flex;
+      gap: 2px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      margin-bottom: 48px;
+      flex-wrap: wrap;
+    }
+
+    .summary-stat {
+      flex: 1;
+      min-width: 120px;
+      background: var(--surface);
+      padding: 28px 24px;
+      text-align: center;
+    }
+
+    .summary-stat .num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 48px;
+      line-height: 1;
+      color: var(--text);
+    }
+
+    .summary-stat .num.green { color: #4caf50; }
+
+    .summary-stat .label {
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    .builds-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .build-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--border);
+      padding: 28px 32px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 24px;
+      align-items: start;
+      transition: background 0.2s;
+    }
+
+    .build-card:hover { background: var(--surface2); }
+
+    .build-card.status-intake        { border-left-color: var(--s-intake); }
+    .build-card.status-parts-ordered { border-left-color: var(--s-parts-ordered); }
+    .build-card.status-in-progress   { border-left-color: var(--s-in-progress); }
+    .build-card.status-testing       { border-left-color: var(--s-testing); }
+    .build-card.status-ready         { border-left-color: var(--s-ready); }
+
+    .build-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 24px;
+      letter-spacing: 1.5px;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .build-meta {
+      font-size: 12px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    .build-meta span { color: var(--gold-light); margin-right: 6px; }
+
+    .progress-wrap { margin-bottom: 12px; }
+
+    .progress-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .progress-bar {
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 2px;
+      background: var(--gold-light);
+      transition: width 0.6s ease;
+    }
+
+    .status-intake        .progress-fill { background: var(--s-intake); }
+    .status-parts-ordered .progress-fill { background: var(--s-parts-ordered); }
+    .status-in-progress   .progress-fill { background: var(--s-in-progress); }
+    .status-testing       .progress-fill { background: var(--s-testing); }
+    .status-ready         .progress-fill { background: var(--s-ready); }
+
+    .build-notes {
+      font-size: 13px;
+      color: var(--muted);
+      font-style: italic;
+      margin-top: 8px;
+    }
+
+    .status-badge {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 6px 14px;
+      border-radius: 2px;
+      white-space: nowrap;
+      color: #fff;
+    }
+
+    .status-intake        .status-badge { background: var(--s-intake); }
+    .status-parts-ordered .status-badge { background: var(--s-parts-ordered); }
+    .status-in-progress   .status-badge { background: var(--s-in-progress); }
+    .status-testing       .status-badge { background: var(--s-testing); }
+    .status-ready         .status-badge { background: var(--s-ready); }
+
+    .build-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 12px;
+    }
+
+    .eta-block { text-align: right; }
+
+    .eta-block .eta-label {
+      font-size: 9px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .eta-block .eta-date {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 18px;
+      letter-spacing: 1.5px;
+      color: var(--silver);
+    }
+
+    .pipeline {
+      display: flex;
+      gap: 0;
+      margin-bottom: 20px;
+    }
+
+    .pipeline-step {
+      flex: 1;
+      height: 3px;
+      background: var(--border);
+      margin-right: 3px;
+      border-radius: 1px;
+    }
+
+    .pipeline-step.done { background: var(--gold-light); }
+    .pipeline-step:last-child { margin-right: 0; }
+
+    .disclaimer {
+      margin-top: 48px;
+      padding: 20px 24px;
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--gold);
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .disclaimer strong { color: var(--silver); }
+
+    @media (max-width: 640px) {
+      .build-card {
+        grid-template-columns: 1fr;
+        padding: 20px;
+      }
+      .build-right {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .eta-block { text-align: left; }
+      .summary-stat { min-width: 80px; padding: 20px 16px; }
+      .summary-stat .num { font-size: 36px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav class="nav">
+    <a href="index.html" class="nav-logo">
+      <span class="wordmark">Golden Valley Guns LLC</span>
+      <span class="sub">Golden Valley, Arizona<span class="sub-ffl"> · FFL 07 Manufacturer</span></span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="gallery.html">Gallery</a></li>
+      <li><a href="inshop.html" class="active">In Shop</a></li>
+      <li><a href="updates.html">Updates</a></li>
+      <li><a href="contact.html">Contact</a></li>
+    </ul>
+    <a href="contact.html" class="nav-cta">Get In Touch</a>
+    <div class="hamburger" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </div>
+  </nav>
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div class="section-label">Current Work</div>
+    <h1>In Shop</h1>
+    <p>Active builds and their current status. Updated as work progresses.</p>
+  </div>
+
+  <!-- MAIN -->
+  <section>
+    <div class="summary-bar" id="summaryBar"></div>
+    <div class="builds-list" id="buildsList"></div>
+
+    <div class="disclaimer">
+      <strong>Note:</strong> Estimated completion dates are best guesses based on current workload and parts availability. We'll reach out directly if anything changes on your build. Questions? Give us a call at <a href="tel:9287270893" style="color: var(--gold-light);">(928) 727-0893</a>.
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <div class="wordmark">Golden Valley Guns LLC</div>
+        <div class="sub">Golden Valley, Arizona</div>
+        <p>FFL 07 Manufacturer out of Golden Valley, AZ. Custom builds, gunsmithing, parts work, and FFL transfers by appointment.</p>
+      </div>
+      <div class="footer-col">
+        <h5>Pages</h5>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="gallery.html">Gallery</a></li>
+          <li><a href="inshop.html">In Shop</a></li>
+          <li><a href="updates.html">Updates</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>Contact</h5>
+        <ul>
+          <li><a href="tel:9287270893">(928) 727-0893</a></li>
+          <li><a href="#">7088 W Jupiter Dr</a></li>
+          <li><a href="#">Golden Valley, AZ 86413</a></li>
+          <li><a href="https://www.facebook.com/p/Golden-Valley-Guns-LLC-61565769817507/" target="_blank">Facebook</a></li>
+          <li><a href="https://www.youtube.com/channel/UCRIezIM_qIvuAnVeTpnjD0w" target="_blank">YouTube</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2025 Golden Valley Guns LLC. All rights reserved.</p>
+      <span class="ffl-badge">FFL 07 · By Appointment</span>
+    </div>
+  </footer>
+
+  <script src="js/builds.js"></script>
+  <script src="js/main.js"></script>
+  <script>
+    const statusLabels = {
+      'intake':        'Intake',
+      'parts-ordered': 'Parts Ordered',
+      'in-progress':   'In Progress',
+      'testing':       'Testing',
+      'ready':         'Ready for Pickup'
+    };
+
+    const stages = ['intake', 'parts-ordered', 'in-progress', 'testing', 'ready'];
+
+    function stagesDone(status) {
+      const idx = stages.indexOf(status);
+      return stages.map((_, i) => i <= idx);
+    }
+
+    function formatEta(dateStr) {
+      if (!dateStr) return '';
+      const d = new Date(dateStr + 'T00:00:00');
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    function renderSummary() {
+      const counts = { total: builds.length, ready: 0, active: 0 };
+      builds.forEach(b => {
+        if (b.status === 'ready') counts.ready++;
+        else counts.active++;
+      });
+      document.getElementById('summaryBar').innerHTML = `
+        <div class="summary-stat">
+          <div class="num">${counts.total}</div>
+          <div class="label">Total in Shop</div>
+        </div>
+        <div class="summary-stat">
+          <div class="num">${counts.active}</div>
+          <div class="label">In Progress</div>
+        </div>
+        <div class="summary-stat">
+          <div class="num green">${counts.ready}</div>
+          <div class="label">Ready for Pickup</div>
+        </div>
+      `;
+    }
+
+    function renderBuilds() {
+      const order = ['ready', 'testing', 'in-progress', 'parts-ordered', 'intake'];
+      const sorted = [...builds].sort((a, b) => order.indexOf(a.status) - order.indexOf(b.status));
+
+      document.getElementById('buildsList').innerHTML = sorted.map(b => {
+        const done = stagesDone(b.status);
+        const pipeline = stages.map((_, i) =>
+          `<div class="pipeline-step ${done[i] ? 'done' : ''}"></div>`
+        ).join('');
+
+        const eta = formatEta(b.eta);
+        const etaHtml = eta ? `
+          <div class="eta-block">
+            <div class="eta-label">Est. Completion</div>
+            <div class="eta-date">${eta}</div>
+          </div>` : '';
+
+        return `
+          <div class="build-card status-${b.status} fade-in">
+            <div class="build-left">
+              <div class="build-title">${b.title}</div>
+              <div class="build-meta"><span>${b.type}</span> ${b.caliber}</div>
+              <div class="pipeline">${pipeline}</div>
+              <div class="progress-wrap">
+                <div class="progress-labels">
+                  <span>Progress</span>
+                  <span>${b.progress}%</span>
+                </div>
+                <div class="progress-bar">
+                  <div class="progress-fill" style="width: ${b.progress}%"></div>
+                </div>
+              </div>
+              ${b.notes ? `<div class="build-notes">${b.notes}</div>` : ''}
+            </div>
+            <div class="build-right">
+              <div class="status-badge">${statusLabels[b.status]}</div>
+              ${etaHtml}
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    renderSummary();
+    renderBuilds();
+  </script>
+</body>
+</html>
