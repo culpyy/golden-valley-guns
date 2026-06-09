@@ -12,6 +12,66 @@
   <meta property="og:description" content="FFL 07 manufacturer and gunsmith in Golden Valley, AZ. Custom builds, parts work, gunsmithing, and FFL transfers." />
   <meta property="og:type" content="website" />
   <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .process-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 2px;
+      background: var(--border);
+      margin-top: 48px;
+    }
+    .process-step {
+      background: var(--bg);
+      padding: 40px 32px;
+    }
+    .process-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 56px;
+      line-height: 1;
+      color: var(--gold-light);
+      opacity: 0.5;
+      margin-bottom: 16px;
+    }
+    .process-step h3 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px;
+      letter-spacing: 1.5px;
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+    .process-step p { font-size: 14px; color: var(--muted); line-height: 1.7; }
+    .faq-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 2px;
+      background: var(--border);
+      margin-top: 48px;
+    }
+    .faq-item {
+      padding: 32px;
+      background: var(--surface);
+      border-left: 3px solid var(--border);
+      transition: border-color 0.2s;
+    }
+    .faq-item:hover { border-left-color: var(--gold-light); }
+    .faq-item h4 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 19px;
+      letter-spacing: 1.5px;
+      color: var(--text);
+      margin-bottom: 10px;
+    }
+    .faq-item p { font-size: 14px; color: var(--muted); line-height: 1.7; }
+    @media (max-width: 900px) {
+      .process-grid { grid-template-columns: repeat(2, 1fr); }
+      .faq-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 480px) {
+      .process-grid { grid-template-columns: 1fr; }
+      .process-step { padding: 28px 24px; }
+      .faq-item { padding: 24px; }
+    }
+  </style>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -126,6 +186,35 @@
     </div>
   </section>
 
+  <!-- HOW IT WORKS -->
+  <section style="background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+    <div class="section-label">Getting Started</div>
+    <h2 class="section-title">How It Works</h2>
+    <p class="section-sub">Simple process. No runaround.</p>
+    <div class="process-grid">
+      <div class="process-step fade-in">
+        <div class="process-num">01</div>
+        <h3>Call or Message</h3>
+        <p>Reach out by phone, email, or through the contact form. Tell us what you need and we'll let you know if we can do it.</p>
+      </div>
+      <div class="process-step fade-in">
+        <div class="process-num">02</div>
+        <h3>We Talk It Through</h3>
+        <p>We go over the build, cost, and timeline before any work starts. If parts have a lead time or anything needs confirming, we tell you upfront.</p>
+      </div>
+      <div class="process-step fade-in">
+        <div class="process-num">03</div>
+        <h3>We Get to Work</h3>
+        <p>Once we're aligned, we start. Check the In Shop page anytime to see where your build stands.</p>
+      </div>
+      <div class="process-step fade-in">
+        <div class="process-num">04</div>
+        <h3>Function Check, Then Pickup</h3>
+        <p>Every build gets a function check before it leaves the shop. When it's done and it's right, we'll reach out.</p>
+      </div>
+    </div>
+  </section>
+
   <!-- ABOUT -->
   <section class="about-strip">
     <div class="about-inner">
@@ -154,6 +243,47 @@
           <h4>Transfers Accepted, In and Out of State</h4>
           <p>We handle FFL transfers from licensed dealers and private sellers. Contact us before shipping so we can confirm the details and get everything lined up on our end.</p>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section>
+    <div class="section-label">Questions</div>
+    <h2 class="section-title">Frequently Asked</h2>
+    <p class="section-sub">Common questions about builds, transfers, and how we operate.</p>
+    <div class="faq-grid">
+      <div class="faq-item fade-in">
+        <h4>Do I Need to Call Before Stopping By?</h4>
+        <p>Yes. Give us a call before you head over so we can make sure we're available. We're a working shop, not a walk-in retail store.</p>
+      </div>
+      <div class="faq-item fade-in">
+        <h4>Do You Handle FFL Transfers?</h4>
+        <p>Yes, in and out of state. Call before you ship anything our way so we can confirm the details and get set up on our end.</p>
+      </div>
+      <div class="faq-item fade-in">
+        <h4>Do You Work on NFA Items?</h4>
+        <p>Yes. We hold an FFL 07 license, so NFA items and Class III transfers are handled. Give us a call if you have questions.</p>
+      </div>
+      <div class="faq-item fade-in">
+        <h4>How Long Do Builds Take?</h4>
+        <p>Depends on complexity and parts availability. We give you a straight timeline upfront and let you know if anything changes.</p>
+      </div>
+      <div class="faq-item fade-in">
+        <h4>Do You Do Parts Builds?</h4>
+        <p>Yes. AK kits, AR builds, and other parts-based projects are a big part of what we do. Reach out and we'll talk through what you're looking to build.</p>
+      </div>
+      <div class="faq-item fade-in">
+        <h4>Do You Buy Used Firearms?</h4>
+        <p>Yes. Bring it in and we'll give you a real number. We buy, sell, and trade firearms and gear at fair prices.</p>
+      </div>
+      <div class="faq-item fade-in">
+        <h4>Can I Ship a Firearm to You?</h4>
+        <p>Yes, for FFL transfers. Call us before you ship so we can confirm all the details on our end first.</p>
+      </div>
+      <div class="faq-item fade-in">
+        <h4>What Areas Do You Serve?</h4>
+        <p>We're in Golden Valley, AZ, serving Golden Valley, Kingman, and the surrounding Mohave County area.</p>
       </div>
     </div>
   </section>
