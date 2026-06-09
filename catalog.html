@@ -667,7 +667,7 @@
   </nav>
 
   <!-- DEMO BANNER -->
-  <div class="demo-banner">Prototype — mock data structured from Lipsey's, RSR Group, Davidson's &amp; Orion APIs. Live version pulls real inventory.</div>
+  <div class="demo-banner">Prototype — mock data structured from Lipsey's, RSR Group, Davidson's &amp; Orion APIs. Live version pulls real inventory and product photos directly from distributor feeds.</div>
 
   <!-- PAGE HEADER -->
   <div class="page-header">
@@ -899,12 +899,8 @@
       }
       grid.innerHTML = items.map(p => {
         const inCart = cart.find(c => c.id === p.id);
-        const imgHtml = p.img
-          ? `<img src="${p.img}" alt="${p.mfr} ${p.model}" loading="lazy" onerror="this.parentElement.innerHTML='${getPlaceholder(p.cat)}'">`
-          : getPlaceholder(p.cat);
         return `
           <div class="product-card">
-            <div class="card-img">${imgHtml}</div>
             <div class="card-top">
               <span class="dist-badge dist-${p.dist}">${DIST_LABELS[p.dist]}</span>
               <span class="stock-dot stock-${p.stock}">${STOCK_LABELS[p.stock]}</span>
