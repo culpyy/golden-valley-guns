@@ -118,6 +118,48 @@
       transition: background 0.2s;
     }
     .product-card:hover { background: var(--surface2); }
+
+    /* ── CARD IMAGE ── */
+    .card-img {
+      height: 160px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: -20px -20px 16px;
+      overflow: hidden;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .card-img img {
+      max-height: 140px;
+      max-width: 88%;
+      object-fit: contain;
+      transition: transform 0.3s ease;
+    }
+    .product-card:hover .card-img img { transform: scale(1.04); }
+    .card-img-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      opacity: 0.18;
+    }
+    .card-img-placeholder svg {
+      width: 48px;
+      height: 48px;
+      fill: var(--silver);
+    }
+    .card-img-placeholder span {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 11px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--silver);
+    }
+
     .card-top {
       display: flex;
       justify-content: space-between;
@@ -785,35 +827,35 @@
     /* ── PRODUCT DATA ── */
     const PRODUCTS = [
       // HANDGUNS
-      { id:1,  mfr:'Glock',              model:'19 Gen 5',               sku:'PA195S203',        cat:'handgun',   caliber:'9mm',         price:529,    stock:'in',  dist:'lipseys',   firearm:true  },
-      { id:2,  mfr:'Glock',              model:'43X MOS',                sku:'PX4350201FRMOS',   cat:'handgun',   caliber:'9mm',         price:499,    stock:'in',  dist:'lipseys',   firearm:true  },
-      { id:3,  mfr:'Sig Sauer',          model:'P320 X-Compact',         sku:'320XC-9-BXR3',     cat:'handgun',   caliber:'9mm',         price:649,    stock:'in',  dist:'davidsons', firearm:true  },
-      { id:4,  mfr:'Smith & Wesson',     model:'M&P Shield Plus',        sku:'13248',            cat:'handgun',   caliber:'9mm',         price:479,    stock:'in',  dist:'rsr',       firearm:true  },
-      { id:5,  mfr:'Springfield Armory', model:'Hellcat OSP',            sku:'HC9319BOSP',       cat:'handgun',   caliber:'9mm',         price:549,    stock:'in',  dist:'rsr',       firearm:true  },
-      { id:6,  mfr:'Ruger',              model:'Security-9',             sku:'3810',             cat:'handgun',   caliber:'9mm',         price:329,    stock:'in',  dist:'orion',     firearm:true  },
-      { id:7,  mfr:'CZ',                 model:'P-10 C',                 sku:'91520',            cat:'handgun',   caliber:'9mm',         price:489,    stock:'low', dist:'davidsons', firearm:true  },
-      { id:8,  mfr:'Taurus',             model:'G3c',                    sku:'1-G3C931-12',      cat:'handgun',   caliber:'9mm',         price:299,    stock:'in',  dist:'orion',     firearm:true  },
+      { id:1,  mfr:'Glock',              model:'19 Gen 5',               sku:'PA195S203',        cat:'handgun',   caliber:'9mm',          price:529,    stock:'in',  dist:'lipseys',   firearm:true,  img:'https://us.glock.com/content/dam/glock/en-us/products/pistols/g19-gen5/glock-pistol-g19-gen5-main.png' },
+      { id:2,  mfr:'Glock',              model:'43X MOS',                sku:'PX4350201FRMOS',   cat:'handgun',   caliber:'9mm',          price:499,    stock:'in',  dist:'lipseys',   firearm:true,  img:'https://us.glock.com/content/dam/glock/en-us/products/pistols/g43x-mos/glock-pistol-g43x-mos-main.png' },
+      { id:3,  mfr:'Sig Sauer',          model:'P320 X-Compact',         sku:'320XC-9-BXR3',     cat:'handgun',   caliber:'9mm',          price:649,    stock:'in',  dist:'davidsons', firearm:true,  img:'' },
+      { id:4,  mfr:'Smith & Wesson',     model:'M&P Shield Plus',        sku:'13248',            cat:'handgun',   caliber:'9mm',          price:479,    stock:'in',  dist:'rsr',       firearm:true,  img:'' },
+      { id:5,  mfr:'Springfield Armory', model:'Hellcat OSP',            sku:'HC9319BOSP',       cat:'handgun',   caliber:'9mm',          price:549,    stock:'in',  dist:'rsr',       firearm:true,  img:'' },
+      { id:6,  mfr:'Ruger',              model:'Security-9',             sku:'3810',             cat:'handgun',   caliber:'9mm',          price:329,    stock:'in',  dist:'orion',     firearm:true,  img:'https://www.ruger.com/image/products/3810/3810_100_20230214.jpg' },
+      { id:7,  mfr:'CZ',                 model:'P-10 C',                 sku:'91520',            cat:'handgun',   caliber:'9mm',          price:489,    stock:'low', dist:'davidsons', firearm:true,  img:'' },
+      { id:8,  mfr:'Taurus',             model:'G3c',                    sku:'1-G3C931-12',      cat:'handgun',   caliber:'9mm',          price:299,    stock:'in',  dist:'orion',     firearm:true,  img:'' },
       // RIFLES
-      { id:9,  mfr:'Daniel Defense',     model:'DDM4 V7',                sku:'02-128-02175-047', cat:'rifle',     caliber:'5.56 NATO',   price:1799,   stock:'in',  dist:'lipseys',   firearm:true  },
-      { id:10, mfr:'Smith & Wesson',     model:'M&P15 Sport II',         sku:'10202',            cat:'rifle',     caliber:'5.56 NATO',   price:699,    stock:'in',  dist:'rsr',       firearm:true  },
-      { id:11, mfr:'Ruger',              model:'10/22 Carbine',          sku:'1103',             cat:'rifle',     caliber:'.22 LR',      price:279,    stock:'in',  dist:'orion',     firearm:true  },
-      { id:12, mfr:'Ruger',              model:'American Ranch',         sku:'26970',            cat:'rifle',     caliber:'.300 Blackout',price:549,   stock:'in',  dist:'orion',     firearm:true  },
-      { id:13, mfr:'Savage Arms',        model:'Axis II XP',             sku:'57260',            cat:'rifle',     caliber:'.308 Win',    price:449,    stock:'in',  dist:'rsr',       firearm:true  },
-      { id:14, mfr:'IWI',                model:'Galil Ace Gen 2 Pistol', sku:'GAP39SB',          cat:'rifle',     caliber:'7.62x39',     price:1499,   stock:'low', dist:'davidsons', firearm:true  },
-      { id:15, mfr:'PSA',                model:'AK-103 Classic',         sku:'7779666',          cat:'rifle',     caliber:'7.62x39',     price:799,    stock:'in',  dist:'orion',     firearm:true  },
+      { id:9,  mfr:'Daniel Defense',     model:'DDM4 V7',                sku:'02-128-02175-047', cat:'rifle',     caliber:'5.56 NATO',    price:1799,   stock:'in',  dist:'lipseys',   firearm:true,  img:'' },
+      { id:10, mfr:'Smith & Wesson',     model:'M&P15 Sport II',         sku:'10202',            cat:'rifle',     caliber:'5.56 NATO',    price:699,    stock:'in',  dist:'rsr',       firearm:true,  img:'' },
+      { id:11, mfr:'Ruger',              model:'10/22 Carbine',          sku:'1103',             cat:'rifle',     caliber:'.22 LR',       price:279,    stock:'in',  dist:'orion',     firearm:true,  img:'https://www.ruger.com/image/products/1103/1103_100_20230214.jpg' },
+      { id:12, mfr:'Ruger',              model:'American Ranch',         sku:'26970',            cat:'rifle',     caliber:'.300 Blackout', price:549,   stock:'in',  dist:'orion',     firearm:true,  img:'' },
+      { id:13, mfr:'Savage Arms',        model:'Axis II XP',             sku:'57260',            cat:'rifle',     caliber:'.308 Win',     price:449,    stock:'in',  dist:'rsr',       firearm:true,  img:'' },
+      { id:14, mfr:'IWI',                model:'Galil Ace Gen 2 Pistol', sku:'GAP39SB',          cat:'rifle',     caliber:'7.62x39',      price:1499,   stock:'low', dist:'davidsons', firearm:true,  img:'' },
+      { id:15, mfr:'PSA',                model:'AK-103 Classic',         sku:'7779666',          cat:'rifle',     caliber:'7.62x39',      price:799,    stock:'in',  dist:'orion',     firearm:true,  img:'' },
       // AMMO
-      { id:16, mfr:'Federal',            model:'American Eagle 9mm 115gr FMJ 50rd', sku:'AE9DP',  cat:'ammo', caliber:'9mm',     price:14.99,  stock:'in',  dist:'orion',     firearm:false },
-      { id:17, mfr:'PMC',                model:'Bronze .223 Rem 55gr FMJ 20rd',     sku:'223A',   cat:'ammo', caliber:'.223 Rem', price:9.99,  stock:'in',  dist:'rsr',       firearm:false },
-      { id:18, mfr:'CCI',                model:'Mini-Mag .22 LR 40gr 100rd',        sku:'0030',   cat:'ammo', caliber:'.22 LR',   price:8.99,  stock:'in',  dist:'orion',     firearm:false },
-      { id:19, mfr:'Wolf',               model:'Military Classic 7.62x39 122gr FMJ 20rd', sku:'WPA762BFMJ', cat:'ammo', caliber:'7.62x39', price:7.99, stock:'in', dist:'rsr', firearm:false },
-      { id:20, mfr:'Hornady',            model:'Black 5.56 75gr BTHP 20rd',         sku:'80268',  cat:'ammo', caliber:'5.56 NATO',price:19.99, stock:'in',  dist:'lipseys',   firearm:false },
-      { id:21, mfr:'Sig Sauer',          model:'Elite 9mm 124gr JHP 20rd',          sku:'E9MMA220',cat:'ammo',caliber:'9mm',     price:18.99, stock:'in',  dist:'davidsons', firearm:false },
+      { id:16, mfr:'Federal',            model:'American Eagle 9mm 115gr FMJ 50rd', sku:'AE9DP',        cat:'ammo', caliber:'9mm',      price:14.99,  stock:'in',  dist:'orion',     firearm:false, img:'' },
+      { id:17, mfr:'PMC',                model:'Bronze .223 Rem 55gr FMJ 20rd',     sku:'223A',         cat:'ammo', caliber:'.223 Rem', price:9.99,   stock:'in',  dist:'rsr',       firearm:false, img:'' },
+      { id:18, mfr:'CCI',                model:'Mini-Mag .22 LR 40gr 100rd',        sku:'0030',         cat:'ammo', caliber:'.22 LR',   price:8.99,   stock:'in',  dist:'orion',     firearm:false, img:'' },
+      { id:19, mfr:'Wolf',               model:'Military Classic 7.62x39 122gr FMJ 20rd', sku:'WPA762BFMJ', cat:'ammo', caliber:'7.62x39', price:7.99, stock:'in', dist:'rsr',     firearm:false, img:'' },
+      { id:20, mfr:'Hornady',            model:'Black 5.56 75gr BTHP 20rd',         sku:'80268',        cat:'ammo', caliber:'5.56 NATO', price:19.99, stock:'in',  dist:'lipseys',   firearm:false, img:'' },
+      { id:21, mfr:'Sig Sauer',          model:'Elite 9mm 124gr JHP 20rd',          sku:'E9MMA220',     cat:'ammo', caliber:'9mm',      price:18.99,  stock:'in',  dist:'davidsons', firearm:false, img:'' },
       // ACCESSORIES
-      { id:22, mfr:'Magpul',             model:'MOE AK Grip',            sku:'MAG523-BLK',       cat:'accessory', caliber:'AK Platform', price:24.99,  stock:'in',  dist:'rsr',       firearm:false },
-      { id:23, mfr:'Streamlight',        model:'TLR-1 HL',               sku:'69260',            cat:'accessory', caliber:'Universal',   price:149.99, stock:'in',  dist:'lipseys',   firearm:false },
-      { id:24, mfr:'Vortex',             model:'Crossfire II 3-9x40',    sku:'CF2-31007',        cat:'accessory', caliber:'Universal',   price:179.99, stock:'in',  dist:'davidsons', firearm:false },
-      { id:25, mfr:'Magpul',             model:'PMAG 30 Gen M3',         sku:'MAG557-BLK',       cat:'accessory', caliber:'AR-15',       price:12.99,  stock:'in',  dist:'rsr',       firearm:false },
-      { id:26, mfr:'Holosun',            model:'HS507C X2',              sku:'HS507C-X2',        cat:'accessory', caliber:'Universal',   price:299.99, stock:'low', dist:'lipseys',   firearm:false },
+      { id:22, mfr:'Magpul',             model:'MOE AK Grip',            sku:'MAG523-BLK',       cat:'accessory', caliber:'AK Platform', price:24.99,  stock:'in',  dist:'rsr',       firearm:false, img:'' },
+      { id:23, mfr:'Streamlight',        model:'TLR-1 HL',               sku:'69260',            cat:'accessory', caliber:'Universal',   price:149.99, stock:'in',  dist:'lipseys',   firearm:false, img:'' },
+      { id:24, mfr:'Vortex',             model:'Crossfire II 3-9x40',    sku:'CF2-31007',        cat:'accessory', caliber:'Universal',   price:179.99, stock:'in',  dist:'davidsons', firearm:false, img:'' },
+      { id:25, mfr:'Magpul',             model:'PMAG 30 Gen M3',         sku:'MAG557-BLK',       cat:'accessory', caliber:'AR-15',       price:12.99,  stock:'in',  dist:'rsr',       firearm:false, img:'' },
+      { id:26, mfr:'Holosun',            model:'HS507C X2',              sku:'HS507C-X2',        cat:'accessory', caliber:'Universal',   price:299.99, stock:'low', dist:'lipseys',   firearm:false, img:'' },
     ];
 
     const DIST_LABELS = { lipseys:"Lipsey's", rsr:'RSR Group', davidsons:"Davidson's", orion:'Orion' };
@@ -824,6 +866,17 @@
     let searchVal = '';
     let cart = [];
     let delivery = 'gvg';
+
+    /* ── PLACEHOLDER SVG ── */
+    const CAT_ICONS = {
+      handgun:   `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><path d="M8 28h32v8H8zM40 30h6l4-6h6v8h-6l-2 4H8v-6z" fill="currentColor"/><rect x="10" y="36" width="4" height="8" rx="1" fill="currentColor"/></svg>`,
+      rifle:     `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="28" width="50" height="6" rx="1" fill="currentColor"/><rect x="4" y="28" width="8" height="10" rx="1" fill="currentColor"/><rect x="54" y="26" width="6" height="4" rx="1" fill="currentColor"/><rect x="20" y="34" width="4" height="8" rx="1" fill="currentColor"/></svg>`,
+      ammo:      `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><rect x="22" y="18" width="20" height="6" rx="3" fill="currentColor"/><rect x="24" y="24" width="16" height="22" rx="1" fill="currentColor"/><rect x="26" y="46" width="12" height="4" rx="1" fill="currentColor"/></svg>`,
+      accessory: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="14" fill="none" stroke="currentColor" stroke-width="4"/><circle cx="32" cy="32" r="4" fill="currentColor"/><line x1="32" y1="4" x2="32" y2="18" stroke="currentColor" stroke-width="3"/><line x1="32" y1="46" x2="32" y2="60" stroke="currentColor" stroke-width="3"/><line x1="4" y1="32" x2="18" y2="32" stroke="currentColor" stroke-width="3"/><line x1="46" y1="32" x2="60" y2="32" stroke="currentColor" stroke-width="3"/></svg>`,
+    };
+    function getPlaceholder(cat) {
+      return `<div class="card-img-placeholder">${CAT_ICONS[cat] || CAT_ICONS.accessory}<span>${CAT_LABELS[cat] || cat}</span></div>`;
+    }
 
     /* ── FILTER ── */
     function filteredProducts() {
@@ -846,8 +899,12 @@
       }
       grid.innerHTML = items.map(p => {
         const inCart = cart.find(c => c.id === p.id);
+        const imgHtml = p.img
+          ? `<img src="${p.img}" alt="${p.mfr} ${p.model}" loading="lazy" onerror="this.parentElement.innerHTML='${getPlaceholder(p.cat)}'">`
+          : getPlaceholder(p.cat);
         return `
           <div class="product-card">
+            <div class="card-img">${imgHtml}</div>
             <div class="card-top">
               <span class="dist-badge dist-${p.dist}">${DIST_LABELS[p.dist]}</span>
               <span class="stock-dot stock-${p.stock}">${STOCK_LABELS[p.stock]}</span>
