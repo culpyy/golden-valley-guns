@@ -135,6 +135,7 @@
               <option value="parts">Parts Work</option>
               <option value="transfer">FFL Transfer</option>
               <option value="buysell">Buy / Sell / Trade</option>
+              <option value="order">Shop / Parts Order</option>
               <option value="other">Other</option>
             </select>
           </div>
@@ -221,6 +222,22 @@
   </footer>
 
   <script src="js/main.js"></script>
+  <script>
+    // Pre-fill form when arriving from shop order modal
+    const params  = new URLSearchParams(location.search);
+    const product = params.get('product');
+    const price   = params.get('price');
+    const subject = params.get('subject');
+    if (product) {
+      const subjectEl = document.getElementById('subject');
+      const messageEl = document.getElementById('message');
+      if (subject && subjectEl) subjectEl.value = subject;
+      if (messageEl) {
+        const priceText = price ? ` ($${price})` : '';
+        messageEl.value = `Hi, I'm interested in the ${product}${priceText}. Please let me know about availability and how to place an order.`;
+      }
+    }
+  </script>
 </body>
 </html>
 

@@ -288,6 +288,120 @@
     }
     .ffl-banner strong { color: var(--silver); }
 
+    /* ── STOCK STATUS ── */
+    .product-stock {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--sc, var(--muted));
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .product-stock::before {
+      content: '';
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--sc, var(--muted));
+      flex-shrink: 0;
+    }
+
+    /* ── ORDER MODAL ── */
+    .order-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(0,0,0,0.88);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .order-modal.open { opacity: 1; pointer-events: auto; }
+    .om-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      max-width: 460px;
+      width: 100%;
+      padding: 36px;
+      position: relative;
+    }
+    .om-close {
+      position: absolute;
+      top: 14px; right: 16px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 18px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 4px 6px;
+    }
+    .om-close:hover { color: var(--text); }
+    .om-cat-tag {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      padding: 4px 10px;
+      display: inline-block;
+      margin-bottom: 14px;
+    }
+    .om-name {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 26px;
+      letter-spacing: 1.5px;
+      color: var(--text);
+      line-height: 1.15;
+      margin-bottom: 8px;
+    }
+    .om-stock-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .om-stock-label::before {
+      content: '';
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: currentColor;
+      flex-shrink: 0;
+    }
+    .om-price-tag {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 34px;
+      letter-spacing: 1px;
+      color: var(--gold-light);
+      margin-bottom: 16px;
+    }
+    .om-desc {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.7;
+      margin-bottom: 24px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    .om-actions { display: flex; flex-direction: column; gap: 10px; }
+    .om-note {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 16px;
+      line-height: 1.6;
+    }
+
     /* ── EMPTY STATE ── */
     .empty-state {
       display: none;
@@ -366,192 +480,8 @@
       <span><strong>Regulated items ship FFL-to-FFL.</strong> If an item requires a background check, it ships to your local dealer — not your door. Everything else ships direct. Questions? <a href="tel:9287270893" style="color:var(--gold-light);">(928) 727-0893</a>.</span>
     </div>
 
-    <!-- PRODUCT GRID -->
-    <div class="product-grid" id="productGrid">
-
-      <div class="product-card" data-cat="parts">
-        <div class="product-img">
-          <span class="product-img-label">Photo Coming</span>
-          <span class="product-cat-tag">Parts</span>
-        </div>
-        <div class="product-body">
-          <div class="product-name">Geissele SSA-E Trigger</div>
-          <div class="product-desc">Super Semi-Automatic Enhanced. Two-stage flat bow. One of the best drop-in AR triggers on the market.</div>
-          <div class="product-footer">
-            <span class="product-price">$240</span>
-            <a href="contact.html" class="btn-buy">Order</a>
-          </div>
-        </div>
-      </div>
-
-      <div class="product-card" data-cat="parts">
-        <div class="product-img">
-          <span class="product-img-label">Photo Coming</span>
-          <span class="product-cat-tag">Parts</span>
-        </div>
-        <div class="product-body">
-          <div class="product-name">BCM Gunfighter Charging Handle</div>
-          <div class="product-desc">Mod 4 medium latch. Mil-spec dimensions, commercial finish. Direct drop-in for standard AR-15 uppers.</div>
-          <div class="product-footer">
-            <span class="product-price">$65</span>
-            <a href="contact.html" class="btn-buy">Order</a>
-          </div>
-        </div>
-      </div>
-
-      <div class="product-card" data-cat="parts">
-        <div class="product-img">
-          <span class="product-img-label">Photo Coming</span>
-          <span class="product-cat-tag">Parts</span>
-          <span class="product-badge new">New</span>
-        </div>
-        <div class="product-body">
-          <div class="product-name">Magpul MOE Pistol Grip</div>
-          <div class="product-desc">Drop-in AR-15 / M16 grip. Aggressive texture, integrated storage compartment. Available in black and FDE.</div>
-          <div class="product-footer">
-            <span class="product-price">$22</span>
-            <a href="contact.html" class="btn-buy">Order</a>
-          </div>
-        </div>
-      </div>
-
-      <div class="product-card" data-cat="accessories">
-        <div class="product-img">
-          <span class="product-img-label">Photo Coming</span>
-          <span class="product-cat-tag">Accessories</span>
-        </div>
-        <div class="product-body">
-          <div class="product-name">Blue Force Gear Vickers Sling</div>
-          <div class="product-desc">VCAS padded sling. Single-point and two-point configurable. Industry standard for a reason.</div>
-          <div class="product-footer">
-            <span class="product-price">$70</span>
-            <a href="contact.html" class="btn-buy">Order</a>
-          </div>
-        </div>
-      </div>
-
-      <div class="product-card" data-cat="accessories">
-        <div class="product-img">
-          <span class="product-img-label">Photo Coming</span>
-          <span class="product-cat-tag">Accessories</span>
-        </div>
-        <div class="product-body">
-          <div class="product-name">Magpul PMAG 30 — 3 Pack</div>
-          <div class="product-desc">Gen M3 30-round AR-15 / M4 magazines. Anti-tilt follower, constant-curve geometry. Comes in black.</div>
-          <div class="product-footer">
-            <span class="product-price">$38</span>
-            <a href="contact.html" class="btn-buy">Order</a>
-          </div>
-        </div>
-      </div>
-
-      <div class="product-card" data-cat="accessories">
-        <div class="product-img">
-          <span class="product-img-label">Photo Coming</span>
-          <span class="product-cat-tag">Accessories</span>
-        </div>
-        <div class="product-body">
-          <div class="product-name">Magpul MS1 Sling</div>
-          <div class="product-desc">Convertible single-point / two-point sling. Nylon webbing, stainless hardware. Works on most platforms.</div>
-          <div class="product-footer">
-            <span class="product-price">$36</span>
-            <a href="contact.html" class="btn-buy">Order</a>
-          </div>
-        </div>
-      </div>
-
-      <div class="product-card" data-cat="optics">
-        <div class="product-img">
-          <span class="product-img-label">Photo Coming</span>
-          <span class="product-cat-tag">Optics</span>
-        </div>
-        <div class="product-body">
-          <div class="product-name">Holosun 507C X2</div>
-          <div class="product-desc">Red dot / circle-dot reticle. Solar + battery backup. Multi-reticle system. Compatible with most pistol cuts.</div>
-          <div class="product-footer">
-            <span class="product-price">$280</span>
-            <a href="contact.html" class="btn-buy">Order</a>
-          </div>
-        </div>
-      </div>
-
-      <div class="product-card" data-cat="optics">
-        <div class="product-img">
-          <span class="product-img-label">Photo Coming</span>
-          <span class="product-cat-tag">Optics</span>
-          <span class="product-badge new">New</span>
-        </div>
-        <div class="product-body">
-          <div class="product-name">Primary Arms SLx 1-6x ACSS</div>
-          <div class="product-desc">1-6x24 LPVO with ACSS reticle. True 1x at low end, illuminated. Strong choice for a do-everything AR setup.</div>
-          <div class="product-footer">
-            <span class="product-price">$320</span>
-            <a href="contact.html" class="btn-buy">Order</a>
-          </div>
-        </div>
-      </div>
-
-      <div class="product-card" data-cat="cleaning">
-        <div class="product-img">
-          <span class="product-img-label">Photo Coming</span>
-          <span class="product-cat-tag">Cleaning</span>
-        </div>
-        <div class="product-body">
-          <div class="product-name">Otis Elite Cleaning System</div>
-          <div class="product-desc">Breech-to-muzzle system for pistols, rifles, and shotguns. Compact case, everything you need to run a full cleaning.</div>
-          <div class="product-footer">
-            <span class="product-price">$45</span>
-            <a href="contact.html" class="btn-buy">Order</a>
-          </div>
-        </div>
-      </div>
-
-      <div class="product-card" data-cat="cleaning">
-        <div class="product-img">
-          <span class="product-img-label">Photo Coming</span>
-          <span class="product-cat-tag">Cleaning</span>
-        </div>
-        <div class="product-body">
-          <div class="product-name">Slip 2000 EWL Oil — 4oz</div>
-          <div class="product-desc">Extreme weapons lubricant. Runs clean and stays put. Works in heat, cold, and dirty environments.</div>
-          <div class="product-footer">
-            <span class="product-price">$14</span>
-            <a href="contact.html" class="btn-buy">Order</a>
-          </div>
-        </div>
-      </div>
-
-      <div class="product-card" data-cat="ammo">
-        <div class="product-img">
-          <span class="product-img-label">Photo Coming</span>
-          <span class="product-cat-tag">Ammo</span>
-        </div>
-        <div class="product-body">
-          <div class="product-name">Federal 5.56 NATO — 20rd</div>
-          <div class="product-desc">XM193 55gr FMJ. Standard velocity, brass case, boxer primed. Pickup only or local delivery — call to check availability.</div>
-          <div class="product-footer">
-            <span class="product-price">$14</span>
-            <a href="contact.html" class="btn-buy outline">Check Stock</a>
-          </div>
-        </div>
-      </div>
-
-      <div class="product-card" data-cat="ammo">
-        <div class="product-img">
-          <span class="product-img-label">Photo Coming</span>
-          <span class="product-cat-tag">Ammo</span>
-        </div>
-        <div class="product-body">
-          <div class="product-name">Hornady 7.62x39 — 20rd</div>
-          <div class="product-desc">SST 123gr. Steel case. Designed for the AK platform. Call ahead to confirm stock before ordering.</div>
-          <div class="product-footer">
-            <span class="product-price">$18</span>
-            <a href="contact.html" class="btn-buy outline">Check Stock</a>
-          </div>
-        </div>
-      </div>
-
-    </div>
+    <!-- PRODUCT GRID — rendered by products.js -->
+    <div class="product-grid" id="productGrid"></div>
 
     <div class="empty-state" id="emptyState">No items in this category yet. <a href="contact.html" style="color:var(--gold-light);">Contact us</a> to ask about availability.</div>
 
@@ -601,6 +531,23 @@
 
   </div>
 
+  <!-- ORDER MODAL -->
+  <div class="order-modal" id="orderModal" role="dialog" aria-modal="true" aria-labelledby="omName">
+    <div class="om-panel">
+      <button class="om-close" id="orderModalClose" aria-label="Close">&#x2715;</button>
+      <div class="om-cat-tag" id="omCat"></div>
+      <div class="om-name" id="omName"></div>
+      <div class="om-stock-label" id="omStock"></div>
+      <div class="om-price-tag" id="omPrice"></div>
+      <div class="om-desc" id="omDesc"></div>
+      <div class="om-actions">
+        <a href="tel:9287270893" class="btn-buy">Call to Order &mdash; (928) 727-0893</a>
+        <a href="#" class="btn-buy outline" id="omInquiryBtn">Send Inquiry</a>
+      </div>
+      <div class="om-note">Accessories and parts ship direct. Firearms and regulated items ship FFL-to-FFL to your local dealer.</div>
+    </div>
+  </div>
+
   <!-- FOOTER -->
   <footer>
     <div class="footer-inner">
@@ -638,38 +585,104 @@
   </footer>
 
   <script src="js/main.js"></script>
+  <script src="js/products.js"></script>
   <script>
-    const catBtns = document.querySelectorAll('.cat-btn');
-    const cards = document.querySelectorAll('.product-card');
-    const countEl = document.getElementById('shopCount');
-    const emptyState = document.getElementById('emptyState');
+    const catBtns      = document.querySelectorAll('.cat-btn');
+    const grid         = document.getElementById('productGrid');
+    const countEl      = document.getElementById('shopCount');
+    const emptyState   = document.getElementById('emptyState');
     const buildsSection = document.getElementById('buildsSection');
+
+    const CAT_SUBJECT = { parts: 'parts', accessories: 'order', optics: 'order', cleaning: 'order', ammo: 'order' };
+
+    function renderCard(p) {
+      const sc      = STOCK_CONFIG[p.stock] || STOCK_CONFIG.in_stock;
+      const catLabel = CAT_LABELS[p.cat] || p.cat;
+      const isCall  = p.stock === 'call';
+      const isOut   = p.stock === 'out';
+      const btnText = isOut ? 'Out of Stock' : isCall ? 'Check Stock' : 'Order';
+      const badge   = p.badge ? `<span class="product-badge ${p.badge}">${p.badge.toUpperCase()}</span>` : '';
+
+      const el = document.createElement('div');
+      el.className = 'product-card';
+      el.dataset.cat = p.cat;
+      el.innerHTML = `
+        <div class="product-img">
+          <span class="product-img-label">No Photo</span>
+          <span class="product-cat-tag">${catLabel}</span>
+          ${badge}
+        </div>
+        <div class="product-body">
+          <div class="product-name">${p.name}</div>
+          <div class="product-stock" style="--sc:${sc.color}">${sc.label}</div>
+          <div class="product-desc">${p.desc}</div>
+          <div class="product-footer">
+            <span class="product-price">$${p.price}</span>
+            <button class="btn-buy${isCall ? ' outline' : ''}" data-pid="${p.id}"${isOut ? ' disabled style="opacity:0.4;cursor:not-allowed;"' : ''}>${btnText}</button>
+          </div>
+        </div>`;
+      return el;
+    }
+
+    PRODUCTS.forEach(p => grid.appendChild(renderCard(p)));
 
     function setCategory(cat) {
       catBtns.forEach(b => b.classList.toggle('active', b.dataset.cat === cat));
-
+      const cards = grid.querySelectorAll('.product-card');
       let visible = 0;
       cards.forEach(card => {
         const show = cat === 'all' || card.dataset.cat === cat;
         card.classList.toggle('hidden', !show);
         if (show) visible++;
       });
-
-      // builds section only shows on all or builds filter
       buildsSection.style.display = (cat === 'all' || cat === 'builds') ? '' : 'none';
-
-      const inBuilds = cat === 'builds';
-      emptyState.classList.toggle('visible', visible === 0 && !inBuilds);
+      emptyState.classList.toggle('visible', visible === 0 && cat !== 'builds');
       countEl.textContent = cat === 'all'
-        ? `Showing all items`
-        : visible > 0
-          ? `${visible} item${visible !== 1 ? 's' : ''} in this category`
-          : 'No items in this category yet';
+        ? 'Showing all items'
+        : visible > 0 ? `${visible} item${visible !== 1 ? 's' : ''} in this category`
+        : 'No items in this category yet';
     }
 
-    catBtns.forEach(btn => {
-      btn.addEventListener('click', () => setCategory(btn.dataset.cat));
+    catBtns.forEach(b => b.addEventListener('click', () => setCategory(b.dataset.cat)));
+
+    // Modal
+    const modal     = document.getElementById('orderModal');
+    const omName    = document.getElementById('omName');
+    const omCat     = document.getElementById('omCat');
+    const omStock   = document.getElementById('omStock');
+    const omPrice   = document.getElementById('omPrice');
+    const omDesc    = document.getElementById('omDesc');
+    const omInquiry = document.getElementById('omInquiryBtn');
+
+    function openModal(pid) {
+      const p = PRODUCTS.find(x => x.id === pid);
+      if (!p) return;
+      const sc       = STOCK_CONFIG[p.stock] || STOCK_CONFIG.in_stock;
+      const catLabel = CAT_LABELS[p.cat] || p.cat;
+      omName.textContent  = p.name;
+      omCat.textContent   = catLabel;
+      omStock.textContent = sc.label;
+      omStock.style.color = sc.color;
+      omPrice.textContent = `$${p.price}`;
+      omDesc.textContent  = p.desc;
+      omInquiry.href = `contact.html?product=${encodeURIComponent(p.name)}&price=${p.price}&subject=${CAT_SUBJECT[p.cat] || 'order'}`;
+      modal.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+      modal.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    grid.addEventListener('click', e => {
+      const btn = e.target.closest('button[data-pid]');
+      if (btn && !btn.disabled) openModal(btn.dataset.pid);
     });
+
+    document.getElementById('orderModalClose').addEventListener('click', closeModal);
+    modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && modal.classList.contains('open')) closeModal(); });
   </script>
 </body>
 </html>
