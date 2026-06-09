@@ -464,6 +464,7 @@
     <button class="cat-btn" data-cat="optics">Optics &amp; Sights</button>
     <button class="cat-btn" data-cat="cleaning">Cleaning &amp; Maintenance</button>
     <button class="cat-btn" data-cat="ammo">Ammo</button>
+    <button class="cat-btn" data-cat="firearms">Firearms</button>
     <button class="cat-btn" data-cat="builds">Custom Builds</button>
   </div>
 
@@ -529,6 +530,50 @@
       </div>
     </div>
 
+    <!-- FIREARMS SOURCING SECTION -->
+    <div class="builds-section" id="firearmsSection" style="margin-top: 2px;">
+      <div class="builds-header">
+        <div>
+          <h2>Firearms — Source to Order</h2>
+          <p>We don't carry a wall of inventory — we source from major distributors. Tell us what you want, we'll get you a price and ETA, and it ships direct to our FFL for your transfer.</p>
+        </div>
+        <a href="contact.html?subject=buysell" class="btn-buy">Request a Firearm</a>
+      </div>
+      <div class="build-request-grid">
+
+        <div class="build-request-card">
+          <div class="br-label">Handguns</div>
+          <div class="br-name">Pistols &amp; Revolvers</div>
+          <div class="br-desc">Glock, Sig Sauer, S&amp;W, Springfield, CZ, Ruger, and more. Tell us make, model, and caliber — we'll source it at a competitive price.</div>
+          <div class="br-footer">
+            <span class="br-price">Sourced to order</span>
+            <a href="contact.html?subject=buysell&product=Handgun+Inquiry" class="btn-buy outline">Request</a>
+          </div>
+        </div>
+
+        <div class="build-request-card">
+          <div class="br-label">Rifles &amp; Carbines</div>
+          <div class="br-name">Semi-Auto &amp; Bolt Gun</div>
+          <div class="br-desc">AR-15s, AKs, bolt-action, and hunting platforms. We build ARs and AKs in-house, or source a factory rifle if that's what fits your budget.</div>
+          <div class="br-footer">
+            <span class="br-price">Sourced to order</span>
+            <a href="contact.html?subject=buysell&product=Rifle+Inquiry" class="btn-buy outline">Request</a>
+          </div>
+        </div>
+
+        <div class="build-request-card">
+          <div class="br-label">Shotguns</div>
+          <div class="br-name">Semi-Auto &amp; Pump</div>
+          <div class="br-desc">Mossberg, Remington, Benelli, and others. Home defense, hunting, and competition configurations. Tell us what you need it for.</div>
+          <div class="br-footer">
+            <span class="br-price">Sourced to order</span>
+            <a href="contact.html?subject=buysell&product=Shotgun+Inquiry" class="btn-buy outline">Request</a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
   </div>
 
   <!-- ORDER MODAL -->
@@ -587,11 +632,12 @@
   <script src="js/main.js"></script>
   <script src="js/products.js"></script>
   <script>
-    const catBtns      = document.querySelectorAll('.cat-btn');
-    const grid         = document.getElementById('productGrid');
-    const countEl      = document.getElementById('shopCount');
-    const emptyState   = document.getElementById('emptyState');
-    const buildsSection = document.getElementById('buildsSection');
+    const catBtns        = document.querySelectorAll('.cat-btn');
+    const grid           = document.getElementById('productGrid');
+    const countEl        = document.getElementById('shopCount');
+    const emptyState     = document.getElementById('emptyState');
+    const buildsSection  = document.getElementById('buildsSection');
+    const firearmsSection = document.getElementById('firearmsSection');
 
     const CAT_SUBJECT = { parts: 'parts', accessories: 'order', optics: 'order', cleaning: 'order', ammo: 'order' };
 
@@ -628,6 +674,10 @@
 
     function setCategory(cat) {
       catBtns.forEach(b => b.classList.toggle('active', b.dataset.cat === cat));
+
+      const isFirearms = cat === 'firearms';
+      grid.style.display = isFirearms ? 'none' : '';
+
       const cards = grid.querySelectorAll('.product-card');
       let visible = 0;
       cards.forEach(card => {
@@ -635,10 +685,14 @@
         card.classList.toggle('hidden', !show);
         if (show) visible++;
       });
-      buildsSection.style.display = (cat === 'all' || cat === 'builds') ? '' : 'none';
-      emptyState.classList.toggle('visible', visible === 0 && cat !== 'builds');
+
+      buildsSection.style.display  = (cat === 'all' || cat === 'builds') ? '' : 'none';
+      firearmsSection.style.display = (cat === 'all' || cat === 'firearms') ? '' : 'none';
+
+      emptyState.classList.toggle('visible', visible === 0 && cat !== 'builds' && !isFirearms);
       countEl.textContent = cat === 'all'
         ? 'Showing all items'
+        : isFirearms ? 'Sourced to order — no stocking required'
         : visible > 0 ? `${visible} item${visible !== 1 ? 's' : ''} in this category`
         : 'No items in this category yet';
     }
