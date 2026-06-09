@@ -171,7 +171,7 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
   letter-spacing: 3px;
   text-transform: uppercase;
   color: var(--gold-light);
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .hero-eyebrow::before {
@@ -186,7 +186,7 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
   line-height: 0.95;
   letter-spacing: 2px;
   color: var(--text);
-  margin-bottom: 28px;
+  margin-bottom: 20px;
 }
 
 .hero h1 span { color: var(--gold-light); }
@@ -196,7 +196,7 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
   color: var(--muted);
   max-width: 480px;
   line-height: 1.7;
-  margin-bottom: 44px;
+  margin-bottom: 28px;
 }
 
 .hero-actions {
@@ -249,10 +249,10 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
 
 .hero-stats {
   position: absolute;
-  bottom: 48px;
+  bottom: 32px;
   right: 48px;
   display: flex;
-  gap: 48px;
+  gap: 36px;
 }
 
 .stat { text-align: right; }
@@ -271,7 +271,7 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
 }
 
 /* ── SECTION BASE ── */
-section { padding: 96px 48px; }
+section { padding: 72px 48px; }
 
 .section-label {
   display: inline-flex;
@@ -297,14 +297,14 @@ h2.section-title {
   letter-spacing: 2px;
   line-height: 1;
   color: var(--text);
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .section-sub {
   font-size: 16px;
   color: var(--muted);
   max-width: 520px;
-  margin-bottom: 56px;
+  margin-bottom: 36px;
 }
 
 /* ── SERVICES ── */
@@ -318,7 +318,7 @@ h2.section-title {
   background: var(--surface);
   border: 1px solid var(--border);
   border-top: 3px solid var(--gold);
-  padding: 36px 32px;
+  padding: 28px 24px;
   transition: background 0.2s, border-color 0.2s;
 }
 
@@ -333,7 +333,7 @@ h2.section-title {
   font-size: 13px;
   letter-spacing: 3px;
   color: var(--gold-light);
-  margin-bottom: 20px;
+  margin-bottom: 12px;
 }
 
 .service-card h3 {
@@ -341,7 +341,7 @@ h2.section-title {
   font-size: 22px;
   letter-spacing: 1.5px;
   color: var(--text);
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .service-card p {
@@ -362,7 +362,7 @@ h2.section-title {
   margin: 0 auto;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 80px;
+  gap: 56px;
   align-items: center;
 }
 
@@ -370,19 +370,19 @@ h2.section-title {
   font-size: 15px;
   color: var(--muted);
   line-height: 1.8;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
-.about-text p:last-of-type { margin-bottom: 32px; }
+.about-text p:last-of-type { margin-bottom: 24px; }
 
 .about-callouts {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 16px;
 }
 
 .callout {
-  padding: 24px 28px;
+  padding: 18px 24px;
   border: 1px solid var(--border);
   border-left: 3px solid var(--gold);
   background: var(--bg);
@@ -393,7 +393,7 @@ h2.section-title {
   font-size: 18px;
   letter-spacing: 1.5px;
   color: var(--text);
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .callout p {
@@ -557,10 +557,10 @@ h2.section-title {
 
 .update-card {
   background: var(--surface);
-  padding: 36px 40px;
+  padding: 28px 32px;
   display: grid;
   grid-template-columns: 120px 1fr;
-  gap: 40px;
+  gap: 32px;
   transition: background 0.2s;
 }
 
@@ -601,7 +601,7 @@ h2.section-title {
   border: 1px solid var(--gold);
   color: var(--gold-light);
   border-radius: 1px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .update-body h3 {
@@ -609,7 +609,7 @@ h2.section-title {
   font-size: 26px;
   letter-spacing: 1.5px;
   color: var(--text);
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .update-body p {
@@ -627,7 +627,7 @@ h2.section-title {
   letter-spacing: 1.5px;
   text-transform: uppercase;
   color: var(--gold-light);
-  margin-top: 16px;
+  margin-top: 14px;
   transition: gap 0.2s;
 }
 
@@ -637,11 +637,11 @@ h2.section-title {
 .contact-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 80px;
+  gap: 56px;
   max-width: 1100px;
 }
 
-.contact-info { display: flex; flex-direction: column; gap: 32px; }
+.contact-info { display: flex; flex-direction: column; gap: 20px; }
 
 .info-block h4 {
   font-size: 11px;
@@ -649,7 +649,7 @@ h2.section-title {
   letter-spacing: 3px;
   text-transform: uppercase;
   color: var(--gold-light);
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .info-block p, .info-block a {
@@ -660,14 +660,14 @@ h2.section-title {
 
 .info-block a:hover { color: var(--text); }
 
-.contact-form { display: flex; flex-direction: column; gap: 16px; }
+.contact-form { display: flex; flex-direction: column; gap: 14px; }
 
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .form-group label {
@@ -706,14 +706,14 @@ h2.section-title {
 .form-note {
   font-size: 12px;
   color: var(--muted);
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 /* ── FOOTER ── */
 footer {
   border-top: 1px solid var(--border);
   background: var(--surface);
-  padding: 48px;
+  padding: 36px 48px;
 }
 
 .footer-inner {
@@ -721,8 +721,8 @@ footer {
   margin: 0 auto;
   display: grid;
   grid-template-columns: 2fr 1fr 1fr;
-  gap: 64px;
-  margin-bottom: 48px;
+  gap: 48px;
+  margin-bottom: 32px;
 }
 
 .footer-brand .wordmark {
@@ -738,7 +738,7 @@ footer {
   text-transform: uppercase;
   color: var(--gold-light);
   margin-top: 2px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .footer-brand p {
@@ -754,7 +754,7 @@ footer {
   letter-spacing: 3px;
   text-transform: uppercase;
   color: var(--text);
-  margin-bottom: 20px;
+  margin-bottom: 14px;
 }
 
 .footer-col ul {
@@ -774,7 +774,7 @@ footer {
 
 .footer-bottom {
   border-top: 1px solid var(--border);
-  padding-top: 24px;
+  padding-top: 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -797,7 +797,7 @@ footer {
 
 /* ── PAGE HEADER ── */
 .page-header {
-  padding: 160px 48px 48px;
+  padding: 160px 48px 32px;
   background:
     radial-gradient(ellipse 60% 80% at 20% 50%, rgba(139,105,20,0.08) 0%, transparent 60%),
     var(--bg);
@@ -810,7 +810,7 @@ footer {
   letter-spacing: 2px;
   line-height: 1;
   color: var(--text);
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .page-header p {
@@ -823,7 +823,7 @@ footer {
 .filter-bar {
   display: flex;
   gap: 8px;
-  margin-bottom: 40px;
+  margin-bottom: 32px;
   flex-wrap: wrap;
 }
 
@@ -852,7 +852,7 @@ footer {
 .divider {
   width: 48px; height: 2px;
   background: var(--gold);
-  margin: 24px 0;
+  margin: 16px 0;
 }
 
 /* ── TABLET (≤900px) ── */
@@ -886,8 +886,8 @@ footer {
 
   .nav-mobile-open .nav-links li:last-child a { border-bottom: none; }
 
-  section { padding: 64px 20px; }
-  .hero { padding: 20px; padding-top: calc(var(--nav-h) + 32px); padding-bottom: 64px; align-items: flex-start; }
+  section { padding: 48px 20px; }
+  .hero { padding: 20px; padding-top: calc(var(--nav-h) + 32px); padding-bottom: 48px; align-items: flex-start; }
   .page-header { padding: calc(var(--nav-h) + 32px) 20px 20px; }
   .hero h1 { font-size: clamp(42px, 11vw, 60px); }
   .hero-desc { font-size: 15px; }
@@ -898,25 +898,25 @@ footer {
   .gallery-grid .tall { aspect-ratio: 4/3; grid-row: span 1; }
   .gallery-overlay { opacity: 1; background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 55%); }
 
-  .services-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
-  .service-card { padding: 28px 24px; }
+  .services-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .service-card { padding: 22px 18px; }
 
-  .about-inner { grid-template-columns: 1fr; gap: 40px; }
+  .about-inner { grid-template-columns: 1fr; gap: 32px; }
 
   .updates-list { max-width: 100%; }
-  .update-card { grid-template-columns: 1fr; gap: 10px; padding: 24px 20px; }
+  .update-card { grid-template-columns: 1fr; gap: 8px; padding: 20px 16px; }
   .update-date { text-align: left; display: flex; align-items: baseline; gap: 10px; }
   .update-date .day { font-size: 28px; }
   .update-body h3 { font-size: 21px; }
 
-  .contact-grid { grid-template-columns: 1fr; gap: 40px; }
+  .contact-grid { grid-template-columns: 1fr; gap: 32px; }
   .form-row { grid-template-columns: 1fr; }
   .form-group input,
   .form-group select,
   .form-group textarea { font-size: 16px; }
 
-  footer { padding: 40px 20px; }
-  .footer-inner { grid-template-columns: 1fr; gap: 32px; }
+  footer { padding: 32px 20px; }
+  .footer-inner { grid-template-columns: 1fr; gap: 24px; margin-bottom: 24px; }
   .footer-bottom { flex-direction: column; gap: 12px; text-align: center; }
 }
 
@@ -929,16 +929,16 @@ footer {
   .gallery-grid .wide,
   .gallery-grid .tall { grid-column: span 1; grid-row: span 1; aspect-ratio: 4/3; }
 
-  .services-grid { grid-template-columns: 1fr; gap: 10px; }
-  .service-card { padding: 24px 20px; }
+  .services-grid { grid-template-columns: 1fr; gap: 8px; }
+  .service-card { padding: 20px 16px; }
 
   .hero h1 { font-size: clamp(38px, 10vw, 52px); }
   .hero-desc { font-size: 14px; }
   .btn-primary, .btn-secondary { width: 100%; justify-content: center; }
 
-  .update-card { padding: 20px 16px; }
+  .update-card { padding: 16px; }
 
-  footer { padding: 32px 16px; }
+  footer { padding: 28px 16px; }
   .footer-bottom .ffl-badge { font-size: 10px; }
 
   .lightbox img { max-width: 95vw; max-height: 75vh; }
