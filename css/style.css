@@ -923,6 +923,8 @@ footer {
 /* ── MOBILE (≤580px) ── */
 @media (max-width: 580px) {
   .nav-cta { display: none; }
+  .nav-logo .wordmark { font-size: 17px; letter-spacing: 1px; }
+  .nav-logo .sub { display: none; }
 
   section { padding: 40px 16px; }
   .page-header { padding: calc(var(--nav-h) + 24px) 16px 24px; }
