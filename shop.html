@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <title>Shop | Golden Valley Guns LLC | Golden Valley, AZ</title>
-  <meta name="description" content="Shop parts, accessories, and gear from Golden Valley Guns LLC. Custom build requests available. FFL 07 manufacturer in Golden Valley, AZ." />
+  <meta name="description" content="Firearms, ammo, and custom builds from Golden Valley Guns LLC. FFL 07 manufacturer in Golden Valley, AZ. We can order any firearm." />
   <meta name="robots" content="index, follow" />
   <link rel="stylesheet" href="css/style.css" />
   <style>
@@ -42,135 +42,8 @@
       margin: 0 auto;
       padding: 48px;
     }
-    .shop-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 32px;
-      flex-wrap: wrap;
-      gap: 12px;
-    }
-    .shop-count {
-      font-size: 11px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-    .shop-notice {
-      font-size: 11px;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      color: var(--muted);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .shop-notice::before {
-      content: '';
-      width: 6px; height: 6px;
-      border-radius: 50%;
-      background: var(--gold-light);
-      flex-shrink: 0;
-    }
 
-    /* ── PRODUCT GRID ── */
-    .product-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 2px;
-      background: var(--border);
-    }
-    .product-card {
-      background: var(--surface);
-      display: flex;
-      flex-direction: column;
-      transition: background 0.2s;
-      cursor: pointer;
-    }
-    .product-card:hover { background: var(--surface2); }
-    .product-card.hidden { display: none; }
-
-    .product-img {
-      aspect-ratio: 4/3;
-      background: var(--bg);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      overflow: hidden;
-    }
-    .product-img-label {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 11px;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      color: var(--border);
-    }
-    .product-cat-tag {
-      position: absolute;
-      top: 12px; left: 12px;
-      font-size: 9px;
-      font-weight: 700;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      padding: 4px 10px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: var(--muted);
-    }
-    .product-badge {
-      position: absolute;
-      top: 12px; right: 12px;
-      font-size: 9px;
-      font-weight: 700;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      padding: 4px 10px;
-      color: #fff;
-    }
-    .product-badge.ffl { background: #1a4f8a; }
-    .product-badge.new { background: var(--gold); }
-
-    .product-body {
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      flex: 1;
-    }
-    .product-name {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 18px;
-      letter-spacing: 1.5px;
-      color: var(--text);
-      margin-bottom: 4px;
-      line-height: 1.2;
-    }
-    .product-desc {
-      font-size: 12px;
-      color: var(--muted);
-      line-height: 1.6;
-      margin-bottom: 16px;
-      flex: 1;
-    }
-    .product-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      margin-top: auto;
-    }
-    .product-price {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 22px;
-      letter-spacing: 1px;
-      color: var(--gold-light);
-    }
-    .product-price.poa {
-      font-size: 14px;
-      letter-spacing: 2px;
-      color: var(--muted);
-    }
+    /* ── BUTTONS ── */
     .btn-buy {
       font-family: 'Bebas Neue', sans-serif;
       font-size: 13px;
@@ -193,7 +66,7 @@
     }
     .btn-buy.outline:hover { background: var(--gold); color: #fff; }
 
-    /* ── BUILDS REQUEST SECTION ── */
+    /* ── SECTIONS ── */
     .builds-section {
       margin-top: 2px;
       background: var(--border);
@@ -206,7 +79,7 @@
       justify-content: space-between;
       align-items: center;
       flex-wrap: wrap;
-      gap: 12px;
+      gap: 16px;
     }
     .builds-header h2 {
       font-family: 'Bebas Neue', sans-serif;
@@ -219,6 +92,7 @@
       color: var(--muted);
       margin-top: 4px;
       max-width: 480px;
+      line-height: 1.7;
     }
     .build-request-grid {
       display: grid;
@@ -265,165 +139,16 @@
       color: var(--muted);
     }
 
-    /* ── FFL NOTICE BANNER ── */
-    .ffl-banner {
-      background: rgba(26, 79, 138, 0.1);
-      border: 1px solid rgba(26, 79, 138, 0.3);
-      padding: 14px 24px;
-      margin-bottom: 32px;
-      font-size: 12px;
-      color: var(--muted);
-      line-height: 1.7;
-      display: flex;
-      gap: 12px;
-      align-items: flex-start;
-    }
-    .ffl-banner-icon {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 10px;
-      letter-spacing: 2px;
-      color: #5b8fc9;
-      white-space: nowrap;
-      padding-top: 2px;
-    }
-    .ffl-banner strong { color: var(--silver); }
-
-    /* ── STOCK STATUS ── */
-    .product-stock {
-      font-size: 10px;
-      font-weight: 600;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: var(--sc, var(--muted));
-      margin-bottom: 10px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .product-stock::before {
-      content: '';
-      width: 5px; height: 5px;
-      border-radius: 50%;
-      background: var(--sc, var(--muted));
-      flex-shrink: 0;
-    }
-
-    /* ── ORDER MODAL ── */
-    .order-modal {
-      position: fixed;
-      inset: 0;
-      z-index: 200;
-      background: rgba(0,0,0,0.88);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.2s;
-    }
-    .order-modal.open { opacity: 1; pointer-events: auto; }
-    .om-panel {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      max-width: 460px;
-      width: 100%;
-      padding: 36px;
-      position: relative;
-    }
-    .om-close {
-      position: absolute;
-      top: 14px; right: 16px;
-      background: none;
-      border: none;
-      color: var(--muted);
-      font-size: 18px;
-      cursor: pointer;
-      line-height: 1;
-      padding: 4px 6px;
-    }
-    .om-close:hover { color: var(--text); }
-    .om-cat-tag {
-      font-size: 9px;
-      font-weight: 700;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: var(--muted);
-      border: 1px solid var(--border);
-      padding: 4px 10px;
-      display: inline-block;
-      margin-bottom: 14px;
-    }
-    .om-name {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 26px;
-      letter-spacing: 1.5px;
-      color: var(--text);
-      line-height: 1.15;
-      margin-bottom: 8px;
-    }
-    .om-stock-label {
-      font-size: 10px;
-      font-weight: 600;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      margin-bottom: 6px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .om-stock-label::before {
-      content: '';
-      width: 5px; height: 5px;
-      border-radius: 50%;
-      background: currentColor;
-      flex-shrink: 0;
-    }
-    .om-price-tag {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 34px;
-      letter-spacing: 1px;
-      color: var(--gold-light);
-      margin-bottom: 16px;
-    }
-    .om-desc {
-      font-size: 13px;
-      color: var(--muted);
-      line-height: 1.7;
-      margin-bottom: 24px;
-      padding-bottom: 24px;
-      border-bottom: 1px solid var(--border);
-    }
-    .om-actions { display: flex; flex-direction: column; gap: 10px; }
-    .om-note {
-      font-size: 11px;
-      color: var(--muted);
-      margin-top: 16px;
-      line-height: 1.6;
-    }
-
-    /* ── EMPTY STATE ── */
-    .empty-state {
-      display: none;
-      padding: 64px 32px;
-      text-align: center;
-      color: var(--muted);
-      font-size: 13px;
-      letter-spacing: 1px;
-      background: var(--surface);
-    }
-    .empty-state.visible { display: block; }
-
     /* ── RESPONSIVE ── */
     @media (max-width: 900px) {
       .shop-wrap { padding: 32px 20px; }
-      .product-grid { grid-template-columns: repeat(2, 1fr); }
       .build-request-grid { grid-template-columns: repeat(2, 1fr); }
     }
     @media (max-width: 580px) {
-      .shop-wrap { padding: 24px 16px; }
-      .product-grid { grid-template-columns: 1fr; }
+      .shop-wrap { padding: 20px 16px; }
       .build-request-grid { grid-template-columns: 1fr; }
+      .builds-header { padding: 20px; flex-direction: column; align-items: flex-start; }
+      .builds-header .btn-buy { width: 100%; text-align: center; }
     }
   </style>
 </head>
@@ -453,13 +178,12 @@
   <div class="page-header">
     <div class="section-label">Golden Valley Guns</div>
     <h1>Shop</h1>
-    <p>Parts, firearms, ammo, and custom builds. Small shop — big capability.</p>
+    <p>Firearms, ammo, and custom builds. Small shop, we can get you almost anything.</p>
   </div>
 
   <!-- CATEGORY BAR -->
   <div class="cat-bar">
     <button class="cat-btn active" data-cat="all">All</button>
-    <button class="cat-btn" data-cat="parts">Parts &amp; Accessories</button>
     <button class="cat-btn" data-cat="firearms">Firearms</button>
     <button class="cat-btn" data-cat="ammo">Ammo</button>
     <button class="cat-btn" data-cat="builds">Custom Builds</button>
@@ -467,15 +191,6 @@
 
   <!-- SHOP -->
   <div class="shop-wrap">
-
-    <div class="shop-header">
-      <span class="shop-count" id="shopCount">Showing all items</span>
-    </div>
-
-    <!-- PRODUCT GRID — rendered by products.js -->
-    <div class="product-grid" id="productGrid"></div>
-
-    <div class="empty-state" id="emptyState">No items in this category yet. <a href="contact.html" style="color:var(--gold-light);">Contact us</a> to ask about availability.</div>
 
     <!-- CUSTOM BUILDS REQUEST -->
     <div class="builds-section" id="buildsSection">
@@ -526,7 +241,7 @@
       <div class="builds-header">
         <div>
           <h2>Firearms</h2>
-          <p>We don't carry a wall of guns — but we can get you almost anything. Tell us what you want (make, model, caliber) and we'll get you a price. You pay, it comes in, you do your 4473 and walk out with it.</p>
+          <p>We don't carry a wall of guns but we can get you almost anything. Tell us what you want (make, model, caliber) and we'll get you a price. You pay, it comes in, you do your 4473 and walk out with it.</p>
         </div>
         <a href="contact.html?subject=buysell" class="btn-buy">Request a Firearm</a>
       </div>
@@ -537,29 +252,12 @@
       <div class="builds-header">
         <div>
           <h2>Ammo</h2>
-          <p>We keep common calibers in stock — 9mm, 5.56, .22 LR, 7.62x39, and others. Stock rotates so call ahead or stop in to see what we have.</p>
+          <p>We keep common calibers in stock: 9mm, 5.56, .22 LR, 7.62x39, and others. Stock rotates so call ahead or stop in to see what we have.</p>
         </div>
         <a href="tel:9287270893" class="btn-buy">Call to Check Stock</a>
       </div>
     </div>
 
-  </div>
-
-  <!-- ORDER MODAL -->
-  <div class="order-modal" id="orderModal" role="dialog" aria-modal="true" aria-labelledby="omName">
-    <div class="om-panel">
-      <button class="om-close" id="orderModalClose" aria-label="Close">&#x2715;</button>
-      <div class="om-cat-tag" id="omCat"></div>
-      <div class="om-name" id="omName"></div>
-      <div class="om-stock-label" id="omStock"></div>
-      <div class="om-price-tag" id="omPrice"></div>
-      <div class="om-desc" id="omDesc"></div>
-      <div class="om-actions">
-        <a href="tel:9287270893" class="btn-buy">Call to Order &mdash; (928) 727-0893</a>
-        <a href="#" class="btn-buy outline" id="omInquiryBtn">Send Inquiry</a>
-      </div>
-      <div class="om-note">Accessories and parts ship direct. Firearms and regulated items ship FFL-to-FFL to your local dealer.</div>
-    </div>
   </div>
 
   <!-- FOOTER -->
@@ -599,116 +297,20 @@
   </footer>
 
   <script src="js/main.js"></script>
-  <script src="js/products.js"></script>
   <script>
     const catBtns         = document.querySelectorAll('.cat-btn');
-    const grid            = document.getElementById('productGrid');
-    const countEl         = document.getElementById('shopCount');
-    const emptyState      = document.getElementById('emptyState');
     const buildsSection   = document.getElementById('buildsSection');
     const firearmsSection = document.getElementById('firearmsSection');
     const ammoSection     = document.getElementById('ammoSection');
 
-    const CAT_SUBJECT = { parts: 'parts' };
-
-    function renderCard(p) {
-      const sc      = STOCK_CONFIG[p.stock] || STOCK_CONFIG.in_stock;
-      const catLabel = CAT_LABELS[p.cat] || p.cat;
-      const isCall  = p.stock === 'call';
-      const isOut   = p.stock === 'out';
-      const btnText = isOut ? 'Out of Stock' : isCall ? 'Check Stock' : 'Order';
-      const badge   = p.badge ? `<span class="product-badge ${p.badge}">${p.badge.toUpperCase()}</span>` : '';
-
-      const el = document.createElement('div');
-      el.className = 'product-card';
-      el.dataset.cat = p.cat;
-      el.innerHTML = `
-        <div class="product-img">
-          <span class="product-img-label">No Photo</span>
-          <span class="product-cat-tag">${catLabel}</span>
-          ${badge}
-        </div>
-        <div class="product-body">
-          <div class="product-name">${p.name}</div>
-          <div class="product-stock" style="--sc:${sc.color}">${sc.label}</div>
-          <div class="product-desc">${p.desc}</div>
-          <div class="product-footer">
-            <span class="product-price">$${p.price}</span>
-            <button class="btn-buy${isCall ? ' outline' : ''}" data-pid="${p.id}"${isOut ? ' disabled style="opacity:0.4;cursor:not-allowed;"' : ''}>${btnText}</button>
-          </div>
-        </div>`;
-      return el;
-    }
-
-    PRODUCTS.forEach(p => grid.appendChild(renderCard(p)));
-
     function setCategory(cat) {
       catBtns.forEach(b => b.classList.toggle('active', b.dataset.cat === cat));
-
-      const serviceOnly = cat === 'firearms' || cat === 'ammo' || cat === 'builds';
-      grid.style.display = serviceOnly ? 'none' : '';
-
-      const cards = grid.querySelectorAll('.product-card');
-      let visible = 0;
-      cards.forEach(card => {
-        const show = cat === 'all' || card.dataset.cat === cat;
-        card.classList.toggle('hidden', !show);
-        if (show) visible++;
-      });
-
       buildsSection.style.display   = (cat === 'all' || cat === 'builds')   ? '' : 'none';
       firearmsSection.style.display = (cat === 'all' || cat === 'firearms') ? '' : 'none';
       ammoSection.style.display     = (cat === 'all' || cat === 'ammo')     ? '' : 'none';
-
-      emptyState.classList.toggle('visible', visible === 0 && !serviceOnly);
-      countEl.textContent = cat === 'all'   ? 'Showing all items'
-        : cat === 'firearms'                ? 'Order any firearm — call or send a request'
-        : cat === 'ammo'                    ? 'Call ahead to check what\'s in stock'
-        : cat === 'builds'                  ? 'Custom builds to order'
-        : visible > 0 ? `${visible} item${visible !== 1 ? 's' : ''} in stock`
-        : 'Nothing in this category right now';
     }
 
     catBtns.forEach(b => b.addEventListener('click', () => setCategory(b.dataset.cat)));
-
-    // Modal
-    const modal     = document.getElementById('orderModal');
-    const omName    = document.getElementById('omName');
-    const omCat     = document.getElementById('omCat');
-    const omStock   = document.getElementById('omStock');
-    const omPrice   = document.getElementById('omPrice');
-    const omDesc    = document.getElementById('omDesc');
-    const omInquiry = document.getElementById('omInquiryBtn');
-
-    function openModal(pid) {
-      const p = PRODUCTS.find(x => x.id === pid);
-      if (!p) return;
-      const sc       = STOCK_CONFIG[p.stock] || STOCK_CONFIG.in_stock;
-      const catLabel = CAT_LABELS[p.cat] || p.cat;
-      omName.textContent  = p.name;
-      omCat.textContent   = catLabel;
-      omStock.textContent = sc.label;
-      omStock.style.color = sc.color;
-      omPrice.textContent = `$${p.price}`;
-      omDesc.textContent  = p.desc;
-      omInquiry.href = `contact.html?product=${encodeURIComponent(p.name)}&price=${p.price}&subject=${CAT_SUBJECT[p.cat] || 'order'}`;
-      modal.classList.add('open');
-      document.body.style.overflow = 'hidden';
-    }
-
-    function closeModal() {
-      modal.classList.remove('open');
-      document.body.style.overflow = '';
-    }
-
-    grid.addEventListener('click', e => {
-      const btn = e.target.closest('button[data-pid]');
-      if (btn && !btn.disabled) openModal(btn.dataset.pid);
-    });
-
-    document.getElementById('orderModalClose').addEventListener('click', closeModal);
-    modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
-    document.addEventListener('keydown', e => { if (e.key === 'Escape' && modal.classList.contains('open')) closeModal(); });
   </script>
 </body>
 </html>
