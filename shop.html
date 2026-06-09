@@ -414,31 +414,6 @@
     }
     .empty-state.visible { display: block; }
 
-    /* ── FFL LOOKUP BAR ── */
-    .ffl-lookup-bar {
-      background: var(--bg);
-      border-bottom: 1px solid var(--border);
-      padding: 20px 32px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 24px;
-      flex-wrap: wrap;
-    }
-    .ffl-lookup-title {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 15px;
-      letter-spacing: 2px;
-      color: var(--silver);
-      margin-bottom: 4px;
-    }
-    .ffl-lookup-sub {
-      font-size: 12px;
-      color: var(--muted);
-      line-height: 1.6;
-      max-width: 560px;
-    }
-
     /* ── RESPONSIVE ── */
     @media (max-width: 900px) {
       .shop-wrap { padding: 32px 20px; }
@@ -478,18 +453,15 @@
   <div class="page-header">
     <div class="section-label">Golden Valley Guns</div>
     <h1>Shop</h1>
-    <p>Parts, accessories, and gear. Completed builds available by request.</p>
+    <p>Parts, firearms, ammo, and custom builds. Small shop — big capability.</p>
   </div>
 
   <!-- CATEGORY BAR -->
   <div class="cat-bar">
     <button class="cat-btn active" data-cat="all">All</button>
-    <button class="cat-btn" data-cat="parts">Parts</button>
-    <button class="cat-btn" data-cat="accessories">Accessories</button>
-    <button class="cat-btn" data-cat="optics">Optics &amp; Sights</button>
-    <button class="cat-btn" data-cat="cleaning">Cleaning &amp; Maintenance</button>
-    <button class="cat-btn" data-cat="ammo">Ammo</button>
+    <button class="cat-btn" data-cat="parts">Parts &amp; Accessories</button>
     <button class="cat-btn" data-cat="firearms">Firearms</button>
+    <button class="cat-btn" data-cat="ammo">Ammo</button>
     <button class="cat-btn" data-cat="builds">Custom Builds</button>
   </div>
 
@@ -498,12 +470,6 @@
 
     <div class="shop-header">
       <span class="shop-count" id="shopCount">Showing all items</span>
-      <span class="shop-notice">Firearms ship to your local FFL dealer</span>
-    </div>
-
-    <div class="ffl-banner">
-      <span class="ffl-banner-icon">FFL Note</span>
-      <span><strong>Regulated items ship FFL-to-FFL.</strong> If an item requires a background check, it ships to your local dealer — not your door. Everything else ships direct. Questions? <a href="tel:9287270893" style="color:var(--gold-light);">(928) 727-0893</a>.</span>
     </div>
 
     <!-- PRODUCT GRID — rendered by products.js -->
@@ -555,55 +521,25 @@
       </div>
     </div>
 
-    <!-- FIREARMS SOURCING SECTION -->
+    <!-- FIREARMS -->
     <div class="builds-section" id="firearmsSection" style="margin-top: 2px;">
       <div class="builds-header">
         <div>
-          <h2>Firearms — Source to Order</h2>
-          <p>We don't carry a wall of inventory — we source from major distributors. Tell us what you want, we'll get you a price and ETA, and it ships direct to our FFL for your transfer.</p>
+          <h2>Firearms</h2>
+          <p>We don't carry a wall of guns — but we can get you almost anything. Tell us what you want (make, model, caliber) and we'll get you a price. You pay, it comes in, you do your 4473 and walk out with it.</p>
         </div>
         <a href="contact.html?subject=buysell" class="btn-buy">Request a Firearm</a>
       </div>
-      <div class="ffl-lookup-bar">
-        <div class="fll-lookup-text">
-          <div class="ffl-lookup-title">Need a transfer dealer near you?</div>
-          <div class="ffl-lookup-sub">Once your firearm ships to us, you'll need a local FFL to receive it if you're not in the Golden Valley area. Use the ATF's official licensee search to find one near you.</div>
+    </div>
+
+    <!-- AMMO -->
+    <div class="builds-section" id="ammoSection" style="margin-top: 2px;">
+      <div class="builds-header">
+        <div>
+          <h2>Ammo</h2>
+          <p>We keep common calibers in stock — 9mm, 5.56, .22 LR, 7.62x39, and others. Stock rotates so call ahead or stop in to see what we have.</p>
         </div>
-        <a href="https://www.atfonline.gov/fflezcheck/" target="_blank" rel="noopener" class="btn-buy outline">ATF FFL Locator &rarr;</a>
-      </div>
-
-      <div class="build-request-grid">
-
-        <div class="build-request-card">
-          <div class="br-label">Handguns</div>
-          <div class="br-name">Pistols &amp; Revolvers</div>
-          <div class="br-desc">Glock, Sig Sauer, S&amp;W, Springfield, CZ, Ruger, and more. Tell us make, model, and caliber — we'll source it at a competitive price.</div>
-          <div class="br-footer">
-            <span class="br-price">Sourced to order</span>
-            <a href="contact.html?subject=buysell&product=Handgun+Inquiry" class="btn-buy outline">Request</a>
-          </div>
-        </div>
-
-        <div class="build-request-card">
-          <div class="br-label">Rifles &amp; Carbines</div>
-          <div class="br-name">Semi-Auto &amp; Bolt Gun</div>
-          <div class="br-desc">AR-15s, AKs, bolt-action, and hunting platforms. We build ARs and AKs in-house, or source a factory rifle if that's what fits your budget.</div>
-          <div class="br-footer">
-            <span class="br-price">Sourced to order</span>
-            <a href="contact.html?subject=buysell&product=Rifle+Inquiry" class="btn-buy outline">Request</a>
-          </div>
-        </div>
-
-        <div class="build-request-card">
-          <div class="br-label">Shotguns</div>
-          <div class="br-name">Semi-Auto &amp; Pump</div>
-          <div class="br-desc">Mossberg, Remington, Benelli, and others. Home defense, hunting, and competition configurations. Tell us what you need it for.</div>
-          <div class="br-footer">
-            <span class="br-price">Sourced to order</span>
-            <a href="contact.html?subject=buysell&product=Shotgun+Inquiry" class="btn-buy outline">Request</a>
-          </div>
-        </div>
-
+        <a href="tel:9287270893" class="btn-buy">Call to Check Stock</a>
       </div>
     </div>
 
@@ -665,14 +601,15 @@
   <script src="js/main.js"></script>
   <script src="js/products.js"></script>
   <script>
-    const catBtns        = document.querySelectorAll('.cat-btn');
-    const grid           = document.getElementById('productGrid');
-    const countEl        = document.getElementById('shopCount');
-    const emptyState     = document.getElementById('emptyState');
-    const buildsSection  = document.getElementById('buildsSection');
+    const catBtns         = document.querySelectorAll('.cat-btn');
+    const grid            = document.getElementById('productGrid');
+    const countEl         = document.getElementById('shopCount');
+    const emptyState      = document.getElementById('emptyState');
+    const buildsSection   = document.getElementById('buildsSection');
     const firearmsSection = document.getElementById('firearmsSection');
+    const ammoSection     = document.getElementById('ammoSection');
 
-    const CAT_SUBJECT = { parts: 'parts', accessories: 'order', optics: 'order', cleaning: 'order', ammo: 'order' };
+    const CAT_SUBJECT = { parts: 'parts' };
 
     function renderCard(p) {
       const sc      = STOCK_CONFIG[p.stock] || STOCK_CONFIG.in_stock;
@@ -708,8 +645,8 @@
     function setCategory(cat) {
       catBtns.forEach(b => b.classList.toggle('active', b.dataset.cat === cat));
 
-      const isFirearms = cat === 'firearms';
-      grid.style.display = isFirearms ? 'none' : '';
+      const serviceOnly = cat === 'firearms' || cat === 'ammo' || cat === 'builds';
+      grid.style.display = serviceOnly ? 'none' : '';
 
       const cards = grid.querySelectorAll('.product-card');
       let visible = 0;
@@ -719,15 +656,17 @@
         if (show) visible++;
       });
 
-      buildsSection.style.display  = (cat === 'all' || cat === 'builds') ? '' : 'none';
+      buildsSection.style.display   = (cat === 'all' || cat === 'builds')   ? '' : 'none';
       firearmsSection.style.display = (cat === 'all' || cat === 'firearms') ? '' : 'none';
+      ammoSection.style.display     = (cat === 'all' || cat === 'ammo')     ? '' : 'none';
 
-      emptyState.classList.toggle('visible', visible === 0 && cat !== 'builds' && !isFirearms);
-      countEl.textContent = cat === 'all'
-        ? 'Showing all items'
-        : isFirearms ? 'Sourced to order — no stocking required'
-        : visible > 0 ? `${visible} item${visible !== 1 ? 's' : ''} in this category`
-        : 'No items in this category yet';
+      emptyState.classList.toggle('visible', visible === 0 && !serviceOnly);
+      countEl.textContent = cat === 'all'   ? 'Showing all items'
+        : cat === 'firearms'                ? 'Order any firearm — call or send a request'
+        : cat === 'ammo'                    ? 'Call ahead to check what\'s in stock'
+        : cat === 'builds'                  ? 'Custom builds to order'
+        : visible > 0 ? `${visible} item${visible !== 1 ? 's' : ''} in stock`
+        : 'Nothing in this category right now';
     }
 
     catBtns.forEach(b => b.addEventListener('click', () => setCategory(b.dataset.cat)));
