@@ -859,7 +859,7 @@ footer {
 @media (max-width: 900px) {
   .nav { padding: 0 20px; }
   .nav-links { display: none; }
-  .nav-cta { font-size: 11px; padding: 8px 14px; }
+  .nav-cta { display: none; }
   .nav-logo .sub-ffl { display: none; }
   .hamburger { display: flex; }
 
@@ -922,7 +922,6 @@ footer {
 
 /* ── MOBILE (≤580px) ── */
 @media (max-width: 580px) {
-  .nav-cta { display: none; }
   .nav-logo .wordmark { font-size: 17px; letter-spacing: 1px; }
   .nav-logo .sub { display: none; }
 

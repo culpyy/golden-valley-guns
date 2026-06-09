@@ -513,15 +513,18 @@
       .submit-actions { align-items: flex-start; flex-direction: row; flex-wrap: wrap; }
     }
     @media (max-width: 580px) {
-      .summary-stat { min-width: calc(50% - 1px); flex: none; }
-      .build-card { grid-template-columns: 1fr; padding: 18px 16px; }
+      .summary-stat { width: calc(50% - 1px); flex: none; min-width: unset; padding: 16px 10px; }
+      .summary-stat .num { font-size: 32px; }
+      .status-legend { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; }
+      .build-card { grid-template-columns: 1fr; padding: 16px; }
       .build-right { flex-direction: row; align-items: center; justify-content: space-between; }
       .eta-block { text-align: left; }
-      .summary-stat { min-width: 80px; padding: 18px 12px; }
-      .summary-stat .num { font-size: 36px; }
       .accept-grid { grid-template-columns: 1fr; }
+      .accept-card { padding: 20px 16px; }
       .atf-flow { grid-template-columns: 1fr; }
-      .status-legend { gap: 12px; }
+      .atf-step { padding: 16px; }
+      .atf-explainer { padding: 32px 16px; }
+      .lookup-callout { padding: 16px; }
     }
   </style>
 </head>
