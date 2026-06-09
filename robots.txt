@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://culpyy.github.io/golden-valley-guns/sitemap.xml
