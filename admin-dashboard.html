@@ -429,6 +429,10 @@
             <label>Progress (0-100)</label>
             <input type="number" id="b-progress" min="0" max="100" placeholder="0" />
           </div>
+          <div class="form-field" style="display:flex;align-items:center;gap:10px;padding-top:22px;">
+            <input type="checkbox" id="b-is-nfa" style="width:16px;height:16px;accent-color:var(--gold-light);cursor:pointer;" />
+            <label for="b-is-nfa" style="cursor:pointer;font-size:11px;letter-spacing:1.5px;">NFA Item (shows ATF pipeline stages)</label>
+          </div>
           <div class="form-field">
             <label>Date Received</label>
             <input type="date" id="b-received" />
@@ -631,6 +635,7 @@
       document.getElementById('b-caliber').value = build ? build.caliber : '';
       document.getElementById('b-status').value = build ? build.status : 'intake';
       document.getElementById('b-progress').value = build ? build.progress : 0;
+      document.getElementById('b-is-nfa').checked = build ? !!build.is_nfa : false;
       document.getElementById('b-received').value = build ? (build.received || '') : '';
       document.getElementById('b-eta').value = build ? (build.eta || '') : '';
       document.getElementById('b-atf-form').value = build ? (build.atf_form || '') : '';
@@ -669,6 +674,7 @@
         caliber:        document.getElementById('b-caliber').value,
         status:         document.getElementById('b-status').value,
         progress:       parseInt(document.getElementById('b-progress').value) || 0,
+        is_nfa:         document.getElementById('b-is-nfa').checked,
         received:       document.getElementById('b-received').value || null,
         eta:            document.getElementById('b-eta').value || null,
         atf_form:       document.getElementById('b-atf-form').value || '',

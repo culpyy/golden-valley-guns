@@ -893,8 +893,10 @@
   <script src="js/supabase.js"></script>
   <script src="js/main.js"></script>
   <script>
-    const stages     = ['intake','parts-ordered','in-progress','testing','atf-filed','atf-approved','ready'];
-    const stageNames = ['Intake','Parts','In Progress','Testing','ATF Filed','ATF Approved','Ready'];
+    const stagesNFA    = ['intake','parts-ordered','in-progress','testing','atf-filed','atf-approved','ready'];
+    const stageNamesNFA = ['Intake','Parts','In Progress','Testing','ATF Filed','ATF Approved','Ready'];
+    const stagesSTD    = ['intake','parts-ordered','in-progress','testing','ready'];
+    const stageNamesSTD = ['Intake','Parts Ordered','In Progress','Testing','Ready'];
     const statusLabels = {
       'intake':        'Intake',
       'parts-ordered': 'Parts Ordered',
@@ -930,8 +932,6 @@
       return Math.floor((today - d) / 86400000);
     }
 
-    function stageIndex(status) { return stages.indexOf(status); }
-
     function renderBoardUpdated() {
       const latest = builds.reduce((max, b) => (!b.received ? max : b.received > max ? b.received : max), '');
       const el = document.getElementById('boardUpdated');
@@ -966,7 +966,9 @@
       }
 
       list.innerHTML = sorted.map(b => {
-        const si = stageIndex(b.status);
+        const stages     = b.is_nfa ? stagesNFA     : stagesSTD;
+        const stageNames = b.is_nfa ? stageNamesNFA : stageNamesSTD;
+        const si = stages.indexOf(b.status);
         const pipelineBars = stages.map((s, i) =>
           `<div class="pipe-seg ${i <= si ? 'done' : ''}"></div>`).join('');
         const pipelineLabels = stages.map((s, i) =>
@@ -1013,8 +1015,8 @@
             </div>
 
             <div class="pipeline-wrap">
-              <div class="pipeline-bars">${pipelineBars}</div>
-              <div class="pipeline-labels">${pipelineLabels}</div>
+              <div class="pipeline-bars" style="grid-template-columns:repeat(${stages.length},1fr)">${pipelineBars}</div>
+              <div class="pipeline-labels" style="grid-template-columns:repeat(${stages.length},1fr)">${pipelineLabels}</div>
             </div>
 
             <div class="progress-row">

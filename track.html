@@ -479,8 +479,10 @@
   <script src="js/supabase.js"></script>
   <script src="js/main.js"></script>
   <script>
-    const stages     = ['intake','parts-ordered','in-progress','testing','atf-filed','atf-approved','ready'];
-    const stageNames = ['Intake','Parts','In Progress','Testing','ATF Filed','Approved','Ready'];
+    const stagesNFA     = ['intake','parts-ordered','in-progress','testing','atf-filed','atf-approved','ready'];
+    const stageNamesNFA = ['Intake','Parts','In Progress','Testing','ATF Filed','Approved','Ready'];
+    const stagesSTD     = ['intake','parts-ordered','in-progress','testing','ready'];
+    const stageNamesSTD = ['Intake','Parts Ordered','In Progress','Testing','Ready'];
     const stageBadge = {
       'intake':        'Intake',
       'parts-ordered': 'Parts Ordered',
@@ -525,10 +527,16 @@
       badge.className   = 'status-badge ' + (b.status || '');
       document.getElementById('rStatusDesc').textContent = stagePlain[b.status] || '';
 
+      const stages     = b.is_nfa ? stagesNFA     : stagesSTD;
+      const stageNames = b.is_nfa ? stageNamesNFA : stageNamesSTD;
       const si = stages.indexOf(b.status);
-      document.getElementById('rPipelineSteps').innerHTML = stages.map((s, i) =>
+      const stepsEl  = document.getElementById('rPipelineSteps');
+      const labelsEl = document.getElementById('rPipelineLabels');
+      stepsEl.style.gridTemplateColumns  = `repeat(${stages.length}, 1fr)`;
+      labelsEl.style.gridTemplateColumns = `repeat(${stages.length}, 1fr)`;
+      stepsEl.innerHTML  = stages.map((s, i) =>
         `<div class="pipe-seg ${i <= si ? 'done' : ''}"></div>`).join('');
-      document.getElementById('rPipelineLabels').innerHTML = stages.map((s, i) =>
+      labelsEl.innerHTML = stages.map((s, i) =>
         `<div class="pipe-lbl ${i <= si ? 'done' : ''}">${stageNames[i]}</div>`).join('');
 
       const notesBlock = document.getElementById('rNotesBlock');
