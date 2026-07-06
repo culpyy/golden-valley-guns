@@ -72,7 +72,7 @@
       border-radius: 50%;
       background: var(--gold-light);
     }
-    .admin-bar-actions { display: flex; gap: 10px; }
+    .admin-bar-actions { display: flex; gap: 10px; flex-wrap: wrap; }
     .admin-bar a, .admin-bar button {
       font-family: 'Bebas Neue', sans-serif;
       font-size: 13px;
@@ -655,7 +655,8 @@
       .atf-flow { grid-template-columns: 1fr; }
       .atf-explainer { padding: 32px 16px; }
       .track-strip { flex-direction: column; align-items: flex-start; }
-      .track-strip-form input { width: 140px; }
+      .track-strip-form { width: 100%; }
+      .track-strip-form input { flex: 1; min-width: 0; width: auto; }
     }
   </style>
 </head>
