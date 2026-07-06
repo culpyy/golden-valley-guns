@@ -774,7 +774,8 @@
     </div>
   </footer>
 
-  <script src="js/builds.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
   <script src="js/main.js"></script>
   <script>
     const statusLabels = {
@@ -944,9 +945,7 @@
       }).join('');
     }
 
-    renderBoardUpdated();
-    renderSummary();
-    renderBuilds();
   </script>
+  <script src="js/builds.js"></script>
 </body>
 </html>
