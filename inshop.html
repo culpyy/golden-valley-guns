@@ -995,12 +995,8 @@
           ? `<a href="track.html?code=${encodeURIComponent(b.tracking_code)}" class="track-link">Track this build</a>`
           : '';
 
-        const adminActions = isAdmin
-          ? `<div class="card-admin-actions"><a href="admin-dashboard.html?edit=${b.id}" class="btn-card-edit">Edit Build</a></div>`
-          : '';
-
-        const cardFooter = (trackLink || adminActions)
-          ? `<div class="card-footer-row">${trackLink}${adminActions}</div>`
+        const cardFooter = trackLink
+          ? `<div class="card-footer-row">${trackLink}</div>`
           : '';
 
         return `
