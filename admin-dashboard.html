@@ -685,7 +685,7 @@
         customer_phone: document.getElementById('b-customer-phone').value || ''
       };
 
-      if (isNew) payload.tracking_code = document.getElementById('b-tracking-code').value;
+      payload.tracking_code = document.getElementById('b-tracking-code').value;
 
       let error;
       if (id) {
