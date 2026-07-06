@@ -479,6 +479,10 @@
       </div>
 
       <div id="buildsTable"></div>
+      <div style="margin-top:24px;padding:16px 20px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+        <div style="font-size:12px;color:var(--muted);letter-spacing:0.5px;">Builds missing a tracking code won't show up on customer lookups.</div>
+        <button id="backfillCodesBtn" style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;padding:8px 18px;background:none;border:1px solid var(--border);color:var(--muted);cursor:pointer;transition:border-color 0.2s,color 0.2s;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold-light)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">Assign Missing Codes</button>
+      </div>
     </div>
 
     <!-- ── PRODUCTS TAB ── -->
@@ -891,6 +895,49 @@
       const failed = results.find(r => r.error);
       if (failed) { showToast('Error saving: ' + failed.error.message); return; }
       showToast('Content saved.');
+    });
+
+    // ── BACKFILL MISSING TRACKING CODES ──
+    document.getElementById('backfillCodesBtn').addEventListener('click', async () => {
+      const btn = document.getElementById('backfillCodesBtn');
+      btn.textContent = 'Working...';
+      btn.disabled = true;
+
+      const { data: missing } = await supabase
+        .from('builds')
+        .select('id')
+        .is('tracking_code', null)
+        .order('created_at', { ascending: true });
+
+      if (!missing || missing.length === 0) {
+        showToast('All builds already have tracking codes.');
+        btn.textContent = 'Assign Missing Codes';
+        btn.disabled = false;
+        return;
+      }
+
+      const year = new Date().getFullYear();
+      const { count: total } = await supabase
+        .from('builds')
+        .select('*', { count: 'exact', head: true });
+
+      let assigned = 0;
+      let counter = (total || 0) - missing.length;
+
+      for (const build of missing) {
+        counter++;
+        const code = `GVG-${year}-${String(counter).padStart(3, '0')}`;
+        const { error } = await supabase
+          .from('builds')
+          .update({ tracking_code: code })
+          .eq('id', build.id);
+        if (!error) assigned++;
+      }
+
+      showToast(`${assigned} code${assigned !== 1 ? 's' : ''} assigned.`);
+      btn.textContent = 'Assign Missing Codes';
+      btn.disabled = false;
+      loadBuilds();
     });
 
     // ── INIT ──
