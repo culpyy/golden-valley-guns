@@ -404,12 +404,20 @@
     catBtns.forEach(b => b.addEventListener('click', () => setCategory(b.dataset.cat)));
 
     async function loadParts() {
+      const grid = document.getElementById('partsGrid');
+      grid.innerHTML = [1, 2, 3].map(() => `
+        <div class="part-card">
+          <div class="shimmer-block" style="height:20px;width:70%;margin-bottom:10px;"></div>
+          <div class="shimmer-block" style="height:10px;width:90%;margin-bottom:6px;"></div>
+          <div class="shimmer-block" style="height:10px;width:60%;"></div>
+        </div>
+      `).join('');
+
       const { data, error } = await supabase
         .from('products')
         .select('*')
         .order('name');
 
-      const grid = document.getElementById('partsGrid');
       if (error || !data || data.length === 0) {
         grid.innerHTML = '<div class="parts-empty">No parts in stock right now. Check back soon or <a href="contact.html" style="color:var(--gold-light);">contact us</a>.</div>';
         return;

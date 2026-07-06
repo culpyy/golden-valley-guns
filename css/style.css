@@ -857,6 +857,7 @@ footer {
 
 /* ── TABLET (≤900px) ── */
 @media (max-width: 900px) {
+  .build-preview-grid { grid-template-columns: 1fr; }
   .nav { padding: 0 20px; }
   .nav-links { display: none; }
   .nav-cta { display: none; }
@@ -918,6 +919,77 @@ footer {
   footer { padding: 32px 20px; }
   .footer-inner { grid-template-columns: 1fr; gap: 24px; margin-bottom: 24px; }
   .footer-bottom { flex-direction: column; gap: 12px; text-align: center; }
+}
+
+/* ── BUILD BOARD PREVIEW (homepage) ── */
+.build-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+  background: var(--border);
+  margin-bottom: 32px;
+}
+.build-preview-card {
+  background: var(--surface);
+  padding: 24px;
+  transition: background 0.2s;
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+}
+.build-preview-card:hover { background: var(--surface2); }
+.bp-label {
+  font-size: 10px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--gold-light);
+  margin-bottom: 8px;
+}
+.bp-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 20px;
+  letter-spacing: 1.5px;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.bp-meta { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+.bp-progress-wrap { display: flex; flex-direction: column; gap: 6px; }
+.bp-progress-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--muted);
+}
+.bp-progress-bar { height: 2px; background: var(--border); overflow: hidden; }
+.bp-progress-fill { height: 100%; background: var(--gold-light); }
+.bp-status {
+  display: inline-block;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  margin-top: 14px;
+  align-self: flex-start;
+}
+.bp-status.intake        { color: #888; border: 1px solid #555; }
+.bp-status.parts-ordered { color: #a0a0f0; border: 1px solid #5555aa; }
+.bp-status.in-progress   { color: #7ec8e3; border: 1px solid #336688; }
+.bp-status.testing       { color: #f0d060; border: 1px solid #887700; }
+.bp-status.atf-filed     { color: #e07b39; border: 1px solid #7a3d00; }
+.bp-status.atf-approved  { color: #4caf50; border: 1px solid #2d7a3a; }
+.bp-status.ready         { color: #4caf50; border: 1px solid #2d7a3a; }
+
+/* ── LOADING SHIMMER ── */
+@keyframes shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position: 600px 0; }
+}
+.shimmer-block {
+  background: linear-gradient(90deg, var(--surface) 25%, var(--surface2) 50%, var(--surface) 75%);
+  background-size: 1200px 100%;
+  animation: shimmer 1.6s infinite linear;
+  border-radius: 2px;
 }
 
 /* ── MOBILE (≤580px) ── */
