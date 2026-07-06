@@ -49,8 +49,49 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
 
 .nav-logo {
   display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  line-height: 1;
+}
+
+.nav-logo-text {
+  display: flex;
   flex-direction: column;
   line-height: 1;
+}
+
+.nav-logo-img {
+  height: 44px;
+  width: auto;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 6px rgba(200,149,26,0.45));
+}
+
+.footer-logo-img {
+  height: 84px;
+  width: auto;
+  display: block;
+  margin-bottom: 18px;
+  filter: drop-shadow(0 0 14px rgba(200,149,26,0.55)) drop-shadow(0 0 32px rgba(200,149,26,0.2));
+}
+
+.hero-logo {
+  position: absolute;
+  right: 6%;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.hero-logo img {
+  width: 230px;
+  height: auto;
+  filter:
+    drop-shadow(0 0 20px rgba(200,149,26,0.65))
+    drop-shadow(0 0 50px rgba(200,149,26,0.3))
+    drop-shadow(0 2px 8px rgba(0,0,0,0.6));
 }
 
 .nav-logo .wordmark {
@@ -866,6 +907,8 @@ footer {
   .nav-cta { display: none; }
   .nav-logo .sub-ffl { display: none; }
   .hamburger { display: flex; }
+  .hero-logo { display: none; }
+  .nav-logo-img { height: 38px; }
 
   .nav-mobile-open .nav-links {
     display: flex;
@@ -1092,6 +1135,8 @@ footer {
   .cta-strip-actions .btn-secondary { flex: 1; justify-content: center; }
   .nav-logo .wordmark { font-size: 17px; letter-spacing: 1px; }
   .nav-logo .sub { display: none; }
+  .nav-logo-img { height: 32px; }
+  .footer-logo-img { height: 68px; }
 
   section { padding: 40px 16px; }
   .page-header { padding: calc(var(--nav-h) + 24px) 16px 24px; }
