@@ -279,6 +279,83 @@
     }
     .toast.show { opacity: 1; transform: translateY(0); }
 
+    /* ── TRACKING CODE MODAL ── */
+    .code-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .code-modal-overlay.open { opacity: 1; pointer-events: all; }
+    .code-modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-top: 3px solid var(--gold-light);
+      padding: 40px;
+      max-width: 420px;
+      width: 90%;
+      text-align: center;
+    }
+    .code-modal-eyebrow {
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--gold-light);
+      margin-bottom: 8px;
+    }
+    .code-modal-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px;
+      letter-spacing: 2px;
+      color: var(--text);
+      margin-bottom: 20px;
+    }
+    .code-display {
+      font-family: 'Courier New', monospace;
+      font-size: 28px;
+      letter-spacing: 4px;
+      color: var(--gold-light);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 16px 24px;
+      margin-bottom: 14px;
+    }
+    .code-modal-sub {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.7;
+      margin-bottom: 24px;
+    }
+    .code-modal-sub strong { color: var(--silver); }
+    .code-modal-actions { display: flex; gap: 12px; justify-content: center; }
+
+    /* ── SECTION DIVIDER IN FORM ── */
+    .form-section-label {
+      grid-column: 1 / -1;
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--gold-light);
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      margin-top: 8px;
+    }
+    .tracking-code-display {
+      font-family: 'Courier New', monospace;
+      font-size: 16px;
+      letter-spacing: 3px;
+      color: var(--gold-light);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+    }
+
     @media (max-width: 700px) {
       .admin-main { padding: 20px 16px; }
       .form-grid, .form-grid.cols-3 { grid-template-columns: 1fr; }
@@ -372,6 +449,24 @@
             <label>Notes (public-facing)</label>
             <textarea id="b-notes" placeholder="Short note visible to customers..."></textarea>
           </div>
+          <div class="form-section-label">Customer Info</div>
+          <div class="form-field">
+            <label>Tracking Code</label>
+            <div class="tracking-code-display" id="b-tracking-code-display">Auto-generated on save</div>
+            <input type="hidden" id="b-tracking-code" />
+          </div>
+          <div class="form-field">
+            <label>Customer Name</label>
+            <input type="text" id="b-customer-name" placeholder="John Smith" />
+          </div>
+          <div class="form-field">
+            <label>Customer Email</label>
+            <input type="email" id="b-customer-email" placeholder="customer@email.com" />
+          </div>
+          <div class="form-field">
+            <label>Customer Phone</label>
+            <input type="tel" id="b-customer-phone" placeholder="(928) 555-0100" />
+          </div>
         </div>
         <div class="form-actions">
           <button class="btn-save" id="saveBuildBtn">Save Build</button>
@@ -459,6 +554,19 @@
 
   <div class="toast" id="toast"></div>
 
+  <div class="code-modal-overlay" id="codeModalOverlay">
+    <div class="code-modal">
+      <div class="code-modal-eyebrow">Build Created</div>
+      <div class="code-modal-title">Customer Tracking Code</div>
+      <div class="code-display" id="codeDisplay"></div>
+      <p class="code-modal-sub">Give this code to the customer. They can track their build at:<br><strong>goldenvalleyguns.netlify.app/track.html</strong></p>
+      <div class="code-modal-actions">
+        <button class="btn-save" id="copyCodeBtn">Copy Code</button>
+        <button class="btn-cancel" id="closeModalBtn">Done</button>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase.js"></script>
   <script>
@@ -490,10 +598,31 @@
       });
     });
 
-    // ── BUILDS ──
-    let editingBuildId = null;
+    // ── TRACKING CODE ──
+    async function generateTrackingCode() {
+      const year = new Date().getFullYear();
+      const { count } = await supabase.from('builds').select('*', { count: 'exact', head: true });
+      const num = String((count || 0) + 1).padStart(3, '0');
+      return `GVG-${year}-${num}`;
+    }
 
-    function openBuildForm(build) {
+    // ── TRACKING CODE MODAL ──
+    function showCodeModal(code) {
+      document.getElementById('codeDisplay').textContent = code;
+      document.getElementById('codeModalOverlay').classList.add('open');
+    }
+
+    document.getElementById('closeModalBtn').addEventListener('click', () => {
+      document.getElementById('codeModalOverlay').classList.remove('open');
+    });
+
+    document.getElementById('copyCodeBtn').addEventListener('click', () => {
+      const code = document.getElementById('codeDisplay').textContent;
+      navigator.clipboard.writeText(code).then(() => showToast('Code copied.'));
+    });
+
+    // ── BUILDS ──
+    async function openBuildForm(build) {
       const form = document.getElementById('buildForm');
       document.getElementById('buildFormTitle').textContent = build ? 'Edit Build' : 'Add Build';
       document.getElementById('buildId').value = build ? build.id : '';
@@ -507,13 +636,25 @@
       document.getElementById('b-atf-form').value = build ? (build.atf_form || '') : '';
       document.getElementById('b-atf-filed').value = build ? (build.atf_filed || '') : '';
       document.getElementById('b-notes').value = build ? (build.notes || '') : '';
+      document.getElementById('b-customer-name').value = build ? (build.customer_name || '') : '';
+      document.getElementById('b-customer-email').value = build ? (build.customer_email || '') : '';
+      document.getElementById('b-customer-phone').value = build ? (build.customer_phone || '') : '';
+
+      if (build && build.tracking_code) {
+        document.getElementById('b-tracking-code').value = build.tracking_code;
+        document.getElementById('b-tracking-code-display').textContent = build.tracking_code;
+      } else {
+        const code = await generateTrackingCode();
+        document.getElementById('b-tracking-code').value = code;
+        document.getElementById('b-tracking-code-display').textContent = code;
+      }
+
       form.classList.add('open');
       form.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     function closeBuildForm() {
       document.getElementById('buildForm').classList.remove('open');
-      editingBuildId = null;
     }
 
     document.getElementById('addBuildBtn').addEventListener('click', () => openBuildForm(null));
@@ -521,18 +662,24 @@
 
     document.getElementById('saveBuildBtn').addEventListener('click', async () => {
       const id = document.getElementById('buildId').value;
+      const isNew = !id;
       const payload = {
-        title:      document.getElementById('b-title').value,
-        type:       document.getElementById('b-type').value,
-        caliber:    document.getElementById('b-caliber').value,
-        status:     document.getElementById('b-status').value,
-        progress:   parseInt(document.getElementById('b-progress').value) || 0,
-        received:   document.getElementById('b-received').value || null,
-        eta:        document.getElementById('b-eta').value || null,
-        atf_form:   document.getElementById('b-atf-form').value || '',
-        atf_filed:  document.getElementById('b-atf-filed').value || null,
-        notes:      document.getElementById('b-notes').value || ''
+        title:          document.getElementById('b-title').value,
+        type:           document.getElementById('b-type').value,
+        caliber:        document.getElementById('b-caliber').value,
+        status:         document.getElementById('b-status').value,
+        progress:       parseInt(document.getElementById('b-progress').value) || 0,
+        received:       document.getElementById('b-received').value || null,
+        eta:            document.getElementById('b-eta').value || null,
+        atf_form:       document.getElementById('b-atf-form').value || '',
+        atf_filed:      document.getElementById('b-atf-filed').value || null,
+        notes:          document.getElementById('b-notes').value || '',
+        customer_name:  document.getElementById('b-customer-name').value || '',
+        customer_email: document.getElementById('b-customer-email').value || '',
+        customer_phone: document.getElementById('b-customer-phone').value || ''
       };
+
+      if (isNew) payload.tracking_code = document.getElementById('b-tracking-code').value;
 
       let error;
       if (id) {
@@ -542,9 +689,15 @@
       }
 
       if (error) { showToast('Error: ' + error.message); return; }
-      showToast(id ? 'Build updated.' : 'Build added.');
+
       closeBuildForm();
       loadBuilds();
+
+      if (isNew) {
+        showCodeModal(payload.tracking_code);
+      } else {
+        showToast('Build updated.');
+      }
     });
 
     async function loadBuilds() {
@@ -558,22 +711,22 @@
         <table class="data-table">
           <thead>
             <tr>
+              <th>Tracking Code</th>
               <th>Title</th>
-              <th>Type</th>
+              <th>Customer</th>
               <th>Status</th>
               <th>Progress</th>
-              <th>Received</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
             ${data.map(b => `
               <tr>
+                <td style="font-family:'Courier New',monospace;font-size:12px;color:var(--gold-light);letter-spacing:1.5px;">${b.tracking_code || '—'}</td>
                 <td class="title">${b.title}</td>
-                <td>${b.type}</td>
+                <td style="font-size:12px;">${b.customer_name || '—'}</td>
                 <td><span class="status-pill ${b.status}">${b.status}</span></td>
                 <td>${b.progress}%</td>
-                <td>${b.received || '—'}</td>
                 <td>
                   <div class="row-actions">
                     <button class="btn-edit" onclick="editBuild('${b.id}')">Edit</button>
