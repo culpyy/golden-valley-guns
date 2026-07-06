@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <title>Admin Dashboard | Golden Valley Guns</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    body { background: var(--bg); }
+
+    /* ── ADMIN HEADER ── */
+    .admin-header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      height: 64px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+    }
+    .admin-brand {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 18px;
+      letter-spacing: 2px;
+      color: var(--text);
+    }
+    .admin-brand span {
+      color: var(--gold-light);
+      margin-left: 10px;
+      font-size: 12px;
+      letter-spacing: 3px;
+    }
+    .btn-signout {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 13px;
+      letter-spacing: 2px;
+      padding: 8px 18px;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .btn-signout:hover { border-color: var(--muted); color: var(--text); }
+
+    /* ── TAB NAV ── */
+    .tab-nav {
+      position: fixed;
+      top: 64px; left: 0; right: 0;
+      z-index: 99;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      padding: 0 32px;
+      gap: 0;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--muted);
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 14px;
+      letter-spacing: 2px;
+      padding: 14px 24px;
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .tab-btn:hover { color: var(--silver); }
+    .tab-btn.active { color: var(--gold-light); border-bottom-color: var(--gold-light); }
+
+    /* ── MAIN CONTENT ── */
+    .admin-main {
+      margin-top: 112px;
+      padding: 32px;
+      max-width: 1100px;
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── SECTION HEADER ── */
+    .section-hd {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+    .section-hd h2 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 26px;
+      letter-spacing: 2px;
+      color: var(--text);
+    }
+
+    /* ── FORM CARD ── */
+    .form-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--gold);
+      padding: 28px 32px;
+      margin-bottom: 32px;
+      display: none;
+    }
+    .form-card.open { display: block; }
+    .form-card h3 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 18px;
+      letter-spacing: 2px;
+      color: var(--text);
+      margin-bottom: 20px;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .form-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .form-field { display: flex; flex-direction: column; gap: 6px; }
+    .form-field.full { grid-column: 1 / -1; }
+    .form-field label {
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .form-field input,
+    .form-field select,
+    .form-field textarea {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 14px;
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-field input:focus,
+    .form-field select:focus,
+    .form-field textarea:focus { border-color: var(--gold-light); }
+    .form-field select { appearance: none; cursor: pointer; }
+    .form-field textarea { resize: vertical; min-height: 72px; }
+    .form-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+    .btn-save {
+      background: var(--gold);
+      color: #fff;
+      border: none;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 14px;
+      letter-spacing: 2px;
+      padding: 11px 28px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-save:hover { background: var(--gold-light); }
+    .btn-cancel {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 14px;
+      letter-spacing: 2px;
+      padding: 11px 28px;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .btn-cancel:hover { border-color: var(--muted); color: var(--text); }
+
+    /* ── DATA TABLE ── */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--surface);
+    }
+    .data-table th {
+      text-align: left;
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      font-weight: 500;
+    }
+    .data-table td {
+      padding: 14px 16px;
+      font-size: 13px;
+      color: var(--silver);
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    .data-table tr:hover td { background: var(--surface2); }
+    .data-table td.title { color: var(--text); font-weight: 500; }
+    .status-pill {
+      display: inline-block;
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 2px;
+      background: var(--surface2);
+      color: var(--muted);
+    }
+    .status-pill.intake        { color: #888; border: 1px solid #555; }
+    .status-pill.parts-ordered { color: #a0a0f0; border: 1px solid #5555aa; }
+    .status-pill.in-progress   { color: #7ec8e3; border: 1px solid #336688; }
+    .status-pill.testing       { color: #f0d060; border: 1px solid #887700; }
+    .status-pill.atf-filed     { color: #e07b39; border: 1px solid #7a3d00; }
+    .status-pill.atf-approved  { color: #4caf50; border: 1px solid #2d7a3a; }
+    .status-pill.ready         { color: #4caf50; border: 1px solid #2d7a3a; }
+    .row-actions { display: flex; gap: 8px; }
+    .btn-edit {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--gold-light);
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 12px;
+      letter-spacing: 1.5px;
+      padding: 5px 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-edit:hover { background: var(--gold); color: #fff; border-color: var(--gold); }
+    .btn-delete {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 12px;
+      letter-spacing: 1.5px;
+      padding: 5px 14px;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+    .btn-delete:hover { background: #6b2222; color: #fff; border-color: #6b2222; }
+    .btn-add {
+      background: var(--gold);
+      color: #fff;
+      border: none;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 14px;
+      letter-spacing: 2px;
+      padding: 11px 24px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-add:hover { background: var(--gold-light); }
+    .empty-state {
+      padding: 48px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+    }
+    .toast {
+      position: fixed;
+      bottom: 32px;
+      right: 32px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--gold-light);
+      padding: 14px 20px;
+      font-size: 13px;
+      color: var(--silver);
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.3s, transform 0.3s;
+      pointer-events: none;
+      z-index: 999;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    @media (max-width: 700px) {
+      .admin-main { padding: 20px 16px; }
+      .form-grid, .form-grid.cols-3 { grid-template-columns: 1fr; }
+      .admin-header { padding: 0 16px; }
+      .tab-nav { padding: 0 16px; }
+      .tab-btn { padding: 12px 14px; font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <div class="admin-header">
+    <div class="admin-brand">Golden Valley Guns <span>Admin</span></div>
+    <button class="btn-signout" id="signoutBtn">Sign Out</button>
+  </div>
+
+  <!-- TABS -->
+  <div class="tab-nav">
+    <button class="tab-btn active" data-tab="builds">Builds</button>
+    <button class="tab-btn" data-tab="products">Products</button>
+    <button class="tab-btn" data-tab="content">Site Content</button>
+  </div>
+
+  <div class="admin-main">
+
+    <!-- ── BUILDS TAB ── -->
+    <div class="tab-panel active" id="tab-builds">
+      <div class="section-hd">
+        <h2>Active Builds</h2>
+        <button class="btn-add" id="addBuildBtn">+ Add Build</button>
+      </div>
+
+      <div class="form-card" id="buildForm">
+        <h3 id="buildFormTitle">Add Build</h3>
+        <input type="hidden" id="buildId" />
+        <div class="form-grid">
+          <div class="form-field">
+            <label>Title</label>
+            <input type="text" id="b-title" placeholder="AK-47 Parts Kit Build" required />
+          </div>
+          <div class="form-field">
+            <label>Type</label>
+            <select id="b-type">
+              <option>Rifle</option>
+              <option>Pistol</option>
+              <option>Shotgun</option>
+              <option>Short-Barreled Rifle</option>
+              <option>Short-Barreled Shotgun</option>
+              <option>Suppressor</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Caliber</label>
+            <input type="text" id="b-caliber" placeholder="7.62x39mm" />
+          </div>
+          <div class="form-field">
+            <label>Status</label>
+            <select id="b-status">
+              <option value="intake">Intake</option>
+              <option value="parts-ordered">Parts Ordered</option>
+              <option value="in-progress">In Progress</option>
+              <option value="testing">Testing</option>
+              <option value="atf-filed">ATF Filed</option>
+              <option value="atf-approved">ATF Approved</option>
+              <option value="ready">Ready</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Progress (0-100)</label>
+            <input type="number" id="b-progress" min="0" max="100" placeholder="0" />
+          </div>
+          <div class="form-field">
+            <label>Date Received</label>
+            <input type="date" id="b-received" />
+          </div>
+          <div class="form-field">
+            <label>ETA (optional)</label>
+            <input type="date" id="b-eta" />
+          </div>
+          <div class="form-field">
+            <label>ATF Form (optional)</label>
+            <input type="text" id="b-atf-form" placeholder="Form 1, Form 4..." />
+          </div>
+          <div class="form-field">
+            <label>ATF Filed Date (optional)</label>
+            <input type="date" id="b-atf-filed" />
+          </div>
+          <div class="form-field full">
+            <label>Notes (public-facing)</label>
+            <textarea id="b-notes" placeholder="Short note visible to customers..."></textarea>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn-save" id="saveBuildBtn">Save Build</button>
+          <button class="btn-cancel" id="cancelBuildBtn">Cancel</button>
+        </div>
+      </div>
+
+      <div id="buildsTable"></div>
+    </div>
+
+    <!-- ── PRODUCTS TAB ── -->
+    <div class="tab-panel" id="tab-products">
+      <div class="section-hd">
+        <h2>Products</h2>
+        <button class="btn-add" id="addProductBtn">+ Add Product</button>
+      </div>
+
+      <div class="form-card" id="productForm">
+        <h3 id="productFormTitle">Add Product</h3>
+        <input type="hidden" id="productId" />
+        <div class="form-grid">
+          <div class="form-field">
+            <label>Name</label>
+            <input type="text" id="p-name" placeholder="Magpul MOE Pistol Grip" required />
+          </div>
+          <div class="form-field">
+            <label>ID / Slug</label>
+            <input type="text" id="p-id" placeholder="magpul-moe-grip" />
+          </div>
+          <div class="form-field">
+            <label>Category</label>
+            <select id="p-category">
+              <option value="parts">Parts &amp; Accessories</option>
+              <option value="ammo">Ammo</option>
+              <option value="firearms">Firearms</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Price ($)</label>
+            <input type="number" id="p-price" min="0" step="0.01" placeholder="0.00" />
+          </div>
+          <div class="form-field">
+            <label>Stock Status</label>
+            <select id="p-stock">
+              <option value="in_stock">In Stock</option>
+              <option value="limited">Limited Stock</option>
+              <option value="call">Call to Check</option>
+              <option value="out">Out of Stock</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Badge (optional)</label>
+            <input type="text" id="p-badge" placeholder="New, Sale..." />
+          </div>
+          <div class="form-field full">
+            <label>Description</label>
+            <textarea id="p-desc" placeholder="Product description..."></textarea>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn-save" id="saveProductBtn">Save Product</button>
+          <button class="btn-cancel" id="cancelProductBtn">Cancel</button>
+        </div>
+      </div>
+
+      <div id="productsTable"></div>
+    </div>
+
+    <!-- ── SITE CONTENT TAB ── -->
+    <div class="tab-panel" id="tab-content">
+      <div class="section-hd">
+        <h2>Site Content</h2>
+      </div>
+      <div class="form-card open" id="contentForm" style="border-left-color: var(--gold-light);">
+        <h3>Homepage Text</h3>
+        <div id="contentFields" class="form-grid"></div>
+        <div class="form-actions">
+          <button class="btn-save" id="saveContentBtn">Save Changes</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
+  <script>
+    // ── AUTH GUARD ──
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) window.location.href = 'admin.html';
+    });
+
+    document.getElementById('signoutBtn').addEventListener('click', async () => {
+      await supabase.auth.signOut();
+      window.location.href = 'admin.html';
+    });
+
+    // ── TOAST ──
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2800);
+    }
+
+    // ── TABS ──
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+      });
+    });
+
+    // ── BUILDS ──
+    let editingBuildId = null;
+
+    function openBuildForm(build) {
+      const form = document.getElementById('buildForm');
+      document.getElementById('buildFormTitle').textContent = build ? 'Edit Build' : 'Add Build';
+      document.getElementById('buildId').value = build ? build.id : '';
+      document.getElementById('b-title').value = build ? build.title : '';
+      document.getElementById('b-type').value = build ? build.type : 'Rifle';
+      document.getElementById('b-caliber').value = build ? build.caliber : '';
+      document.getElementById('b-status').value = build ? build.status : 'intake';
+      document.getElementById('b-progress').value = build ? build.progress : 0;
+      document.getElementById('b-received').value = build ? (build.received || '') : '';
+      document.getElementById('b-eta').value = build ? (build.eta || '') : '';
+      document.getElementById('b-atf-form').value = build ? (build.atf_form || '') : '';
+      document.getElementById('b-atf-filed').value = build ? (build.atf_filed || '') : '';
+      document.getElementById('b-notes').value = build ? (build.notes || '') : '';
+      form.classList.add('open');
+      form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function closeBuildForm() {
+      document.getElementById('buildForm').classList.remove('open');
+      editingBuildId = null;
+    }
+
+    document.getElementById('addBuildBtn').addEventListener('click', () => openBuildForm(null));
+    document.getElementById('cancelBuildBtn').addEventListener('click', closeBuildForm);
+
+    document.getElementById('saveBuildBtn').addEventListener('click', async () => {
+      const id = document.getElementById('buildId').value;
+      const payload = {
+        title:      document.getElementById('b-title').value,
+        type:       document.getElementById('b-type').value,
+        caliber:    document.getElementById('b-caliber').value,
+        status:     document.getElementById('b-status').value,
+        progress:   parseInt(document.getElementById('b-progress').value) || 0,
+        received:   document.getElementById('b-received').value || null,
+        eta:        document.getElementById('b-eta').value || null,
+        atf_form:   document.getElementById('b-atf-form').value || '',
+        atf_filed:  document.getElementById('b-atf-filed').value || null,
+        notes:      document.getElementById('b-notes').value || ''
+      };
+
+      let error;
+      if (id) {
+        ({ error } = await supabase.from('builds').update(payload).eq('id', id));
+      } else {
+        ({ error } = await supabase.from('builds').insert(payload));
+      }
+
+      if (error) { showToast('Error: ' + error.message); return; }
+      showToast(id ? 'Build updated.' : 'Build added.');
+      closeBuildForm();
+      loadBuilds();
+    });
+
+    async function loadBuilds() {
+      const { data, error } = await supabase.from('builds').select('*').order('received', { ascending: false });
+      const container = document.getElementById('buildsTable');
+      if (error || !data || data.length === 0) {
+        container.innerHTML = '<div class="empty-state">No builds yet. Click "+ Add Build" to get started.</div>';
+        return;
+      }
+      container.innerHTML = `
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Progress</th>
+              <th>Received</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.map(b => `
+              <tr>
+                <td class="title">${b.title}</td>
+                <td>${b.type}</td>
+                <td><span class="status-pill ${b.status}">${b.status}</span></td>
+                <td>${b.progress}%</td>
+                <td>${b.received || '—'}</td>
+                <td>
+                  <div class="row-actions">
+                    <button class="btn-edit" onclick="editBuild('${b.id}')">Edit</button>
+                    <button class="btn-delete" onclick="deleteBuild('${b.id}')">Delete</button>
+                  </div>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>`;
+    }
+
+    async function editBuild(id) {
+      const { data } = await supabase.from('builds').select('*').eq('id', id).single();
+      if (data) openBuildForm(data);
+    }
+
+    async function deleteBuild(id) {
+      if (!confirm('Delete this build? This cannot be undone.')) return;
+      const { error } = await supabase.from('builds').delete().eq('id', id);
+      if (error) { showToast('Error: ' + error.message); return; }
+      showToast('Build deleted.');
+      loadBuilds();
+    }
+
+    // ── PRODUCTS ──
+    document.getElementById('addProductBtn').addEventListener('click', () => openProductForm(null));
+    document.getElementById('cancelProductBtn').addEventListener('click', () => {
+      document.getElementById('productForm').classList.remove('open');
+    });
+
+    function openProductForm(product) {
+      const form = document.getElementById('productForm');
+      document.getElementById('productFormTitle').textContent = product ? 'Edit Product' : 'Add Product';
+      document.getElementById('productId').value = product ? product.id : '';
+      document.getElementById('p-name').value = product ? product.name : '';
+      document.getElementById('p-id').value = product ? product.id : '';
+      document.getElementById('p-category').value = product ? product.category : 'parts';
+      document.getElementById('p-price').value = product ? product.price : '';
+      document.getElementById('p-stock').value = product ? product.stock : 'in_stock';
+      document.getElementById('p-badge').value = product ? (product.badge || '') : '';
+      document.getElementById('p-desc').value = product ? product.description : '';
+      const idField = document.getElementById('p-id');
+      idField.readOnly = !!product;
+      idField.style.opacity = product ? '0.5' : '1';
+      form.classList.add('open');
+      form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    document.getElementById('saveProductBtn').addEventListener('click', async () => {
+      const existingId = document.getElementById('productId').value;
+      const newId = document.getElementById('p-id').value.trim().toLowerCase().replace(/\s+/g, '-');
+      const payload = {
+        name:        document.getElementById('p-name').value,
+        category:    document.getElementById('p-category').value,
+        description: document.getElementById('p-desc').value,
+        price:       parseFloat(document.getElementById('p-price').value) || 0,
+        stock:       document.getElementById('p-stock').value,
+        badge:       document.getElementById('p-badge').value || null
+      };
+
+      let error;
+      if (existingId) {
+        ({ error } = await supabase.from('products').update(payload).eq('id', existingId));
+      } else {
+        ({ error } = await supabase.from('products').insert({ id: newId, ...payload }));
+      }
+
+      if (error) { showToast('Error: ' + error.message); return; }
+      showToast(existingId ? 'Product updated.' : 'Product added.');
+      document.getElementById('productForm').classList.remove('open');
+      loadProducts();
+    });
+
+    async function loadProducts() {
+      const { data, error } = await supabase.from('products').select('*').order('name');
+      const container = document.getElementById('productsTable');
+      if (error || !data || data.length === 0) {
+        container.innerHTML = '<div class="empty-state">No products yet. Click "+ Add Product" to get started.</div>';
+        return;
+      }
+      container.innerHTML = `
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Category</th>
+              <th>Price</th>
+              <th>Stock</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.map(p => `
+              <tr>
+                <td class="title">${p.name}</td>
+                <td>${p.category}</td>
+                <td>$${parseFloat(p.price).toFixed(2)}</td>
+                <td><span class="status-pill">${p.stock}</span></td>
+                <td>
+                  <div class="row-actions">
+                    <button class="btn-edit" onclick="editProduct('${p.id}')">Edit</button>
+                    <button class="btn-delete" onclick="deleteProduct('${p.id}')">Delete</button>
+                  </div>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>`;
+    }
+
+    async function editProduct(id) {
+      const { data } = await supabase.from('products').select('*').eq('id', id).single();
+      if (data) openProductForm(data);
+    }
+
+    async function deleteProduct(id) {
+      if (!confirm('Delete this product? This cannot be undone.')) return;
+      const { error } = await supabase.from('products').delete().eq('id', id);
+      if (error) { showToast('Error: ' + error.message); return; }
+      showToast('Product deleted.');
+      loadProducts();
+    }
+
+    // ── SITE CONTENT ──
+    const CONTENT_LABELS = {
+      hero_title:        'Hero Title',
+      hero_subtitle:     'Hero Subtitle',
+      hero_cta_primary:  'Primary CTA Button',
+      hero_cta_secondary:'Secondary CTA Button',
+      about_text:        'About Text'
+    };
+
+    async function loadContent() {
+      const { data } = await supabase.from('site_content').select('*');
+      const container = document.getElementById('contentFields');
+      if (!data) return;
+      container.innerHTML = data.map(row => `
+        <div class="form-field ${row.key === 'hero_subtitle' || row.key === 'about_text' ? 'full' : ''}">
+          <label>${CONTENT_LABELS[row.key] || row.key}</label>
+          ${row.key === 'hero_subtitle' || row.key === 'about_text'
+            ? `<textarea id="content-${row.key}">${row.value}</textarea>`
+            : `<input type="text" id="content-${row.key}" value="${row.value}" />`}
+        </div>
+      `).join('');
+    }
+
+    document.getElementById('saveContentBtn').addEventListener('click', async () => {
+      const keys = ['hero_title', 'hero_subtitle', 'hero_cta_primary', 'hero_cta_secondary', 'about_text'];
+      const updates = keys.map(key => {
+        const el = document.getElementById('content-' + key);
+        return el ? supabase.from('site_content').update({ value: el.value }).eq('key', key) : null;
+      }).filter(Boolean);
+
+      const results = await Promise.all(updates);
+      const failed = results.find(r => r.error);
+      if (failed) { showToast('Error saving: ' + failed.error.message); return; }
+      showToast('Content saved.');
+    });
+
+    // ── INIT ──
+    loadBuilds();
+    loadProducts();
+    loadContent();
+  </script>
+</body>
+</html>
