@@ -150,6 +150,39 @@
     </div>
   </section>
 
+  <!-- CREDENTIALS STRIP -->
+  <div class="cred-strip">
+    <div class="cred-item">
+      <div class="cred-label">License</div>
+      <div class="cred-val">FFL 07 Manufacturer</div>
+    </div>
+    <div class="cred-item">
+      <div class="cred-label">Location</div>
+      <div class="cred-val">Golden Valley, AZ</div>
+    </div>
+    <div class="cred-item">
+      <div class="cred-label">Capability</div>
+      <div class="cred-val">NFA / Class III</div>
+    </div>
+    <div class="cred-item">
+      <div class="cred-label">Standard</div>
+      <div class="cred-val">Function Check Every Build</div>
+    </div>
+  </div>
+
+  <!-- LIVE BUILD BOARD PREVIEW -->
+  <section>
+    <div class="section-label">Live Build Board</div>
+    <h2 class="section-title">What's in the Shop</h2>
+    <p class="section-sub">A live look at builds currently in progress. Updated as work moves forward.</p>
+    <div class="build-preview-grid" id="buildPreview">
+      <div class="build-preview-card"><div class="shimmer-block" style="height:12px;width:40%;margin-bottom:12px;"></div><div class="shimmer-block" style="height:20px;width:70%;margin-bottom:8px;"></div><div class="shimmer-block" style="height:10px;width:30%;"></div></div>
+      <div class="build-preview-card"><div class="shimmer-block" style="height:12px;width:40%;margin-bottom:12px;"></div><div class="shimmer-block" style="height:20px;width:70%;margin-bottom:8px;"></div><div class="shimmer-block" style="height:10px;width:30%;"></div></div>
+      <div class="build-preview-card"><div class="shimmer-block" style="height:12px;width:40%;margin-bottom:12px;"></div><div class="shimmer-block" style="height:20px;width:70%;margin-bottom:8px;"></div><div class="shimmer-block" style="height:10px;width:30%;"></div></div>
+    </div>
+    <a href="inshop.html" class="btn-secondary">Full Build Board &#8594;</a>
+  </section>
+
   <!-- SERVICES -->
   <section>
     <div class="section-label">What We Do</div>
@@ -291,18 +324,19 @@
     </div>
   </section>
 
-  <!-- LIVE BUILD BOARD PREVIEW -->
-  <section>
-    <div class="section-label">Live Build Board</div>
-    <h2 class="section-title">What's in the Shop</h2>
-    <p class="section-sub">A live look at builds currently in progress. Updated as work moves forward.</p>
-    <div class="build-preview-grid" id="buildPreview">
-      <div class="build-preview-card"><div class="shimmer-block" style="height:12px;width:40%;margin-bottom:12px;"></div><div class="shimmer-block" style="height:20px;width:70%;margin-bottom:8px;"></div><div class="shimmer-block" style="height:10px;width:30%;"></div></div>
-      <div class="build-preview-card"><div class="shimmer-block" style="height:12px;width:40%;margin-bottom:12px;"></div><div class="shimmer-block" style="height:20px;width:70%;margin-bottom:8px;"></div><div class="shimmer-block" style="height:10px;width:30%;"></div></div>
-      <div class="build-preview-card"><div class="shimmer-block" style="height:12px;width:40%;margin-bottom:12px;"></div><div class="shimmer-block" style="height:20px;width:70%;margin-bottom:8px;"></div><div class="shimmer-block" style="height:10px;width:30%;"></div></div>
+  <!-- CTA STRIP -->
+  <div class="cta-strip">
+    <div class="cta-strip-inner">
+      <div>
+        <div class="section-label">Get Started</div>
+        <h2>Ready to build something?</h2>
+      </div>
+      <div class="cta-strip-actions">
+        <a href="tel:9287270893" class="btn-primary">(928) 727-0893</a>
+        <a href="contact.html" class="btn-secondary">Send a Message &#8594;</a>
+      </div>
     </div>
-    <a href="inshop.html" class="btn-secondary">Full Build Board &#8594;</a>
-  </section>
+  </div>
 
   <!-- FOOTER -->
   <footer>
@@ -344,6 +378,11 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase.js"></script>
   <script src="js/main.js"></script>
+  <script>
+    document.querySelectorAll('.faq-item').forEach(item => {
+      item.addEventListener('click', () => item.classList.toggle('open'));
+    });
+  </script>
   <script>
     const STATUS_LABELS = {
       'intake': 'Intake', 'parts-ordered': 'Parts Ordered', 'in-progress': 'In Progress',
