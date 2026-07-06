@@ -139,15 +139,78 @@
       color: var(--muted);
     }
 
+    /* ── PARTS GRID ── */
+    .parts-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2px;
+      background: var(--border);
+    }
+    .part-card {
+      background: var(--bg);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: background 0.2s;
+    }
+    .part-card:hover { background: var(--surface); }
+    .part-name {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 19px;
+      letter-spacing: 1.5px;
+      color: var(--text);
+    }
+    .part-desc {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.6;
+      flex: 1;
+    }
+    .part-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 8px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .part-price {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px;
+      letter-spacing: 1px;
+      color: var(--gold-light);
+    }
+    .part-stock {
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 3px 10px;
+    }
+    .stock-in_stock  { color: #4caf50; border: 1px solid #2d7a3a; }
+    .stock-limited   { color: #C8951A; border: 1px solid #8B6914; }
+    .stock-call      { color: var(--muted); border: 1px solid var(--border); }
+    .stock-out       { color: #888; border: 1px solid #444; }
+    .parts-empty {
+      grid-column: 1 / -1;
+      background: var(--surface);
+      padding: 48px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
     /* ── RESPONSIVE ── */
     @media (max-width: 900px) {
       .shop-wrap { padding: 32px 20px; }
       .build-request-grid { grid-template-columns: repeat(2, 1fr); }
+      .parts-grid { grid-template-columns: repeat(2, 1fr); }
     }
     @media (max-width: 580px) {
       .shop-wrap { padding: 20px 16px; }
       .cat-btn { padding: 10px 16px; font-size: 12px; letter-spacing: 1.5px; }
       .build-request-grid { grid-template-columns: 1fr; }
+      .parts-grid { grid-template-columns: 1fr; }
       .builds-header { padding: 20px; flex-direction: column; align-items: flex-start; }
       .builds-header .btn-buy { width: 100%; text-align: center; }
     }
@@ -189,6 +252,7 @@
     <button class="cat-btn" data-cat="builds">Kit Builds</button>
     <button class="cat-btn" data-cat="firearms">Firearms</button>
     <button class="cat-btn" data-cat="ammo">Ammo</button>
+    <button class="cat-btn" data-cat="parts">Parts &amp; Accessories</button>
   </div>
 
   <!-- SHOP -->
@@ -261,6 +325,18 @@
       </div>
     </div>
 
+    <!-- PARTS & ACCESSORIES -->
+    <div class="builds-section" id="partsSection" style="margin-top: 2px;">
+      <div class="builds-header">
+        <div>
+          <h2>Parts &amp; Accessories</h2>
+          <p>Grips, magazines, cleaning gear, and more. Stop in or contact us to check availability and pricing.</p>
+        </div>
+        <a href="contact.html" class="btn-buy outline">Ask About an Item</a>
+      </div>
+      <div class="parts-grid" id="partsGrid"></div>
+    </div>
+
   </div>
 
   <!-- FOOTER -->
@@ -300,21 +376,58 @@
     </div>
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
   <script src="js/main.js"></script>
   <script>
     const catBtns         = document.querySelectorAll('.cat-btn');
     const buildsSection   = document.getElementById('buildsSection');
     const firearmsSection = document.getElementById('firearmsSection');
     const ammoSection     = document.getElementById('ammoSection');
+    const partsSection    = document.getElementById('partsSection');
+
+    const STOCK_LABELS = {
+      in_stock: 'In Stock',
+      limited:  'Limited Stock',
+      call:     'Call to Check',
+      out:      'Out of Stock'
+    };
 
     function setCategory(cat) {
       catBtns.forEach(b => b.classList.toggle('active', b.dataset.cat === cat));
       buildsSection.style.display   = (cat === 'all' || cat === 'builds')   ? '' : 'none';
       firearmsSection.style.display = (cat === 'all' || cat === 'firearms') ? '' : 'none';
       ammoSection.style.display     = (cat === 'all' || cat === 'ammo')     ? '' : 'none';
+      partsSection.style.display    = (cat === 'all' || cat === 'parts')    ? '' : 'none';
     }
 
     catBtns.forEach(b => b.addEventListener('click', () => setCategory(b.dataset.cat)));
+
+    async function loadParts() {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('name');
+
+      const grid = document.getElementById('partsGrid');
+      if (error || !data || data.length === 0) {
+        grid.innerHTML = '<div class="parts-empty">No parts in stock right now. Check back soon or <a href="contact.html" style="color:var(--gold-light);">contact us</a>.</div>';
+        return;
+      }
+
+      grid.innerHTML = data.map(p => `
+        <div class="part-card">
+          <div class="part-name">${p.name}</div>
+          <div class="part-desc">${p.description}</div>
+          <div class="part-footer">
+            <span class="part-price">$${parseFloat(p.price).toFixed(2)}</span>
+            <span class="part-stock stock-${p.stock}">${STOCK_LABELS[p.stock] || p.stock}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    loadParts();
   </script>
 </body>
 </html>
