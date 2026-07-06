@@ -35,7 +35,6 @@
   }
   </script>
   <style>
-    /* ── STATUS COLORS ── */
     :root {
       --s-intake:        #555555;
       --s-parts-ordered: #8a6a00;
@@ -46,12 +45,105 @@
       --s-ready:         #1a5c1a;
     }
 
+    /* ── ADMIN BAR ── */
+    .admin-bar {
+      display: none;
+      background: rgba(139,105,20,0.1);
+      border-bottom: 1px solid rgba(139,105,20,0.35);
+      padding: 10px 48px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .admin-bar.visible { display: flex; }
+    .admin-bar-label {
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--gold-light);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .admin-bar-label::before {
+      content: '';
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--gold-light);
+    }
+    .admin-bar-actions { display: flex; gap: 10px; }
+    .admin-bar a, .admin-bar button {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 13px;
+      letter-spacing: 2px;
+      padding: 7px 16px;
+      border: 1px solid var(--gold);
+      color: var(--gold-light);
+      background: none;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s, color 0.2s;
+    }
+    .admin-bar a:hover, .admin-bar button:hover {
+      background: var(--gold);
+      color: #fff;
+    }
+    .admin-bar a.solid { background: var(--gold); color: #fff; }
+    .admin-bar a.solid:hover { background: var(--gold-light); }
+
+    /* ── TRACK STRIP ── */
+    .track-strip {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 20px 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+    .track-strip-text { font-size: 13px; color: var(--muted); line-height: 1.5; }
+    .track-strip-text strong { color: var(--silver); display: block; font-size: 14px; margin-bottom: 2px; }
+    .track-strip-form { display: flex; gap: 0; border: 1px solid var(--border); }
+    .track-strip-form input {
+      background: var(--bg);
+      border: none;
+      padding: 10px 16px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      letter-spacing: 2px;
+      color: var(--text);
+      text-transform: uppercase;
+      outline: none;
+      width: 180px;
+    }
+    .track-strip-form input::placeholder {
+      color: var(--muted);
+      letter-spacing: 1px;
+      text-transform: none;
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+    }
+    .track-strip-form button {
+      background: var(--gold-light);
+      border: none;
+      padding: 10px 20px;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 14px;
+      letter-spacing: 2px;
+      color: #000;
+      cursor: pointer;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+    .track-strip-form button:hover { background: var(--gold); color: #fff; }
+
     /* ── SUMMARY BAR ── */
     .summary-bar {
       display: flex;
       gap: 2px;
       background: var(--border);
-      border: 1px solid var(--border);
       margin-bottom: 32px;
       flex-wrap: wrap;
     }
@@ -59,16 +151,17 @@
       flex: 1;
       min-width: 120px;
       background: var(--surface);
-      padding: 24px 20px;
+      padding: 22px 20px;
       text-align: center;
     }
     .summary-stat .num {
       font-family: 'Bebas Neue', sans-serif;
-      font-size: 48px;
+      font-size: 44px;
       line-height: 1;
       color: var(--text);
     }
-    .summary-stat .num.green { color: #4caf50; }
+    .summary-stat .num.green  { color: #4caf50; }
+    .summary-stat .num.amber  { color: var(--s-atf-filed); }
     .summary-stat .label {
       font-size: 10px;
       letter-spacing: 2px;
@@ -77,158 +170,12 @@
       margin-top: 4px;
     }
 
-    /* ── BUILD CARDS ── */
-    .builds-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .build-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-left: 4px solid var(--border);
-      padding: 24px 28px;
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 24px;
-      align-items: start;
-      transition: background 0.2s;
-    }
-    .build-card:hover { background: var(--surface2); }
-    .build-card.status-intake        { border-left-color: var(--s-intake); }
-    .build-card.status-parts-ordered { border-left-color: var(--s-parts-ordered); }
-    .build-card.status-in-progress   { border-left-color: var(--s-in-progress); }
-    .build-card.status-testing       { border-left-color: var(--s-testing); }
-    .build-card.status-atf-filed     { border-left-color: var(--s-atf-filed); }
-    .build-card.status-atf-approved  { border-left-color: var(--s-atf-approved); }
-    .build-card.status-ready         { border-left-color: var(--s-ready); }
-    .build-title {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 22px;
-      letter-spacing: 1.5px;
-      color: var(--text);
-      margin-bottom: 4px;
-    }
-    .build-meta {
-      font-size: 11px;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 14px;
-    }
-    .build-meta span { color: var(--gold-light); margin-right: 6px; }
-    .progress-wrap { margin-bottom: 10px; }
-    .progress-labels {
-      display: flex;
-      justify-content: space-between;
-      font-size: 10px;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 5px;
-    }
-    .progress-bar {
-      height: 3px;
-      background: var(--border);
-      border-radius: 2px;
-      overflow: hidden;
-    }
-    .progress-fill {
-      height: 100%;
-      border-radius: 2px;
-      background: var(--gold-light);
-      transition: width 0.6s ease;
-    }
-    .status-intake        .progress-fill { background: var(--s-intake); }
-    .status-parts-ordered .progress-fill { background: var(--s-parts-ordered); }
-    .status-in-progress   .progress-fill { background: var(--s-in-progress); }
-    .status-testing       .progress-fill { background: var(--s-testing); }
-    .status-atf-filed     .progress-fill { background: var(--s-atf-filed); }
-    .status-atf-approved  .progress-fill { background: var(--s-atf-approved); }
-    .status-ready         .progress-fill { background: var(--s-ready); }
-    .build-notes {
-      font-size: 13px;
-      color: var(--muted);
-      font-style: italic;
-      margin-top: 8px;
-    }
-    .status-badge {
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      padding: 5px 12px;
-      border-radius: 2px;
-      white-space: nowrap;
-      color: #fff;
-    }
-    .status-intake        .status-badge { background: var(--s-intake); }
-    .status-parts-ordered .status-badge { background: var(--s-parts-ordered); }
-    .status-in-progress   .status-badge { background: var(--s-in-progress); }
-    .status-testing       .status-badge { background: var(--s-testing); }
-    .status-atf-filed     .status-badge { background: var(--s-atf-filed); }
-    .status-atf-approved  .status-badge { background: var(--s-atf-approved); }
-    .status-ready         .status-badge { background: var(--s-ready); }
-    .build-right {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 10px;
-    }
-    .eta-block { text-align: right; }
-    .eta-block .eta-label {
-      font-size: 9px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-    .eta-block .eta-date {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 16px;
-      letter-spacing: 1.5px;
-      color: var(--silver);
-    }
-    .pipeline {
-      display: flex;
-      gap: 3px;
-      margin-bottom: 14px;
-    }
-    .pipeline-step {
-      flex: 1;
-      height: 3px;
-      background: var(--border);
-      border-radius: 1px;
-    }
-    .pipeline-step.done { background: var(--gold-light); }
-
-    /* ── LEGEND ── */
-    .status-legend {
-      display: flex;
-      gap: 20px;
-      flex-wrap: wrap;
-      margin-bottom: 24px;
-    }
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      font-size: 11px;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-    .legend-dot {
-      width: 8px; height: 8px;
-      border-radius: 2px;
-      flex-shrink: 0;
-    }
-
     /* ── BOARD HEADER ── */
     .board-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 20px;
+      margin-bottom: 24px;
       flex-wrap: wrap;
       gap: 12px;
     }
@@ -253,108 +200,292 @@
       50% { opacity: 0.25; }
     }
 
-    /* ── DAYS IN SHOP ── */
-    .build-timing {
+    /* ── BUILD CARDS ── */
+    .builds-list {
       display: flex;
-      gap: 24px;
-      margin-top: 12px;
-      padding-top: 12px;
-      border-top: 1px solid var(--border);
+      flex-direction: column;
+      gap: 2px;
+      background: var(--border);
     }
-    .timing-item { display: flex; flex-direction: column; }
-    .timing-label {
-      font-size: 9px;
+    .build-card {
+      background: var(--surface);
+      border-left: 4px solid var(--border);
+      padding: 28px 32px;
+      transition: background 0.2s;
+      position: relative;
+    }
+    .build-card:hover { background: var(--surface2); }
+
+    .build-card.status-intake        { border-left-color: var(--s-intake); }
+    .build-card.status-parts-ordered { border-left-color: var(--s-parts-ordered); }
+    .build-card.status-in-progress   { border-left-color: var(--s-in-progress); }
+    .build-card.status-testing       { border-left-color: var(--s-testing); }
+    .build-card.status-atf-filed     { border-left-color: var(--s-atf-filed); }
+    .build-card.status-atf-approved  { border-left-color: var(--s-atf-approved); }
+    .build-card.status-ready         { border-left-color: var(--s-ready); }
+
+    /* card top row */
+    .card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 4px;
+      flex-wrap: wrap;
+    }
+    .card-top-left { flex: 1; min-width: 0; }
+    .build-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 26px;
+      letter-spacing: 1.5px;
+      color: var(--text);
+      line-height: 1.1;
+    }
+    .build-subtitle {
+      font-size: 11px;
       letter-spacing: 2px;
       text-transform: uppercase;
       color: var(--muted);
+      margin-top: 3px;
     }
-    .timing-value {
+    .build-subtitle span { color: var(--gold-light); }
+
+    /* status badge + desc */
+    .card-status-block {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 5px;
+      flex-shrink: 0;
+    }
+    .status-badge {
       font-family: 'Bebas Neue', sans-serif;
-      font-size: 18px;
+      font-size: 13px;
+      letter-spacing: 2px;
+      padding: 5px 14px;
+      color: #fff;
+      white-space: nowrap;
+    }
+    .status-intake        .status-badge { background: var(--s-intake); }
+    .status-parts-ordered .status-badge { background: var(--s-parts-ordered); }
+    .status-in-progress   .status-badge { background: var(--s-in-progress); }
+    .status-testing       .status-badge { background: var(--s-testing); }
+    .status-atf-filed     .status-badge { background: var(--s-atf-filed); }
+    .status-atf-approved  .status-badge { background: var(--s-atf-approved); }
+    .status-ready         .status-badge { background: var(--s-ready); }
+
+    .status-desc {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.5px;
+      text-align: right;
+    }
+
+    /* pipeline */
+    .pipeline-wrap { margin: 20px 0 16px; }
+    .pipeline-bars {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 3px;
+      margin-bottom: 6px;
+    }
+    .pipe-seg {
+      height: 5px;
+      background: var(--border);
+      border-radius: 1px;
+      transition: background 0.3s;
+    }
+    .pipe-seg.done { background: var(--gold-light); }
+    .status-ready .pipe-seg.done    { background: var(--s-ready); }
+    .status-atf-approved .pipe-seg.done { background: var(--s-atf-approved); }
+
+    .pipeline-labels {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 3px;
+    }
+    .pipe-label {
+      font-size: 8px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.3;
+      padding: 0 1px;
+    }
+    .pipe-label.done { color: var(--gold-light); }
+    .status-ready .pipe-label.done    { color: var(--s-ready); }
+    .status-atf-approved .pipe-label.done { color: var(--s-atf-approved); }
+
+    /* progress */
+    .progress-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .progress-bar-wrap { flex: 1; }
+    .progress-bar {
+      height: 5px;
+      background: var(--border);
+      overflow: hidden;
+      border-radius: 2px;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--gold-light);
+      border-radius: 2px;
+      transition: width 0.6s ease;
+    }
+    .status-ready .progress-fill         { background: var(--s-ready); }
+    .status-atf-approved .progress-fill  { background: var(--s-atf-approved); }
+    .status-in-progress .progress-fill   { background: var(--s-in-progress); }
+    .status-testing .progress-fill       { background: var(--s-testing); }
+    .progress-pct {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 20px;
       letter-spacing: 1px;
       color: var(--silver);
+      min-width: 44px;
+      text-align: right;
     }
-    .timing-value.days-long { color: #e07b39; }
 
-    /* ── ATF TIMING ── */
-    .atf-pending-block {
+    /* card meta row */
+    .card-meta-row {
       display: flex;
-      gap: 20px;
-      margin-top: 10px;
-      padding: 10px 14px;
-      background: rgba(122, 61, 0, 0.12);
-      border: 1px solid rgba(122, 61, 0, 0.3);
-      border-radius: 2px;
+      gap: 32px;
       flex-wrap: wrap;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+      margin-top: 4px;
     }
-    .status-atf-approved .atf-pending-block {
-      background: rgba(26, 107, 58, 0.12);
-      border-color: rgba(26, 107, 58, 0.3);
-    }
-    .atf-form-label {
-      font-size: 10px;
+    .meta-item { display: flex; flex-direction: column; }
+    .meta-lbl {
+      font-size: 9px;
       letter-spacing: 2px;
       text-transform: uppercase;
       color: var(--muted);
       margin-bottom: 2px;
     }
-    .atf-form-value {
+    .meta-val {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 17px;
+      letter-spacing: 1px;
+      color: var(--silver);
+    }
+    .meta-val.days-long { color: #e07b39; }
+    .meta-val.green { color: #4caf50; }
+
+    /* ATF block */
+    .atf-block {
+      margin-top: 14px;
+      padding: 12px 16px;
+      background: rgba(122,61,0,0.1);
+      border: 1px solid rgba(122,61,0,0.3);
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+    .status-atf-approved .atf-block {
+      background: rgba(26,107,58,0.1);
+      border-color: rgba(26,107,58,0.3);
+    }
+    .atf-item { display: flex; flex-direction: column; }
+    .atf-lbl {
+      font-size: 9px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 2px;
+    }
+    .atf-val {
       font-family: 'Bebas Neue', sans-serif;
       font-size: 15px;
       letter-spacing: 1px;
       color: var(--silver);
     }
     .atf-approved-tag {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
       font-size: 11px;
       font-weight: 700;
       letter-spacing: 2px;
       text-transform: uppercase;
       color: #4caf50;
-      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
     }
     .atf-approved-tag::before { content: '✓'; font-size: 13px; }
 
-    /* ── LOOKUP CALLOUT ── */
-    .lookup-callout {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-left: 3px solid var(--gold-light);
-      padding: 20px 24px;
-      margin-top: 24px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 24px;
-      flex-wrap: wrap;
-    }
-    .lookup-callout p {
+    /* notes */
+    .build-notes {
       font-size: 13px;
       color: var(--muted);
+      font-style: italic;
+      margin-top: 12px;
+      padding: 10px 14px;
+      border-left: 2px solid var(--border);
       line-height: 1.6;
-      margin: 0;
     }
-    .lookup-callout p strong { color: var(--silver); }
-    .lookup-cta {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 14px;
-      letter-spacing: 2px;
+
+    /* card footer row */
+    .card-footer-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 16px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .track-link {
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
       color: var(--gold-light);
-      border: 1px solid var(--gold);
-      padding: 9px 20px;
-      white-space: nowrap;
-      transition: background 0.2s, color 0.2s;
       text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .track-link::after { content: '→'; }
+    .track-link:hover { color: var(--gold); }
+
+    .card-admin-actions { display: flex; gap: 8px; }
+    .btn-card-edit {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 12px;
+      letter-spacing: 2px;
+      padding: 5px 14px;
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      cursor: pointer;
+      text-decoration: none;
+      transition: border-color 0.2s, color 0.2s;
       display: inline-block;
     }
-    .lookup-cta:hover { background: var(--gold); color: #fff; }
+    .btn-card-edit:hover { border-color: var(--gold); color: var(--gold-light); }
 
-    /* ── DISCLAIMER ── */
+    /* empty state */
+    .builds-empty {
+      background: var(--surface);
+      padding: 56px 32px;
+      text-align: center;
+      border: 1px solid var(--border);
+    }
+    .builds-empty h3 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 24px;
+      letter-spacing: 2px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .builds-empty p { font-size: 13px; color: var(--muted); }
+
+    /* disclaimer */
     .disclaimer {
-      margin-top: 32px;
-      padding: 16px 20px;
+      margin-top: 24px;
+      padding: 14px 18px;
       border: 1px solid var(--border);
       border-left: 3px solid var(--gold);
       font-size: 13px;
@@ -392,10 +523,7 @@
       background: var(--border);
       margin-bottom: 28px;
     }
-    .atf-step {
-      background: var(--bg);
-      padding: 22px 20px;
-    }
+    .atf-step { background: var(--bg); padding: 22px 20px; }
     .atf-step-num {
       font-family: 'Bebas Neue', sans-serif;
       font-size: 11px;
@@ -511,38 +639,28 @@
       .atf-explainer { padding: 40px 20px; }
       .submit-strip { grid-template-columns: 1fr; padding: 40px 20px; }
       .submit-actions { align-items: flex-start; flex-direction: row; flex-wrap: wrap; }
+      .track-strip { padding: 16px 20px; }
+      .admin-bar { padding: 10px 20px; }
     }
-    @media (max-width: 580px) {
+    @media (max-width: 640px) {
+      .pipeline-labels { display: none; }
       .summary-stat { width: calc(50% - 1px); flex: none; min-width: unset; padding: 16px 10px; }
       .summary-stat .num { font-size: 32px; }
-      .status-legend { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; }
-
-      .build-card { display: flex; flex-direction: column; gap: 0; padding: 16px; }
-      .build-right {
-        order: -1;
-        flex-direction: row;
-        align-items: center;
-        justify-content: space-between;
-        padding-bottom: 12px;
-        margin-bottom: 14px;
-        border-bottom: 1px solid var(--border);
-      }
-      .eta-block { text-align: right; }
-      .build-timing { gap: 12px 16px; flex-wrap: wrap; }
-      .atf-pending-block { gap: 12px; }
-
+      .build-card { padding: 18px 16px; }
+      .card-top { flex-direction: column; }
+      .card-status-block { align-items: flex-start; flex-direction: row; align-items: center; gap: 10px; }
+      .status-desc { text-align: left; }
+      .card-meta-row { gap: 16px; }
       .accept-grid { grid-template-columns: 1fr; }
-      .accept-card { padding: 20px 16px; }
       .atf-flow { grid-template-columns: 1fr; }
-      .atf-step { padding: 16px; }
       .atf-explainer { padding: 32px 16px; }
-      .lookup-callout { padding: 16px; }
+      .track-strip { flex-direction: column; align-items: flex-start; }
+      .track-strip-form input { width: 140px; }
     }
   </style>
 </head>
 <body>
 
-  <!-- NAV -->
   <nav class="nav">
     <a href="index.html" class="nav-logo">
       <span class="wordmark">Golden Valley Guns LLC</span>
@@ -562,11 +680,33 @@
     </div>
   </nav>
 
+  <!-- ADMIN BAR (shown only when logged in) -->
+  <div class="admin-bar" id="adminBar">
+    <span class="admin-bar-label">Admin Mode</span>
+    <div class="admin-bar-actions">
+      <a href="admin-dashboard.html?new=1" class="solid" id="adminNewBuildBtn">+ New Build</a>
+      <a href="admin-dashboard.html">Dashboard</a>
+      <button onclick="adminSignOut()">Sign Out</button>
+    </div>
+  </div>
+
+  <!-- TRACK YOUR BUILD STRIP -->
+  <div class="track-strip">
+    <div class="track-strip-text">
+      <strong>Have a tracking code?</strong>
+      Enter it to see your build's current stage, progress, and estimated completion.
+    </div>
+    <div class="track-strip-form">
+      <input type="text" id="quickTrackInput" placeholder="GVG-2026-001" maxlength="12" />
+      <button onclick="quickTrack()">Track Build</button>
+    </div>
+  </div>
+
   <!-- PAGE HEADER -->
   <div class="page-header">
     <div class="section-label">Active Work</div>
     <h1>In Shop</h1>
-    <p>Live build board, shop capabilities, and what we accept. Updated as work progresses.</p>
+    <p>Live build board updated as work progresses. Drop something off? Give us a call if you don't see it here.</p>
   </div>
 
   <!-- ACTIVE BUILDS -->
@@ -576,30 +716,14 @@
         <div class="live-dot"></div>
         <span id="boardUpdated">Loading board...</span>
       </div>
-      <span style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);">Don't see yours? <a href="tel:9287270893" style="color:var(--gold-light);">Call us</a></span>
+      <a href="tel:9287270893" style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold-light);text-decoration:none;">Questions? (928) 727-0893</a>
     </div>
 
     <div class="summary-bar" id="summaryBar"></div>
-
-    <div class="status-legend">
-      <div class="legend-item"><div class="legend-dot" style="background:var(--s-intake)"></div>Intake</div>
-      <div class="legend-item"><div class="legend-dot" style="background:var(--s-parts-ordered)"></div>Parts Ordered</div>
-      <div class="legend-item"><div class="legend-dot" style="background:var(--s-in-progress)"></div>In Progress</div>
-      <div class="legend-item"><div class="legend-dot" style="background:var(--s-testing)"></div>Testing</div>
-      <div class="legend-item"><div class="legend-dot" style="background:var(--s-atf-filed)"></div>ATF Paperwork Filed</div>
-      <div class="legend-item"><div class="legend-dot" style="background:var(--s-atf-approved)"></div>ATF Approved</div>
-      <div class="legend-item"><div class="legend-dot" style="background:var(--s-ready)"></div>Ready / Transferring</div>
-    </div>
-
     <div class="builds-list" id="buildsList"></div>
 
     <div class="disclaimer">
-      <strong>Note:</strong> Estimated completion dates are best guesses based on current workload and parts availability. We'll reach out directly if anything changes on your build. Questions? Call us at <a href="tel:9287270893" style="color: var(--gold-light);">(928) 727-0893</a>.
-    </div>
-
-    <div class="lookup-callout">
-      <p><strong>Don't see your build listed?</strong> Not every item in the shop is on the board. If you dropped something off and don't see it here, give us a call and we'll give you a live status update.</p>
-      <a href="tel:9287270893" class="lookup-cta">(928) 727-0893</a>
+      <strong>Note:</strong> ETAs are best estimates based on current workload and parts availability. We'll reach out directly if something changes on your build. Questions? <a href="tel:9287270893" style="color:var(--gold-light);">(928) 727-0893</a>
     </div>
   </section>
 
@@ -607,7 +731,7 @@
   <div class="atf-explainer">
     <div class="section-label">NFA Builds</div>
     <h2>The ATF Transfer Process</h2>
-    <p class="sub-copy">NFA items require ATF approval before they leave our license. Here's how we handle it.</p>
+    <p class="sub-copy">NFA items require ATF approval before they leave our license. Here's exactly how we handle it so you know what to expect.</p>
     <div class="atf-flow">
       <div class="atf-step">
         <div class="atf-step-num">Step 01</div>
@@ -631,17 +755,16 @@
       </div>
     </div>
     <div class="atf-note">
-      <strong>What you need to do during ATF review:</strong> Nothing. We manage the paperwork and the wait. We'll call you when approval comes through. Questions about your specific build? <a href="tel:9287270893" style="color:var(--gold-light);">(928) 727-0893</a>.
+      <strong>What you need to do during ATF review:</strong> Nothing. We manage the paperwork and the wait. We'll call you when approval comes through. Questions? <a href="tel:9287270893" style="color:var(--gold-light);">(928) 727-0893</a>
     </div>
   </div>
 
   <!-- WHAT WE WORK ON -->
-  <section style="background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+  <section style="background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
     <div class="section-label">Intake</div>
     <h2 class="section-title">What We Work On</h2>
     <p class="section-sub">Bring us the project. If it involves firearms, we'll tell you straight whether we can do it and what it'll take.</p>
     <div class="accept-grid">
-
       <div class="accept-card fade-in">
         <div class="accept-icon">01 &nbsp;·&nbsp; Custom Builds</div>
         <h3>Custom Firearms</h3>
@@ -654,7 +777,6 @@
           <li>Specification builds to order</li>
         </ul>
       </div>
-
       <div class="accept-card fade-in">
         <div class="accept-icon">02 &nbsp;·&nbsp; Parts Kits</div>
         <h3>Parts Kit Builds</h3>
@@ -667,7 +789,6 @@
           <li>Full parts-to-finished builds</li>
         </ul>
       </div>
-
       <div class="accept-card fade-in">
         <div class="accept-icon">03 &nbsp;·&nbsp; Gunsmithing</div>
         <h3>Gunsmithing &amp; Repairs</h3>
@@ -680,11 +801,10 @@
           <li>Stock fitting and bedding</li>
         </ul>
       </div>
-
       <div class="accept-card fade-in">
         <div class="accept-icon">04 &nbsp;·&nbsp; Transfers</div>
         <h3>FFL Transfers</h3>
-        <p>$20 per transfer, in and out of state. Call or email before you ship so we can make sure everything is ready on our end.</p>
+        <p>$20 per transfer, in and out of state. Call or email before you ship so we can make sure everything is ready.</p>
         <ul>
           <li>Online purchase transfers</li>
           <li>Dealer-to-dealer transfers</li>
@@ -693,11 +813,10 @@
           <li>Estate and trust transfers</li>
         </ul>
       </div>
-
       <div class="accept-card fade-in">
         <div class="accept-icon">05 &nbsp;·&nbsp; Refurbishments</div>
         <h3>Refurb &amp; Restoration</h3>
-        <p>Military surplus, beat-up working guns, collector pieces that need attention. We'll give you an honest assessment before we start.</p>
+        <p>Military surplus, beat-up working guns, collector pieces that need attention. We give an honest assessment before we start.</p>
         <ul>
           <li>Military surplus refurbishment</li>
           <li>Refinishing and metal work</li>
@@ -706,7 +825,6 @@
           <li>Corrosion treatment</li>
         </ul>
       </div>
-
       <div class="accept-card fade-in">
         <div class="accept-icon">06 &nbsp;·&nbsp; Used Firearms</div>
         <h3>Used Gun Sales</h3>
@@ -719,11 +837,10 @@
           <li>We'll make a fair offer</li>
         </ul>
       </div>
-
     </div>
   </section>
 
-  <!-- SUBMIT A BUILD -->
+  <!-- SUBMIT STRIP -->
   <div class="submit-strip">
     <div>
       <div class="section-label">Get Started</div>
@@ -751,7 +868,7 @@
           <li><a href="gallery.html">Gallery</a></li>
           <li><a href="inshop.html">In Shop</a></li>
           <li><a href="shop.html">Shop</a></li>
-      <li><a href="updates.html">Updates</a></li>
+          <li><a href="updates.html">Updates</a></li>
           <li><a href="contact.html">Contact</a></li>
         </ul>
       </div>
@@ -776,174 +893,194 @@
   <script src="js/supabase.js"></script>
   <script src="js/main.js"></script>
   <script>
+    const stages     = ['intake','parts-ordered','in-progress','testing','atf-filed','atf-approved','ready'];
+    const stageNames = ['Intake','Parts','In Progress','Testing','ATF Filed','ATF Approved','Ready'];
     const statusLabels = {
       'intake':        'Intake',
       'parts-ordered': 'Parts Ordered',
       'in-progress':   'In Progress',
       'testing':       'Testing',
-      'atf-filed':     'ATF Paperwork Filed',
+      'atf-filed':     'ATF Filed',
       'atf-approved':  'ATF Approved',
-      'ready':         'Ready / Transferring'
+      'ready':         'Ready'
     };
-
-    const stageDescriptions = {
-      'intake':        'In — being assessed',
-      'parts-ordered': 'Waiting on parts',
+    const statusDesc = {
+      'intake':        'Checked in — being assessed',
+      'parts-ordered': 'Waiting on parts to arrive',
       'in-progress':   'On the bench',
-      'testing':       'Function check',
-      'atf-filed':     'Waiting on ATF',
-      'atf-approved':  'ATF cleared',
-      'ready':         'Ready to transfer'
+      'testing':       'Function check in progress',
+      'atf-filed':     'ATF paperwork submitted — pending approval',
+      'atf-approved':  'ATF approved — ready to transfer',
+      'ready':         'Done — ready for pickup'
     };
 
-    const stages = ['intake', 'parts-ordered', 'in-progress', 'testing', 'atf-filed', 'atf-approved', 'ready'];
+    let builds = [];
+    let isAdmin = false;
 
-    function stagesDone(status) {
-      const idx = stages.indexOf(status);
-      return stages.map((_, i) => i <= idx);
+    function formatDate(d) {
+      if (!d) return '—';
+      const [y, m, day] = d.split('-');
+      return new Date(y, m - 1, day).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     }
 
-    function formatDate(dateStr) {
-      if (!dateStr) return '';
+    function daysAgo(dateStr) {
+      if (!dateStr) return null;
       const d = new Date(dateStr + 'T00:00:00');
-      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      const today = new Date(); today.setHours(0,0,0,0);
+      return Math.floor((today - d) / 86400000);
     }
 
-    function daysInShop(receivedStr) {
-      if (!receivedStr) return null;
-      const received = new Date(receivedStr + 'T00:00:00');
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      return Math.floor((today - received) / 86400000);
-    }
-
-    function daysPending(filedStr) {
-      if (!filedStr) return null;
-      const filed = new Date(filedStr + 'T00:00:00');
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      return Math.floor((today - filed) / 86400000);
-    }
+    function stageIndex(status) { return stages.indexOf(status); }
 
     function renderBoardUpdated() {
-      const latest = builds.reduce((max, b) => {
-        if (!b.received) return max;
-        return b.received > max ? b.received : max;
-      }, '');
+      const latest = builds.reduce((max, b) => (!b.received ? max : b.received > max ? b.received : max), '');
       const el = document.getElementById('boardUpdated');
       if (el) el.textContent = latest ? 'Last intake: ' + formatDate(latest) : 'Board active';
     }
 
     function renderSummary() {
-      const counts = { total: builds.length, active: 0, atf: 0, ready: 0 };
-      builds.forEach(b => {
-        if (b.status === 'ready') counts.ready++;
-        else if (b.status === 'atf-filed' || b.status === 'atf-approved') counts.atf++;
-        else counts.active++;
-      });
+      const total  = builds.length;
+      const active = builds.filter(b => !['atf-filed','atf-approved','ready'].includes(b.status)).length;
+      const atf    = builds.filter(b => b.status === 'atf-filed' || b.status === 'atf-approved').length;
+      const ready  = builds.filter(b => b.status === 'ready').length;
       document.getElementById('summaryBar').innerHTML = `
-        <div class="summary-stat">
-          <div class="num">${counts.total}</div>
-          <div class="label">Total in Shop</div>
-        </div>
-        <div class="summary-stat">
-          <div class="num">${counts.active}</div>
-          <div class="label">Active Builds</div>
-        </div>
-        <div class="summary-stat">
-          <div class="num" style="color:var(--s-atf-filed);">${counts.atf}</div>
-          <div class="label">ATF Pending</div>
-        </div>
-        <div class="summary-stat">
-          <div class="num green">${counts.ready}</div>
-          <div class="label">Ready / Transferring</div>
-        </div>
+        <div class="summary-stat"><div class="num">${total}</div><div class="label">In Shop</div></div>
+        <div class="summary-stat"><div class="num">${active}</div><div class="label">Active Builds</div></div>
+        <div class="summary-stat"><div class="num amber">${atf}</div><div class="label">ATF Pending</div></div>
+        <div class="summary-stat"><div class="num green">${ready}</div><div class="label">Ready / Transfer</div></div>
       `;
     }
 
     function renderBuilds() {
-      const order = ['ready', 'atf-approved', 'atf-filed', 'testing', 'in-progress', 'parts-ordered', 'intake'];
+      const order = ['ready','atf-approved','atf-filed','testing','in-progress','parts-ordered','intake'];
       const sorted = [...builds].sort((a, b) => order.indexOf(a.status) - order.indexOf(b.status));
+      const list = document.getElementById('buildsList');
 
-      document.getElementById('buildsList').innerHTML = sorted.map(b => {
-        const done = stagesDone(b.status);
-        const pipeline = stages.map((s, i) =>
-          `<div class="pipeline-step ${done[i] ? 'done' : ''}" title="${statusLabels[s]}"></div>`
-        ).join('');
+      if (!sorted.length) {
+        list.innerHTML = `
+          <div class="builds-empty">
+            <h3>Nothing on the board right now.</h3>
+            <p>Call us at <a href="tel:9287270893" style="color:var(--gold-light);">(928) 727-0893</a> to get your build started.</p>
+          </div>`;
+        return;
+      }
 
-        const eta = formatDate(b.eta);
-        const etaHtml = eta ? `
-          <div class="eta-block">
-            <div class="eta-label">Est. Complete</div>
-            <div class="eta-date">${eta}</div>
-          </div>` : '';
+      list.innerHTML = sorted.map(b => {
+        const si = stageIndex(b.status);
+        const pipelineBars = stages.map((s, i) =>
+          `<div class="pipe-seg ${i <= si ? 'done' : ''}"></div>`).join('');
+        const pipelineLabels = stages.map((s, i) =>
+          `<div class="pipe-label ${i <= si ? 'done' : ''}">${stageNames[i]}</div>`).join('');
 
-        const days = daysInShop(b.received);
-        const daysClass = days !== null && days > 30 ? 'days-long' : '';
+        const days = daysAgo(b.received);
+        const eta  = formatDate(b.eta);
         const isAtf = b.status === 'atf-filed' || b.status === 'atf-approved';
-        const atfDays = b.atf_filed ? daysPending(b.atf_filed) : null;
 
-        const atfHtml = isAtf && b.atf_filed ? `
-          <div class="atf-pending-block">
-            ${b.atf_form ? `<div class="timing-item">
-              <span class="atf-form-label">ATF Form</span>
-              <span class="atf-form-value">${b.atf_form}</span>
-            </div>` : ''}
-            <div class="timing-item">
-              <span class="atf-form-label">Paperwork Filed</span>
-              <span class="atf-form-value">${formatDate(b.atf_filed)}</span>
-            </div>
-            ${atfDays !== null ? `<div class="timing-item">
-              <span class="atf-form-label">Days Pending</span>
-              <span class="atf-form-value" style="color:${atfDays > 60 ? '#e07b39' : 'var(--silver)'};">${atfDays}</span>
-            </div>` : ''}
-            ${b.status === 'atf-approved' ? `<div class="atf-approved-tag">ATF Approved &mdash; Ready to Transfer</div>` : ''}
+        const metaItems = [];
+        if (b.received) metaItems.push(`<div class="meta-item"><div class="meta-lbl">In Shop Since</div><div class="meta-val">${formatDate(b.received)}</div></div>`);
+        if (days !== null && !isAtf) metaItems.push(`<div class="meta-item"><div class="meta-lbl">Days in Shop</div><div class="meta-val ${days > 30 ? 'days-long' : ''}">${days}</div></div>`);
+        if (b.eta) metaItems.push(`<div class="meta-item"><div class="meta-lbl">Est. Complete</div><div class="meta-val">${eta}</div></div>`);
+
+        const atfBlock = isAtf && b.atf_filed ? `
+          <div class="atf-block">
+            ${b.atf_form ? `<div class="atf-item"><div class="atf-lbl">ATF Form</div><div class="atf-val">${b.atf_form}</div></div>` : ''}
+            <div class="atf-item"><div class="atf-lbl">Filed</div><div class="atf-val">${formatDate(b.atf_filed)}</div></div>
+            ${daysAgo(b.atf_filed) !== null ? `<div class="atf-item"><div class="atf-lbl">Days Pending</div><div class="atf-val ${daysAgo(b.atf_filed) > 60 ? 'days-long' : ''}">${daysAgo(b.atf_filed)}</div></div>` : ''}
+            ${b.status === 'atf-approved' ? `<div style="width:100%;"><div class="atf-approved-tag">ATF Approved — Ready to Transfer</div></div>` : ''}
           </div>` : '';
 
-        const timingHtml = `
-          <div class="build-timing">
-            ${b.received ? `<div class="timing-item">
-              <span class="timing-label">In Shop Since</span>
-              <span class="timing-value">${formatDate(b.received)}</span>
-            </div>` : ''}
-            ${days !== null && !isAtf ? `<div class="timing-item">
-              <span class="timing-label">Days in Shop</span>
-              <span class="timing-value ${daysClass}">${days}</span>
-            </div>` : ''}
-            ${stageDescriptions[b.status] ? `<div class="timing-item">
-              <span class="timing-label">Current Stage</span>
-              <span class="timing-value" style="font-size:13px;font-family:'Inter',sans-serif;color:var(--muted);">${stageDescriptions[b.status]}</span>
-            </div>` : ''}
-          </div>
-          ${atfHtml}`;
+        const notesBlock = b.notes ? `<div class="build-notes">${b.notes}</div>` : '';
+
+        const trackLink = b.tracking_code
+          ? `<a href="track.html?code=${encodeURIComponent(b.tracking_code)}" class="track-link">Track this build</a>`
+          : '';
+
+        const adminActions = isAdmin
+          ? `<div class="card-admin-actions"><a href="admin-dashboard.html?edit=${b.id}" class="btn-card-edit">Edit Build</a></div>`
+          : '';
+
+        const cardFooter = (trackLink || adminActions)
+          ? `<div class="card-footer-row">${trackLink}${adminActions}</div>`
+          : '';
 
         return `
-          <div class="build-card status-${b.status} fade-in">
-            <div class="build-left">
-              <div class="build-title">${b.title}</div>
-              <div class="build-meta"><span>${b.type}</span>${b.caliber}</div>
-              <div class="pipeline">${pipeline}</div>
-              <div class="progress-wrap">
-                <div class="progress-labels">
-                  <span>Progress</span>
-                  <span>${b.progress}%</span>
-                </div>
-                <div class="progress-bar">
-                  <div class="progress-fill" style="width: ${b.progress}%"></div>
-                </div>
+          <div class="build-card status-${b.status}">
+            <div class="card-top">
+              <div class="card-top-left">
+                <div class="build-title">${b.title}</div>
+                <div class="build-subtitle"><span>${b.type}</span>${b.caliber ? ' &nbsp;·&nbsp; ' + b.caliber : ''}</div>
               </div>
-              ${b.notes ? `<div class="build-notes">${b.notes}</div>` : ''}
-              ${timingHtml}
+              <div class="card-status-block">
+                <div class="status-badge">${statusLabels[b.status] || b.status}</div>
+                <div class="status-desc">${statusDesc[b.status] || ''}</div>
+              </div>
             </div>
-            <div class="build-right">
-              <div class="status-badge">${statusLabels[b.status]}</div>
-              ${etaHtml}
+
+            <div class="pipeline-wrap">
+              <div class="pipeline-bars">${pipelineBars}</div>
+              <div class="pipeline-labels">${pipelineLabels}</div>
             </div>
+
+            <div class="progress-row">
+              <div class="progress-bar-wrap">
+                <div class="progress-bar"><div class="progress-fill" style="width:${b.progress || 0}%"></div></div>
+              </div>
+              <div class="progress-pct">${b.progress || 0}%</div>
+            </div>
+
+            ${metaItems.length ? `<div class="card-meta-row">${metaItems.join('')}</div>` : ''}
+            ${atfBlock}
+            ${notesBlock}
+            ${cardFooter}
           </div>`;
       }).join('');
     }
 
+    // quick track from the strip at top
+    function quickTrack() {
+      const code = document.getElementById('quickTrackInput').value.trim().toUpperCase();
+      if (!code) return;
+      window.location.href = 'track.html?code=' + encodeURIComponent(code);
+    }
+    document.getElementById('quickTrackInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') quickTrack();
+    });
+
+    // admin sign out
+    async function adminSignOut() {
+      await supabase.auth.signOut();
+      document.getElementById('adminBar').classList.remove('visible');
+      isAdmin = false;
+      renderBuilds();
+    }
+
+    // check admin session then load
+    async function init() {
+      const { data: { session } } = await supabase.auth.getSession();
+      isAdmin = !!session;
+      if (isAdmin) document.getElementById('adminBar').classList.add('visible');
+
+      showBuildsSkeleton();
+      const { data, error } = await supabase.from('builds').select('*').order('received', { ascending: false });
+      if (error) { console.error(error); return; }
+      builds = data || [];
+      renderBoardUpdated();
+      renderSummary();
+      renderBuilds();
+    }
+
+    function showBuildsSkeleton() {
+      const list = document.getElementById('buildsList');
+      list.innerHTML = [1,2,3].map(() => `
+        <div class="build-card" style="background:var(--surface);">
+          <div class="shimmer-block" style="height:14px;width:50%;margin-bottom:10px;"></div>
+          <div class="shimmer-block" style="height:10px;width:30%;margin-bottom:20px;"></div>
+          <div class="shimmer-block" style="height:5px;width:100%;margin-bottom:8px;"></div>
+          <div class="shimmer-block" style="height:5px;width:100%;"></div>
+        </div>`).join('');
+    }
+
+    init();
   </script>
-  <script src="js/builds.js"></script>
 </body>
 </html>

@@ -891,6 +891,30 @@
     loadBuilds();
     loadProducts();
     loadContent();
+
+    // deep-link: ?edit=ID opens that build's edit form after load
+    // deep-link: ?new=1 opens the new build form after load
+    const _urlParams = new URLSearchParams(window.location.search);
+    const _editId = _urlParams.get('edit');
+    const _newBuild = _urlParams.get('new');
+    if (_editId || _newBuild) {
+      // switch to Builds tab first
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.querySelector('.tab-btn[data-tab="builds"]').classList.add('active');
+      document.getElementById('tab-builds').classList.add('active');
+
+      if (_editId) {
+        // wait for loadBuilds to finish, then open the edit form
+        const _waitForBuilds = setInterval(async () => {
+          const { data } = await supabase.from('builds').select('*').eq('id', _editId).single();
+          if (data) { clearInterval(_waitForBuilds); openBuildForm(data); }
+        }, 400);
+        setTimeout(() => clearInterval(_waitForBuilds), 8000);
+      } else {
+        setTimeout(() => openBuildForm(null), 300);
+      }
+    }
   </script>
 </body>
 </html>
