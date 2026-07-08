@@ -1,3 +1,7 @@
+// Footer copyright year (avoids the site looking stale every January)
+const copyYear = document.getElementById('copyYear');
+if (copyYear) copyYear.textContent = new Date().getFullYear();
+
 // Mobile nav toggle
 const nav = document.querySelector('.nav');
 const hamburger = document.querySelector('.hamburger');
