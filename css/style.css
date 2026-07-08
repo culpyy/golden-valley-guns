@@ -360,20 +360,38 @@ h2.section-title {
 
 /* ── SERVICES (homepage teaser — full detail lives on services.html) ── */
 .services-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+  background: var(--border);
   margin-bottom: 28px;
 }
 
-.services-tags span {
-  font-size: 12px;
+.services-tag {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface);
+  padding: 18px 20px;
+  font-size: 13px;
   font-weight: 600;
-  letter-spacing: 1.5px;
+  letter-spacing: 1px;
   text-transform: uppercase;
+  color: var(--text);
+  transition: background 0.2s, color 0.2s;
+}
+
+.services-tag:hover {
+  background: var(--surface2);
   color: var(--gold-light);
-  border: 1px solid var(--gold);
-  padding: 8px 16px;
+}
+
+.tag-num {
+  font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
+  font-size: 16px;
+  letter-spacing: 1px;
+  color: var(--gold-light);
+  flex-shrink: 0;
 }
 
 /* ── ABOUT STRIP ── */
@@ -932,6 +950,7 @@ footer {
 @media (max-width: 900px) {
   .build-preview-grid { grid-template-columns: 1fr; }
   .cred-strip { grid-template-columns: repeat(2, 1fr); }
+  .services-tags { grid-template-columns: repeat(2, 1fr); }
   .cta-strip { padding: 40px 20px; }
   .cta-strip-inner { flex-direction: column; align-items: flex-start; gap: 24px; }
   .nav { padding: 0 20px; }
@@ -1130,6 +1149,7 @@ footer {
 /* ── MOBILE (≤580px) ── */
 @media (max-width: 580px) {
   .cred-strip { grid-template-columns: repeat(2, 1fr); }
+  .services-tags { grid-template-columns: 1fr; }
   .cred-item { padding: 14px 16px; }
   .cred-val { font-size: 14px; }
   .cta-strip { padding: 32px 16px; }
