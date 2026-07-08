@@ -999,6 +999,7 @@ footer {
 
 /* ── FAQ ACCORDION ── */
 .faq-item { cursor: pointer; user-select: none; }
+.faq-item:focus-visible { outline: 2px solid var(--gold-light); outline-offset: -2px; }
 .faq-item h4 {
   display: flex;
   justify-content: space-between;

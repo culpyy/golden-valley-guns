@@ -296,35 +296,35 @@
     <h2 class="section-title">Frequently Asked</h2>
     <p class="section-sub">Common questions about builds, transfers, and how we operate.</p>
     <div class="faq-grid">
-      <div class="faq-item fade-in">
+      <div class="faq-item fade-in" tabindex="0" role="button" aria-expanded="false">
         <h4>Do I Need to Call Before Stopping By?</h4>
         <p>Yes. Give us a call before you head over so we can make sure we're available. We're a working shop, not a walk-in retail store.</p>
       </div>
-      <div class="faq-item fade-in">
+      <div class="faq-item fade-in" tabindex="0" role="button" aria-expanded="false">
         <h4>Do You Handle FFL Transfers?</h4>
         <p>Yes, in and out of state. Call before you ship anything our way so we can confirm the details and get set up on our end.</p>
       </div>
-      <div class="faq-item fade-in">
+      <div class="faq-item fade-in" tabindex="0" role="button" aria-expanded="false">
         <h4>Do You Work on NFA Items?</h4>
         <p>Yes. We hold an FFL 07 license, so NFA items and Class III transfers are handled. Give us a call if you have questions.</p>
       </div>
-      <div class="faq-item fade-in">
+      <div class="faq-item fade-in" tabindex="0" role="button" aria-expanded="false">
         <h4>How Long Do Builds Take?</h4>
         <p>Depends on complexity and parts availability. We give you a straight timeline upfront and let you know if anything changes.</p>
       </div>
-      <div class="faq-item fade-in">
+      <div class="faq-item fade-in" tabindex="0" role="button" aria-expanded="false">
         <h4>Do You Do Parts Builds?</h4>
         <p>Yes. AK kits, AR builds, and other parts-based projects are a big part of what we do. Reach out and we'll talk through what you're looking to build.</p>
       </div>
-      <div class="faq-item fade-in">
+      <div class="faq-item fade-in" tabindex="0" role="button" aria-expanded="false">
         <h4>Do You Buy Used Firearms?</h4>
         <p>Yes. Bring it in and we'll give you a real number. We buy, sell, and trade firearms and gear at fair prices.</p>
       </div>
-      <div class="faq-item fade-in">
+      <div class="faq-item fade-in" tabindex="0" role="button" aria-expanded="false">
         <h4>Can I Ship a Firearm to You?</h4>
         <p>Yes, for FFL transfers. Call us before you ship so we can confirm all the details on our end first.</p>
       </div>
-      <div class="faq-item fade-in">
+      <div class="faq-item fade-in" tabindex="0" role="button" aria-expanded="false">
         <h4>What Does the Quoted Price Cover?</h4>
         <p>The quoted price is what you pay to get a completed, fully functioning firearm back. Quality checks happen at every step of the build. No hidden fees added at the end.</p>
       </div>
@@ -387,7 +387,17 @@
   <script src="js/main.js"></script>
   <script>
     document.querySelectorAll('.faq-item').forEach(item => {
-      item.addEventListener('click', () => item.classList.toggle('open'));
+      const toggle = () => {
+        const isOpen = item.classList.toggle('open');
+        item.setAttribute('aria-expanded', isOpen);
+      };
+      item.addEventListener('click', toggle);
+      item.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          toggle();
+        }
+      });
     });
   </script>
   <script>
