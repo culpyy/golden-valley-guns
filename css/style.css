@@ -684,6 +684,22 @@ h2.section-title {
 
 .update-body .read-more:hover { gap: 10px; }
 
+/* ── INLINE PHONE LINKS ── */
+/* One consistent look for the phone number wherever it's mentioned mid-copy, instead of a one-off inline style at each spot. */
+.tel-link {
+  color: var(--gold-light);
+  font-weight: 600;
+}
+.tel-link:hover { color: var(--gold-glow); }
+
+.board-tel {
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--gold-light);
+}
+.board-tel:hover { color: var(--gold-glow); }
+
 /* ── CONTACT ── */
 .contact-grid {
   display: grid;
