@@ -358,48 +358,22 @@ h2.section-title {
   margin-bottom: 36px;
 }
 
-/* ── SERVICES ── */
-.services-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin-bottom: 32px;
+/* ── SERVICES (homepage teaser — full detail lives on services.html) ── */
+.services-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 28px;
 }
 
-.service-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-top: 3px solid var(--gold);
-  padding: 28px 24px;
-  transition: background 0.2s, border-color 0.2s;
-}
-
-.service-card:hover {
-  background: var(--surface2);
-  border-color: var(--gold-light);
-  border-top-color: var(--gold-glow);
-}
-
-.service-num {
-  font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
-  font-size: 13px;
-  letter-spacing: 3px;
-  color: var(--gold-light);
-  margin-bottom: 12px;
-}
-
-.service-card h3 {
-  font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
-  font-size: 22px;
+.services-tags span {
+  font-size: 12px;
+  font-weight: 600;
   letter-spacing: 1.5px;
-  color: var(--text);
-  margin-bottom: 10px;
-}
-
-.service-card p {
-  font-size: 14px;
-  color: var(--muted);
-  line-height: 1.7;
+  text-transform: uppercase;
+  color: var(--gold-light);
+  border: 1px solid var(--gold);
+  padding: 8px 16px;
 }
 
 /* ── ABOUT STRIP ── */
@@ -976,9 +950,6 @@ footer {
   .gallery-grid .tall { aspect-ratio: 4/3; grid-row: span 1; }
   .gallery-overlay { opacity: 1; background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 55%); }
 
-  .services-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-  .service-card { padding: 22px 18px; }
-
   .about-inner { grid-template-columns: 1fr; gap: 32px; }
 
   .updates-list { max-width: 100%; }
@@ -1176,9 +1147,6 @@ footer {
   .gallery-grid { grid-template-columns: 1fr; gap: 8px; }
   .gallery-grid .wide,
   .gallery-grid .tall { grid-column: span 1; grid-row: span 1; aspect-ratio: 4/3; }
-
-  .services-grid { grid-template-columns: 1fr; gap: 8px; }
-  .service-card { padding: 20px 16px; }
 
   .hero h1 { font-size: clamp(38px, 10vw, 52px); }
   .hero-desc { font-size: 14px; }
