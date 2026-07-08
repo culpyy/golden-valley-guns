@@ -292,14 +292,27 @@
       margin-bottom: 6px;
     }
     .pipe-seg {
-      height: 5px;
+      height: 3px;
       background: var(--border);
-      border-radius: 1px;
       transition: background 0.3s;
+      position: relative;
+    }
+    .pipe-seg::after {
+      content: '';
+      position: absolute;
+      left: 50%; top: 50%;
+      transform: translate(-50%, -50%);
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--bg);
+      border: 1px solid var(--border);
     }
     .pipe-seg.done { background: var(--gold-light); }
+    .pipe-seg.done::after { background: var(--gold-light); border-color: var(--gold-light); }
     .status-ready .pipe-seg.done    { background: var(--s-ready); }
+    .status-ready .pipe-seg.done::after { background: var(--s-ready); border-color: var(--s-ready); }
     .status-atf-approved .pipe-seg.done { background: var(--s-atf-approved); }
+    .status-atf-approved .pipe-seg.done::after { background: var(--s-atf-approved); border-color: var(--s-atf-approved); }
 
     .pipeline-labels {
       display: grid;
@@ -307,6 +320,7 @@
       gap: 3px;
     }
     .pipe-label {
+      font-family: 'JetBrains Mono', monospace;
       font-size: 8px;
       letter-spacing: 0.5px;
       text-transform: uppercase;
@@ -406,18 +420,37 @@
       letter-spacing: 1px;
       color: var(--silver);
     }
+    .atf-val.form-ref {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
     .atf-approved-tag {
+      font-family: 'JetBrains Mono', monospace;
       font-size: 11px;
-      font-weight: 700;
+      font-weight: 600;
       letter-spacing: 2px;
       text-transform: uppercase;
       color: #4caf50;
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       margin-top: 8px;
+      width: fit-content;
+      border: 2px solid #4caf50;
+      padding: 7px 16px;
+      position: relative;
+      transform: rotate(-2deg);
     }
     .atf-approved-tag::before { content: '✓'; font-size: 13px; }
+    .atf-approved-tag::after {
+      content: '';
+      position: absolute;
+      inset: 3px;
+      border: 1px solid #4caf50;
+      opacity: 0.45;
+      pointer-events: none;
+    }
 
     /* notes */
     .build-notes {
@@ -992,7 +1025,7 @@
 
         const atfBlock = isAtf && b.atf_filed ? `
           <div class="atf-block">
-            ${b.atf_form ? `<div class="atf-item"><div class="atf-lbl">ATF Form</div><div class="atf-val">${b.atf_form}</div></div>` : ''}
+            ${b.atf_form ? `<div class="atf-item"><div class="atf-lbl">ATF Form</div><div class="atf-val form-ref">${b.atf_form}</div></div>` : ''}
             <div class="atf-item"><div class="atf-lbl">Filed</div><div class="atf-val">${formatDate(b.atf_filed)}</div></div>
             ${daysAgo(b.atf_filed) !== null ? `<div class="atf-item"><div class="atf-lbl">Days Pending</div><div class="atf-val ${daysAgo(b.atf_filed) > 60 ? 'days-long' : ''}">${daysAgo(b.atf_filed)}</div></div>` : ''}
             ${b.status === 'atf-approved' ? `<div style="width:100%;"><div class="atf-approved-tag">ATF Approved — Ready to Transfer</div></div>` : ''}
