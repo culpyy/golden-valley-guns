@@ -1,28 +1,38 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://culpyy.github.io/golden-valley-guns/</loc>
+    <loc>https://goldenvalleyguns.netlify.app/</loc>
     <changefreq>monthly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://culpyy.github.io/golden-valley-guns/gallery.html</loc>
+    <loc>https://goldenvalleyguns.netlify.app/gallery.html</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://culpyy.github.io/golden-valley-guns/inshop.html</loc>
+    <loc>https://goldenvalleyguns.netlify.app/inshop.html</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://culpyy.github.io/golden-valley-guns/updates.html</loc>
+    <loc>https://goldenvalleyguns.netlify.app/shop.html</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://goldenvalleyguns.netlify.app/updates.html</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://culpyy.github.io/golden-valley-guns/contact.html</loc>
+    <loc>https://goldenvalleyguns.netlify.app/contact.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://goldenvalleyguns.netlify.app/track.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
   </url>
 </urlset>

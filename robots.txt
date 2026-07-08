@@ -1,4 +1,6 @@
 User-agent: *
 Allow: /
+Disallow: /admin.html
+Disallow: /admin-dashboard.html
 
-Sitemap: https://culpyy.github.io/golden-valley-guns/sitemap.xml
+Sitemap: https://goldenvalleyguns.netlify.app/sitemap.xml
