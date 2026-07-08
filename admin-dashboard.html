@@ -438,6 +438,12 @@
           <div class="form-field">
             <label>ETA (optional)</label>
             <input type="date" id="b-eta" />
+            <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+              <span style="font-size:11px;color:var(--muted);white-space:nowrap;">Current backlog:</span>
+              <input type="number" id="b-eta-months" value="8" min="1" max="24" style="width:48px;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:6px 8px;font-size:12px;" />
+              <span style="font-size:11px;color:var(--muted);white-space:nowrap;">months out</span>
+              <button type="button" id="b-eta-calc-btn" class="btn-edit">Set ETA</button>
+            </div>
           </div>
           <div class="form-field" id="b-atf-form-wrap" style="display:none;">
             <label>ATF Form (optional)</label>
@@ -679,6 +685,14 @@
       document.getElementById('b-atf-filed-wrap').style.display = show ? '' : 'none';
     }
     document.getElementById('b-is-nfa').addEventListener('change', toggleAtfFields);
+
+    document.getElementById('b-eta-calc-btn').addEventListener('click', () => {
+      const receivedVal = document.getElementById('b-received').value;
+      const months = parseInt(document.getElementById('b-eta-months').value) || 8;
+      const base = receivedVal ? new Date(receivedVal + 'T00:00:00') : new Date();
+      base.setMonth(base.getMonth() + months);
+      document.getElementById('b-eta').value = base.toLocaleDateString('en-CA');
+    });
 
     document.getElementById('addBuildBtn').addEventListener('click', () => openBuildForm(null));
     document.getElementById('cancelBuildBtn').addEventListener('click', closeBuildForm);
