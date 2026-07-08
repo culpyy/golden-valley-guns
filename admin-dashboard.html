@@ -439,11 +439,11 @@
             <label>ETA (optional)</label>
             <input type="date" id="b-eta" />
           </div>
-          <div class="form-field">
+          <div class="form-field" id="b-atf-form-wrap" style="display:none;">
             <label>ATF Form (optional)</label>
             <input type="text" id="b-atf-form" placeholder="Form 1, Form 4..." />
           </div>
-          <div class="form-field">
+          <div class="form-field" id="b-atf-filed-wrap" style="display:none;">
             <label>ATF Filed Date (optional)</label>
             <input type="date" id="b-atf-filed" />
           </div>
@@ -646,7 +646,8 @@
       document.getElementById('b-caliber').value = build ? build.caliber : '';
       document.getElementById('b-status').value = build ? build.status : 'intake';
       document.getElementById('b-is-nfa').checked = build ? !!build.is_nfa : false;
-      document.getElementById('b-received').value = build ? (build.received || '') : '';
+      toggleAtfFields();
+      document.getElementById('b-received').value = build ? (build.received || '') : new Date().toLocaleDateString('en-CA');
       document.getElementById('b-eta').value = build ? (build.eta || '') : '';
       document.getElementById('b-atf-form').value = build ? (build.atf_form || '') : '';
       document.getElementById('b-atf-filed').value = build ? (build.atf_filed || '') : '';
@@ -671,6 +672,13 @@
     function closeBuildForm() {
       document.getElementById('buildForm').classList.remove('open');
     }
+
+    function toggleAtfFields() {
+      const show = document.getElementById('b-is-nfa').checked;
+      document.getElementById('b-atf-form-wrap').style.display = show ? '' : 'none';
+      document.getElementById('b-atf-filed-wrap').style.display = show ? '' : 'none';
+    }
+    document.getElementById('b-is-nfa').addEventListener('change', toggleAtfFields);
 
     document.getElementById('addBuildBtn').addEventListener('click', () => openBuildForm(null));
     document.getElementById('cancelBuildBtn').addEventListener('click', closeBuildForm);
