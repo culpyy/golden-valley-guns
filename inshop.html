@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <title>In Shop | Active Builds | Golden Valley Guns LLC | Golden Valley, AZ</title>
-  <meta name="description" content="See what's currently in the shop at Golden Valley Guns LLC. FFL 07 manufacturer in Golden Valley, Arizona. Custom builds, AK parts kits, gunsmithing, FFL transfers. Call (928) 727-0893." />
-  <meta name="keywords" content="gunsmith Golden Valley AZ, custom gun builds Arizona, AK parts kit build Arizona, FFL 07 Arizona, AR-15 build Arizona" />
+  <meta name="description" content="Live build board for Golden Valley Guns LLC — see what's currently in progress, from intake through ATF transfer. FFL 07 manufacturer in Golden Valley, Arizona." />
+  <meta name="keywords" content="gunsmith Golden Valley AZ, build status Arizona, FFL 07 Arizona, NFA build tracking" />
   <meta name="robots" content="index, follow" />
   <meta property="og:title" content="In Shop | Golden Valley Guns LLC | Golden Valley, AZ" />
-  <meta property="og:description" content="Active build board and shop capabilities for Golden Valley Guns LLC. FFL 07. Custom builds, AK kits, gunsmithing, and transfers. Golden Valley, AZ." />
+  <meta property="og:description" content="Live build board for Golden Valley Guns LLC — see what's currently in progress, from intake through ATF transfer." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://goldenvalleyguns.netlify.app/inshop.html" />
   <meta property="og:image" content="https://goldenvalleyguns.netlify.app/images/logo.png" />
@@ -529,151 +529,8 @@
     }
     .disclaimer strong { color: var(--silver); }
 
-    /* ── ATF PROCESS EXPLAINER ── */
-    .atf-explainer {
-      background: var(--surface);
-      border-top: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
-      padding: 56px 48px;
-    }
-    .atf-explainer .section-label { margin-bottom: 8px; }
-    .atf-explainer h2 {
-      font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
-      font-size: clamp(22px, 3.5vw, 36px);
-      letter-spacing: 2px;
-      color: var(--text);
-      margin-bottom: 8px;
-    }
-    .atf-explainer .sub-copy {
-      font-size: 14px;
-      color: var(--muted);
-      max-width: 660px;
-      line-height: 1.7;
-      margin-bottom: 32px;
-    }
-    .atf-flow {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 2px;
-      background: var(--border);
-      margin-bottom: 28px;
-    }
-    .atf-step { background: var(--bg); padding: 22px 20px; }
-    .atf-step-num {
-      font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
-      font-size: 11px;
-      letter-spacing: 3px;
-      color: var(--s-atf-filed);
-      margin-bottom: 10px;
-    }
-    .atf-step.step-approved .atf-step-num { color: var(--s-atf-approved); }
-    .atf-step h4 {
-      font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
-      font-size: 17px;
-      letter-spacing: 1.5px;
-      color: var(--text);
-      margin-bottom: 6px;
-    }
-    .atf-step p { font-size: 12px; color: var(--muted); line-height: 1.6; }
-    .atf-note {
-      border: 1px solid var(--border);
-      border-left: 3px solid var(--s-atf-filed);
-      padding: 14px 18px;
-      font-size: 13px;
-      color: var(--muted);
-      line-height: 1.7;
-    }
-    .atf-note strong { color: var(--silver); }
-
-    /* ── WHAT WE WORK ON ── */
-    .accept-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 2px;
-      background: var(--border);
-      margin-top: 32px;
-    }
-    .accept-card {
-      background: var(--surface);
-      padding: 28px 24px;
-      transition: background 0.2s;
-    }
-    .accept-card:hover { background: var(--surface2); }
-    .accept-icon {
-      font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
-      font-size: 11px;
-      letter-spacing: 3px;
-      color: var(--gold-light);
-      margin-bottom: 12px;
-    }
-    .accept-card h3 {
-      font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
-      font-size: 20px;
-      letter-spacing: 1.5px;
-      color: var(--text);
-      margin-bottom: 8px;
-    }
-    .accept-card p { font-size: 13px; color: var(--muted); line-height: 1.7; }
-    .accept-card ul {
-      list-style: none;
-      margin-top: 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    .accept-card ul li {
-      font-size: 12px;
-      color: var(--muted);
-      letter-spacing: 0.5px;
-      padding-left: 12px;
-      position: relative;
-    }
-    .accept-card ul li::before {
-      content: '–';
-      position: absolute;
-      left: 0;
-      color: var(--gold-light);
-    }
-
-    /* ── SUBMIT STRIP ── */
-    .submit-strip {
-      background: var(--surface);
-      border-top: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
-      padding: 56px 48px;
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 48px;
-      align-items: center;
-    }
-    .submit-strip h2 {
-      font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
-      font-size: clamp(28px, 4vw, 44px);
-      letter-spacing: 2px;
-      color: var(--text);
-      margin-bottom: 8px;
-    }
-    .submit-strip p {
-      font-size: 14px;
-      color: var(--muted);
-      max-width: 520px;
-      line-height: 1.7;
-    }
-    .submit-actions {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      align-items: flex-end;
-      flex-shrink: 0;
-    }
-
     /* ── RESPONSIVE ── */
     @media (max-width: 900px) {
-      .accept-grid { grid-template-columns: repeat(2, 1fr); }
-      .atf-flow { grid-template-columns: repeat(2, 1fr); }
-      .atf-explainer { padding: 40px 20px; }
-      .submit-strip { grid-template-columns: 1fr; padding: 40px 20px; }
-      .submit-actions { align-items: flex-start; flex-direction: row; flex-wrap: wrap; }
       .track-strip { padding: 16px 20px; }
       .admin-bar { padding: 10px 20px; }
     }
@@ -686,9 +543,6 @@
       .card-status-block { align-items: flex-start; flex-direction: row; align-items: center; gap: 10px; }
       .status-desc { text-align: left; }
       .card-meta-row { gap: 16px; }
-      .accept-grid { grid-template-columns: 1fr; }
-      .atf-flow { grid-template-columns: 1fr; }
-      .atf-explainer { padding: 32px 16px; }
       .track-strip { flex-direction: column; align-items: flex-start; }
       .track-strip-form { width: 100%; }
       .track-strip-form input { flex: 1; min-width: 0; width: auto; }
@@ -707,6 +561,7 @@
     </a>
     <ul class="nav-links">
       <li><a href="index.html">Home</a></li>
+      <li><a href="services.html">Services</a></li>
       <li><a href="inshop.html" class="active">In Shop</a></li>
       <li><a href="gallery.html">Gallery</a></li>
       <li><a href="shop.html">Shop</a></li>
@@ -745,7 +600,7 @@
   <div class="page-header">
     <div class="section-label">Active Work</div>
     <h1>In Shop</h1>
-    <p>Live build board updated as work progresses. Drop something off? Give us a call if you don't see it here.</p>
+    <p>Live build board, updated as work progresses. Looking to start something new? See <a href="services.html" class="tel-link">what we work on</a>.</p>
   </div>
 
   <!-- ACTIVE BUILDS -->
@@ -766,132 +621,6 @@
     </div>
   </section>
 
-  <!-- ATF PROCESS EXPLAINER -->
-  <div class="atf-explainer">
-    <div class="section-label">NFA Builds</div>
-    <h2>The ATF Transfer Process</h2>
-    <p class="sub-copy">NFA items require ATF approval before they leave our license. Here's exactly how we handle it so you know what to expect.</p>
-    <div class="atf-flow">
-      <div class="atf-step">
-        <div class="atf-step-num">Step 01</div>
-        <h4>Build &amp; Function Check</h4>
-        <p>We complete the build and run a full function check. You get a finished, fully functioning firearm before any paperwork is filed.</p>
-      </div>
-      <div class="atf-step">
-        <div class="atf-step-num">Step 02</div>
-        <h4>ATF Form Filed</h4>
-        <p>We submit the appropriate ATF form on our end. We'll let you know when it goes in and what form was used.</p>
-      </div>
-      <div class="atf-step">
-        <div class="atf-step-num">Step 03</div>
-        <h4>ATF Review Period</h4>
-        <p>ATF reviews and approves the transfer. eForms typically clear in 2 to 8 weeks. We'll reach out as soon as anything comes back.</p>
-      </div>
-      <div class="atf-step step-approved">
-        <div class="atf-step-num">Step 04</div>
-        <h4>Approved &amp; Ready</h4>
-        <p>Once ATF approves, we contact you to arrange pickup or transfer to your FFL. You take possession through your dealer.</p>
-      </div>
-    </div>
-    <div class="atf-note">
-      <strong>What you need to do during ATF review:</strong> Nothing. We manage the paperwork and the wait. We'll call you when approval comes through. Questions? <a href="tel:9287270893" class="tel-link">(928) 727-0893</a>
-    </div>
-  </div>
-
-  <!-- WHAT WE WORK ON -->
-  <section style="background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
-    <div class="section-label">Intake</div>
-    <h2 class="section-title">What We Work On</h2>
-    <p class="section-sub">Bring us the project. If it involves firearms, we'll tell you straight whether we can do it and what it'll take.</p>
-    <div class="accept-grid">
-      <div class="accept-card fade-in">
-        <div class="accept-icon">01 &nbsp;·&nbsp; Custom Builds</div>
-        <h3>Custom Firearms</h3>
-        <p>Full builds from the ground up to your specs. Function-checked before it leaves.</p>
-        <ul>
-          <li>AR-15 / AR-10 platform builds</li>
-          <li>Pistol builds and custom configurations</li>
-          <li>Precision rifle builds</li>
-          <li>Caliber conversions</li>
-          <li>Specification builds to order</li>
-        </ul>
-      </div>
-      <div class="accept-card fade-in">
-        <div class="accept-icon">02 &nbsp;·&nbsp; Parts Kits</div>
-        <h3>Parts Kit Builds</h3>
-        <p>Ship us your kit and we'll handle the build. Call before you ship so we can get you a quote and timeline.</p>
-        <ul>
-          <li>AK-pattern parts kit builds</li>
-          <li>FAL, G3, and other surplus kits</li>
-          <li>Receiver fitting and riveting</li>
-          <li>Barrel pressing and headspace</li>
-          <li>Full parts-to-finished builds</li>
-        </ul>
-      </div>
-      <div class="accept-card fade-in">
-        <div class="accept-icon">03 &nbsp;·&nbsp; Gunsmithing</div>
-        <h3>Gunsmithing &amp; Repairs</h3>
-        <p>Trigger work, timing, action jobs, troubleshooting. Bring us the problem and we'll tell you what it needs.</p>
-        <ul>
-          <li>Trigger jobs and action work</li>
-          <li>Barrel threading and fitting</li>
-          <li>Timing and headspace checks</li>
-          <li>Malfunction diagnosis</li>
-          <li>Stock fitting and bedding</li>
-        </ul>
-      </div>
-      <div class="accept-card fade-in">
-        <div class="accept-icon">04 &nbsp;·&nbsp; Transfers</div>
-        <h3>FFL Transfers</h3>
-        <p>$20 per transfer, in and out of state. Call or email before you ship so we can make sure everything is ready.</p>
-        <ul>
-          <li>Online purchase transfers</li>
-          <li>Dealer-to-dealer transfers</li>
-          <li>Out-of-state transfers</li>
-          <li>NFA transfers (Form 4)</li>
-          <li>Estate and trust transfers</li>
-        </ul>
-      </div>
-      <div class="accept-card fade-in">
-        <div class="accept-icon">05 &nbsp;·&nbsp; Refurbishments</div>
-        <h3>Refurb &amp; Restoration</h3>
-        <p>Military surplus, beat-up working guns, collector pieces that need attention. We give an honest assessment before we start.</p>
-        <ul>
-          <li>Military surplus refurbishment</li>
-          <li>Refinishing and metal work</li>
-          <li>Parts replacement and sourcing</li>
-          <li>Stock and furniture replacement</li>
-          <li>Corrosion treatment</li>
-        </ul>
-      </div>
-      <div class="accept-card fade-in">
-        <div class="accept-icon">06 &nbsp;·&nbsp; Used Firearms</div>
-        <h3>Used Gun Sales</h3>
-        <p>We buy used firearms and have inventory in the shop. Call ahead to see what's in stock or to discuss a sale.</p>
-        <ul>
-          <li>Used pistol and rifle purchases</li>
-          <li>Trade-in toward builds</li>
-          <li>Estate and collection sales</li>
-          <li>Consignment (call to discuss)</li>
-          <li>We'll make a fair offer</li>
-        </ul>
-      </div>
-    </div>
-  </section>
-
-  <!-- SUBMIT STRIP -->
-  <div class="submit-strip">
-    <div>
-      <div class="section-label">Get Started</div>
-      <h2>Ready to Submit a Build?</h2>
-      <p>Call or email with what you're looking to do. We'll tell you if it's in our wheelhouse, give you a realistic timeline, and quote you a price. The number we give you is the number you pay.</p>
-    </div>
-    <div class="submit-actions">
-      <a href="tel:9287270893" class="btn-primary">(928) 727-0893</a>
-      <a href="contact.html" class="btn-secondary">Send a Message &#8594;</a>
-    </div>
-  </div>
-
   <!-- FOOTER -->
   <footer>
     <div class="footer-inner">
@@ -905,6 +634,7 @@
         <h5>Pages</h5>
         <ul>
           <li><a href="index.html">Home</a></li>
+          <li><a href="services.html">Services</a></li>
           <li><a href="inshop.html">In Shop</a></li>
           <li><a href="gallery.html">Gallery</a></li>
           <li><a href="shop.html">Shop</a></li>
