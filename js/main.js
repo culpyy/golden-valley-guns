@@ -27,9 +27,11 @@ if (lightbox) {
 
       if (src) {
         lbImg.src = src;
+        lbImg.alt = title || '';
         lbImg.style.display = '';
       } else {
         lbImg.style.display = 'none';
+        lbImg.alt = '';
       }
       lbTitle.textContent = title || '';
       lbSub.textContent = sub || '';
