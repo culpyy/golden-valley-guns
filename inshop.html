@@ -1009,6 +1009,7 @@
         const stages     = b.is_nfa ? stagesNFA     : stagesSTD;
         const stageNames = b.is_nfa ? stageNamesNFA : stageNamesSTD;
         const si = stages.indexOf(b.status);
+        const progress = si === -1 ? 0 : Math.round(((si + 1) / stages.length) * 100);
         const pipelineBars = stages.map((s, i) =>
           `<div class="pipe-seg ${i <= si ? 'done' : ''}"></div>`).join('');
         const pipelineLabels = stages.map((s, i) =>
@@ -1061,9 +1062,9 @@
 
             <div class="progress-row">
               <div class="progress-bar-wrap">
-                <div class="progress-bar"><div class="progress-fill" style="width:${b.progress || 0}%"></div></div>
+                <div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div>
               </div>
-              <div class="progress-pct">${b.progress || 0}%</div>
+              <div class="progress-pct">${progress}%</div>
             </div>
 
             ${metaItems.length ? `<div class="card-meta-row">${metaItems.join('')}</div>` : ''}

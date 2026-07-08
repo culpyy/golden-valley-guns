@@ -397,11 +397,19 @@
       'intake': 'Intake', 'parts-ordered': 'Parts Ordered', 'in-progress': 'In Progress',
       'testing': 'Testing', 'atf-filed': 'ATF Filed', 'atf-approved': 'ATF Approved', 'ready': 'Ready'
     };
+    const stagesNFA = ['intake', 'parts-ordered', 'in-progress', 'testing', 'atf-filed', 'atf-approved', 'ready'];
+    const stagesSTD = ['intake', 'parts-ordered', 'in-progress', 'testing', 'ready'];
+
+    function calcProgress(status, isNfa) {
+      const stages = isNfa ? stagesNFA : stagesSTD;
+      const si = stages.indexOf(status);
+      return si === -1 ? 0 : Math.round(((si + 1) / stages.length) * 100);
+    }
 
     async function loadBuildPreview() {
       const { data, error } = await supabase
         .from('builds')
-        .select('title, type, caliber, status, progress')
+        .select('title, type, caliber, status, is_nfa')
         .order('received', { ascending: false })
         .limit(3);
 
@@ -411,18 +419,21 @@
         return;
       }
 
-      container.innerHTML = data.map((b, i) => `
+      container.innerHTML = data.map((b, i) => {
+        const progress = calcProgress(b.status, b.is_nfa);
+        return `
         <a href="inshop.html" class="build-preview-card fade-in">
           <div class="bp-label">0${i + 1} &nbsp;·&nbsp; ${b.type}</div>
           <div class="bp-title">${b.title}</div>
           <div class="bp-meta">${b.caliber}</div>
           <div class="bp-progress-wrap">
-            <div class="bp-progress-labels"><span>Progress</span><span>${b.progress}%</span></div>
-            <div class="bp-progress-bar"><div class="bp-progress-fill" style="width:${b.progress}%"></div></div>
+            <div class="bp-progress-labels"><span>Progress</span><span>${progress}%</span></div>
+            <div class="bp-progress-bar"><div class="bp-progress-fill" style="width:${progress}%"></div></div>
           </div>
           <span class="bp-status ${b.status}">${STATUS_LABELS[b.status] || b.status}</span>
         </a>
-      `).join('');
+      `;
+      }).join('');
     }
 
     loadBuildPreview();

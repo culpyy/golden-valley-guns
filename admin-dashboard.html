@@ -427,10 +427,6 @@
               <option value="ready">Ready</option>
             </select>
           </div>
-          <div class="form-field">
-            <label>Progress (0-100)</label>
-            <input type="number" id="b-progress" min="0" max="100" placeholder="0" />
-          </div>
           <div class="form-field" style="display:flex;align-items:center;gap:10px;padding-top:22px;">
             <input type="checkbox" id="b-is-nfa" style="width:16px;height:16px;accent-color:var(--gold-light);cursor:pointer;" />
             <label for="b-is-nfa" style="cursor:pointer;font-size:11px;letter-spacing:1.5px;">NFA Item (shows ATF pipeline stages)</label>
@@ -580,6 +576,15 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase.js"></script>
   <script>
+    // ── PROGRESS (derived from status, not manually entered) ──
+    const stagesNFA = ['intake', 'parts-ordered', 'in-progress', 'testing', 'atf-filed', 'atf-approved', 'ready'];
+    const stagesSTD = ['intake', 'parts-ordered', 'in-progress', 'testing', 'ready'];
+    function calcProgress(status, isNfa) {
+      const stages = isNfa ? stagesNFA : stagesSTD;
+      const si = stages.indexOf(status);
+      return si === -1 ? 0 : Math.round(((si + 1) / stages.length) * 100);
+    }
+
     // ── AUTH GUARD ──
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) window.location.href = 'admin.html';
@@ -640,7 +645,6 @@
       document.getElementById('b-type').value = build ? build.type : 'Rifle';
       document.getElementById('b-caliber').value = build ? build.caliber : '';
       document.getElementById('b-status').value = build ? build.status : 'intake';
-      document.getElementById('b-progress').value = build ? build.progress : 0;
       document.getElementById('b-is-nfa').checked = build ? !!build.is_nfa : false;
       document.getElementById('b-received').value = build ? (build.received || '') : '';
       document.getElementById('b-eta').value = build ? (build.eta || '') : '';
@@ -679,8 +683,8 @@
         type:           document.getElementById('b-type').value,
         caliber:        document.getElementById('b-caliber').value,
         status:         document.getElementById('b-status').value,
-        progress:       parseInt(document.getElementById('b-progress').value) || 0,
         is_nfa:         document.getElementById('b-is-nfa').checked,
+        progress:       calcProgress(document.getElementById('b-status').value, document.getElementById('b-is-nfa').checked),
         received:       document.getElementById('b-received').value || null,
         eta:            document.getElementById('b-eta').value || null,
         atf_form:       document.getElementById('b-atf-form').value || '',
@@ -738,7 +742,7 @@
                 <td class="title">${b.title}</td>
                 <td style="font-size:12px;">${b.customer_name || '—'}</td>
                 <td><span class="status-pill ${b.status}">${b.status}</span></td>
-                <td>${b.progress}%</td>
+                <td>${calcProgress(b.status, b.is_nfa)}%</td>
                 <td>
                   <div class="row-actions">
                     <button class="btn-edit" onclick="editBuild('${b.id}')">Edit</button>

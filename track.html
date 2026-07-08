@@ -522,10 +522,6 @@
       document.getElementById('rReceived').textContent = formatDate(b.received);
       document.getElementById('rEta').textContent      = formatDate(b.eta);
 
-      const pct = b.progress || 0;
-      document.getElementById('rProgressPct').textContent  = pct + '%';
-      document.getElementById('rProgressFill').style.width = pct + '%';
-
       const badge = document.getElementById('rStatusBadge');
       badge.textContent = stageBadge[b.status] || b.status;
       badge.className   = 'status-badge ' + (b.status || '');
@@ -534,6 +530,9 @@
       const stages     = b.is_nfa ? stagesNFA     : stagesSTD;
       const stageNames = b.is_nfa ? stageNamesNFA : stageNamesSTD;
       const si = stages.indexOf(b.status);
+      const pct = si === -1 ? 0 : Math.round(((si + 1) / stages.length) * 100);
+      document.getElementById('rProgressPct').textContent  = pct + '%';
+      document.getElementById('rProgressFill').style.width = pct + '%';
       const stepsEl  = document.getElementById('rPipelineSteps');
       const labelsEl = document.getElementById('rPipelineLabels');
       stepsEl.style.gridTemplateColumns  = `repeat(${stages.length}, 1fr)`;
