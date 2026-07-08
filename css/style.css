@@ -203,24 +203,6 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
   max-width: 680px;
 }
 
-.hero-eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 3px;
-  text-transform: uppercase;
-  color: var(--gold-light);
-  margin-bottom: 20px;
-}
-
-.hero-eyebrow::before {
-  content: '';
-  width: 32px; height: 1px;
-  background: var(--gold-light);
-}
-
 .hero h1 {
   font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
   font-size: clamp(56px, 8vw, 96px);

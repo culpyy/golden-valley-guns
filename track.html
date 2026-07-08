@@ -27,7 +27,7 @@
     }
     .track-main {
       flex: 1;
-      padding: 64px 24px 80px;
+      padding: calc(var(--nav-h) + 40px) 24px 80px;
       max-width: 660px;
       margin: 0 auto;
       width: 100%;
@@ -335,7 +335,7 @@
     .help-row a:hover { color: var(--gold); }
 
     @media (max-width: 540px) {
-      .track-main { padding: 40px 16px 60px; }
+      .track-main { padding: calc(var(--nav-h) + 24px) 16px 60px; }
       .result-meta { grid-template-columns: 1fr; }
       .pipeline-labels { display: none; }
       .result-card-header { flex-direction: column; }
@@ -356,8 +356,8 @@
     </a>
     <ul class="nav-links">
       <li><a href="index.html">Home</a></li>
-      <li><a href="gallery.html">Gallery</a></li>
       <li><a href="inshop.html">In Shop</a></li>
+      <li><a href="gallery.html">Gallery</a></li>
       <li><a href="shop.html">Shop</a></li>
       <li><a href="updates.html">Updates</a></li>
       <li><a href="contact.html">Contact</a></li>
@@ -455,8 +455,8 @@
         <h5>Pages</h5>
         <ul>
           <li><a href="index.html">Home</a></li>
-          <li><a href="gallery.html">Gallery</a></li>
           <li><a href="inshop.html">In Shop</a></li>
+          <li><a href="gallery.html">Gallery</a></li>
           <li><a href="shop.html">Shop</a></li>
           <li><a href="updates.html">Updates</a></li>
           <li><a href="contact.html">Contact</a></li>
