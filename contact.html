@@ -112,7 +112,11 @@
 
       <!-- FORM -->
       <div class="fade-in">
-        <form id="contactForm" class="contact-form" novalidate>
+        <form id="contactForm" class="contact-form" name="contact" method="POST" data-netlify="true" netlify-honeypot="bot-field" novalidate>
+          <input type="hidden" name="form-name" value="contact" />
+          <p style="position:absolute;left:-9999px;">
+            <label>Leave this field blank: <input name="bot-field" /></label>
+          </p>
           <div class="form-row">
             <div class="form-group">
               <label for="fname">First Name</label>

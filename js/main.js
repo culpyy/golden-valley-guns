@@ -81,22 +81,44 @@ document.querySelectorAll('.fade-in').forEach(el => {
   observer.observe(el);
 });
 
-// Contact form
+// Contact form (submits to Netlify Forms via AJAX so the page doesn't reload)
 const form = document.getElementById('contactForm');
 if (form) {
   form.addEventListener('submit', e => {
     e.preventDefault();
     const btn = form.querySelector('button[type="submit"]');
-    btn.textContent = 'Message Sent';
-    btn.style.background = '#1a5c1a';
-    btn.style.borderColor = '#1a5c1a';
+    const originalText = btn.textContent;
+    btn.textContent = 'Sending...';
     btn.disabled = true;
-    setTimeout(() => {
-      btn.textContent = 'Send Message';
-      btn.style.background = '';
-      btn.style.borderColor = '';
-      btn.disabled = false;
-      form.reset();
-    }, 3000);
+
+    fetch('/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams(new FormData(form)).toString(),
+    })
+      .then(res => {
+        if (!res.ok) throw new Error('Submission failed');
+        btn.textContent = 'Message Sent';
+        btn.style.background = '#1a5c1a';
+        btn.style.borderColor = '#1a5c1a';
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.style.background = '';
+          btn.style.borderColor = '';
+          btn.disabled = false;
+          form.reset();
+        }, 3000);
+      })
+      .catch(() => {
+        btn.textContent = 'Something went wrong — call us instead';
+        btn.style.background = '#8a1a1a';
+        btn.style.borderColor = '#8a1a1a';
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.style.background = '';
+          btn.style.borderColor = '';
+          btn.disabled = false;
+        }, 4000);
+      });
   });
 }
