@@ -53,12 +53,14 @@
       background: rgba(139,105,20,0.1);
       border-bottom: 1px solid rgba(139,105,20,0.35);
       padding: 10px 48px;
+      padding-top: calc(var(--nav-h) + 10px);
       align-items: center;
       justify-content: space-between;
       gap: 12px;
       flex-wrap: wrap;
     }
     .admin-bar.visible { display: flex; }
+    .admin-bar.visible + .track-strip { padding-top: 20px; }
     .admin-bar-label {
       font-size: 10px;
       letter-spacing: 2px;
@@ -99,6 +101,7 @@
       background: var(--surface);
       border-bottom: 1px solid var(--border);
       padding: 20px 48px;
+      padding-top: calc(var(--nav-h) + 20px);
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -529,10 +532,16 @@
     }
     .disclaimer strong { color: var(--silver); }
 
+    /* .page-header normally carries extra top padding to clear the fixed nav as the
+       first element on the page — here .track-strip is first and handles that itself,
+       so this would otherwise be a large redundant gap. */
+    .page-header { padding-top: 40px; }
+
     /* ── RESPONSIVE ── */
     @media (max-width: 900px) {
-      .track-strip { padding: 16px 20px; }
-      .admin-bar { padding: 10px 20px; }
+      .track-strip { padding: 16px 20px; padding-top: calc(var(--nav-h) + 16px); }
+      .admin-bar { padding: 10px 20px; padding-top: calc(var(--nav-h) + 10px); }
+      .admin-bar.visible + .track-strip { padding-top: 16px; }
     }
     @media (max-width: 640px) {
       .pipeline-labels { display: none; }
