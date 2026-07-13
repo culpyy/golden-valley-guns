@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <title>Ship Something to Us | Golden Valley Guns LLC | Golden Valley, AZ</title>
+  <meta name="description" content="Shipping a parts kit or firearm to Golden Valley Guns LLC? Fill out the intake form to get a tracking code and printable slip to include in your box." />
+  <meta name="robots" content="index, follow" />
+  <meta property="og:title" content="Ship Something to Us | Golden Valley Guns LLC" />
+  <meta property="og:description" content="Get a tracking code and printable slip before you ship a parts kit or firearm to Golden Valley Guns LLC." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://goldenvalleyguns.netlify.app/intake.html" />
+  <meta property="og:image" content="https://goldenvalleyguns.netlify.app/images/logo.png" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .intake-note {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.7;
+      background: var(--surface);
+      border-left: 3px solid var(--gold);
+      padding: 16px 20px;
+      margin-top: 20px;
+    }
+
+    /* ── SLIP / CONFIRMATION ── */
+    .intake-slip {
+      display: none;
+      max-width: 560px;
+      background: var(--surface);
+      border: 1px solid var(--gold);
+      padding: 40px;
+    }
+    .intake-slip.show { display: block; }
+    .slip-brand {
+      font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
+      font-size: 20px;
+      letter-spacing: 1.5px;
+      color: var(--text);
+      margin-bottom: 2px;
+    }
+    .slip-address { font-size: 12px; color: var(--muted); margin-bottom: 24px; }
+    .slip-code-label {
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--gold-light);
+      margin-bottom: 4px;
+    }
+    .slip-code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 32px;
+      letter-spacing: 2px;
+      color: var(--text);
+      margin-bottom: 24px;
+    }
+    .slip-row { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-top: 1px solid var(--border); font-size: 13px; }
+    .slip-row span:first-child { color: var(--muted); }
+    .slip-row span:last-child { color: var(--text); text-align: right; }
+    .slip-actions { display: flex; gap: 12px; margin-top: 28px; flex-wrap: wrap; }
+
+    @media print {
+      body * { visibility: hidden; }
+      .intake-slip, .intake-slip * { visibility: visible; }
+      .intake-slip {
+        display: block !important;
+        position: absolute;
+        top: 0; left: 0;
+        border: 1px solid #000;
+        width: 100%;
+        max-width: none;
+      }
+      .slip-actions { display: none !important; }
+    }
+
+    @media (max-width: 580px) {
+      .intake-slip { padding: 24px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- AGE GATE -->
+  <div id="ageGate" class="age-gate">
+    <div class="age-gate-card">
+      <img src="images/logo.png" class="age-gate-logo" alt="Golden Valley Guns LLC" />
+      <h2>Age Verification Required</h2>
+      <p>You must be <strong>18 years of age or older</strong> to enter this site. Golden Valley Guns LLC is an FFL 07 licensed firearms manufacturer and dealer. By continuing, you confirm you meet the minimum age requirement under federal and Arizona law.</p>
+      <div class="age-gate-actions">
+        <button id="ageGateEnter" class="btn-primary">I Am 18 or Older &mdash; Enter</button>
+        <a href="https://www.google.com" class="btn-secondary">Exit</a>
+      </div>
+    </div>
+  </div>
+  <script>
+    if (localStorage.getItem('gvg_age_verified') === 'true') {
+      document.getElementById('ageGate').style.display = 'none';
+    } else {
+      document.body.style.overflow = 'hidden';
+    }
+  </script>
+
+  <!-- NAV -->
+  <nav class="nav">
+    <a href="index.html" class="nav-logo">
+      <img src="images/logo.png" class="nav-logo-img" alt="" />
+      <div class="nav-logo-text">
+        <span class="wordmark">Golden Valley Guns LLC</span>
+        <span class="sub">Golden Valley, Arizona<span class="sub-ffl"> · FFL 07 Manufacturer</span></span>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="services.html">Services</a></li>
+      <li><a href="inshop.html">In Shop</a></li>
+      <li><a href="gallery.html">Gallery</a></li>
+      <li><a href="shop.html">Shop</a></li>
+      <li><a href="updates.html">Updates</a></li>
+      <li><a href="contact.html">Contact</a></li>
+    </ul>
+    <a href="contact.html" class="nav-cta">Get In Touch</a>
+    <div class="hamburger" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </div>
+  </nav>
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div class="section-label">Before You Ship</div>
+    <h1>Ship Something to Us</h1>
+    <p>Fill this out before you ship a parts kit or firearm to us. You'll get a tracking code and a printable slip &mdash; include it in the box so we know whose it is and what to do with it.</p>
+  </div>
+
+  <!-- INTAKE SECTION -->
+  <section>
+    <div class="contact-grid">
+
+      <!-- INFO -->
+      <div class="contact-info fade-in">
+        <div class="info-block">
+          <h4>Ship To</h4>
+          <p>Golden Valley Guns LLC<br>7088 W Jupiter Dr<br>Golden Valley, AZ 86413</p>
+        </div>
+        <div class="info-block">
+          <h4>Phone</h4>
+          <p><a href="tel:9287270893">(928) 727-0893</a></p>
+        </div>
+        <div class="intake-note">
+          This form doesn't replace calling ahead &mdash; for anything involving NFA items or FFL transfer specifics, still call us first at (928) 727-0893. This form exists so whatever you ship arrives self-identifying, with a tracking code we can match to your info the moment it lands.
+        </div>
+      </div>
+
+      <!-- FORM -->
+      <div class="fade-in">
+        <form id="intakeForm" class="contact-form" novalidate>
+          <p style="position:absolute;left:-9999px;">
+            <label>Leave this field blank: <input name="bot-field" id="botField" /></label>
+          </p>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="i-name">Full Name</label>
+              <input type="text" id="i-name" placeholder="John Smith" required />
+            </div>
+            <div class="form-group">
+              <label for="i-phone">Phone</label>
+              <input type="tel" id="i-phone" placeholder="(928) 555-0100" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="i-email">Email</label>
+            <input type="email" id="i-email" placeholder="you@example.com" />
+          </div>
+          <p class="form-note" style="margin-top:-8px;">Give us at least one: email or phone.</p>
+          <div class="form-group">
+            <label for="i-service">What's This For?</label>
+            <select id="i-service" required>
+              <option value="" disabled selected>Select a service</option>
+              <option value="custom_build">Custom Build</option>
+              <option value="parts_kit">Parts Kit Build</option>
+              <option value="gunsmithing">Gunsmithing / Repair</option>
+              <option value="transfer">FFL Transfer</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="i-type">Firearm Type</label>
+              <select id="i-type">
+                <option>Rifle</option>
+                <option>Pistol</option>
+                <option>Shotgun</option>
+                <option>Short-Barreled Rifle</option>
+                <option>Short-Barreled Shotgun</option>
+                <option>Suppressor</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="i-caliber">Caliber (optional)</label>
+              <input type="text" id="i-caliber" placeholder="7.62x39mm" />
+            </div>
+          </div>
+          <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
+            <input type="checkbox" id="i-nfa" style="width:16px;height:16px;accent-color:var(--gold-light);cursor:pointer;" />
+            <label for="i-nfa" style="text-transform:none;letter-spacing:normal;font-size:13px;cursor:pointer;">This is an NFA item (suppressor, SBR, SBS)</label>
+          </div>
+          <div class="form-group">
+            <label for="i-notes">Notes</label>
+            <textarea id="i-notes" placeholder="What's in the box, what you want done..."></textarea>
+          </div>
+          <button type="submit" id="intakeSubmitBtn" class="btn-primary" style="margin-top: 8px; width: 100%; justify-content: center;">
+            Get My Tracking Code &#8594;
+          </button>
+        </form>
+
+        <!-- SLIP (shown after successful submit) -->
+        <div class="intake-slip" id="intakeSlip">
+          <div class="slip-brand">Golden Valley Guns LLC</div>
+          <div class="slip-address">7088 W Jupiter Dr, Golden Valley, AZ 86413 &middot; (928) 727-0893</div>
+          <div class="slip-code-label">Tracking Code</div>
+          <div class="slip-code" id="slipCode">&mdash;</div>
+          <div class="slip-row"><span>Name</span><span id="slipName">&mdash;</span></div>
+          <div class="slip-row"><span>Phone</span><span id="slipPhone">&mdash;</span></div>
+          <div class="slip-row"><span>Service</span><span id="slipService">&mdash;</span></div>
+          <div class="slip-actions">
+            <button type="button" id="printSlipBtn" class="btn-primary">Print This Slip</button>
+            <a href="track.html" class="btn-secondary">Track This Later &#8594;</a>
+          </div>
+        </div>
+        <p class="form-note" id="intakeError" style="display:none;color:#c0392b;"></p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <img src="images/logo.png" class="footer-logo-img" alt="Golden Valley Guns LLC" />
+        <div class="wordmark">Golden Valley Guns LLC</div>
+        <div class="sub">Golden Valley, Arizona</div>
+        <p>FFL 07 Manufacturer. Custom builds, gunsmithing, parts work, and transfers out of Golden Valley, AZ.</p>
+      </div>
+      <div class="footer-col">
+        <h5>Pages</h5>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="services.html">Services</a></li>
+          <li><a href="inshop.html">In Shop</a></li>
+          <li><a href="gallery.html">Gallery</a></li>
+          <li><a href="shop.html">Shop</a></li>
+          <li><a href="updates.html">Updates</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>Contact</h5>
+        <ul>
+          <li><a href="tel:9287270893">(928) 727-0893</a></li>
+          <li><a href="https://maps.google.com/?q=7088+W+Jupiter+Dr+Golden+Valley+AZ+86413" target="_blank">7088 W Jupiter Dr<br>Golden Valley, AZ 86413</a></li>
+          <li><a href="https://www.facebook.com/p/Golden-Valley-Guns-LLC-61565769817507/" target="_blank">Facebook</a></li>
+          <li><a href="https://www.youtube.com/channel/UCRIezIM_qIvuAnVeTpnjD0w" target="_blank">YouTube</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; <span id="copyYear">2025</span> Golden Valley Guns LLC. All rights reserved.</p>
+      <span class="ffl-badge">FFL 07 · Golden Valley, AZ</span>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script>
+    const SERVICE_LABELS = {
+      custom_build: 'Custom Build',
+      parts_kit:    'Parts Kit Build',
+      gunsmithing:  'Gunsmithing / Repair',
+      transfer:     'FFL Transfer',
+      other:        'Other'
+    };
+
+    const intakeForm = document.getElementById('intakeForm');
+    const errorEl = document.getElementById('intakeError');
+
+    intakeForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      errorEl.style.display = 'none';
+
+      const name    = document.getElementById('i-name').value.trim();
+      const email   = document.getElementById('i-email').value.trim();
+      const phone   = document.getElementById('i-phone').value.trim();
+      const service = document.getElementById('i-service').value;
+
+      if (!name || !service || (!email && !phone)) {
+        errorEl.textContent = 'Please add your name, a service type, and at least an email or phone number.';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      const btn = document.getElementById('intakeSubmitBtn');
+      const originalText = btn.textContent;
+      btn.textContent = 'Submitting...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/.netlify/functions/create-intake', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            customerName:  name,
+            customerEmail: email,
+            customerPhone: phone,
+            serviceType:   service,
+            firearmType:   document.getElementById('i-type').value,
+            caliber:       document.getElementById('i-caliber').value.trim(),
+            isNfa:         document.getElementById('i-nfa').checked,
+            notes:         document.getElementById('i-notes').value.trim(),
+            botField:      document.getElementById('botField').value
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Something went wrong.');
+
+        document.getElementById('slipCode').textContent = data.trackingCode;
+        document.getElementById('slipName').textContent = name;
+        document.getElementById('slipPhone').textContent = phone || email;
+        document.getElementById('slipService').textContent = SERVICE_LABELS[service] || service;
+
+        intakeForm.style.display = 'none';
+        document.getElementById('intakeSlip').classList.add('show');
+      } catch (err) {
+        errorEl.textContent = err.message || 'Something went wrong. Please call us instead.';
+        errorEl.style.display = 'block';
+        btn.textContent = originalText;
+        btn.disabled = false;
+      }
+    });
+
+    document.getElementById('printSlipBtn').addEventListener('click', () => window.print());
+  </script>
+</body>
+</html>
