@@ -1,7 +1,10 @@
--- Distributor catalog (Lipsey's / RSR / Davidson's / Orion) - run this once in the
--- Supabase SQL editor (Project > SQL Editor > New query). Paste and run top to bottom.
+-- Distributor catalog (Lipsey's / RSR / Davidson's / Orion).
+-- Run in the Supabase SQL editor. If pasting the whole file at once causes an
+-- "unterminated quoted string" error, run each numbered block separately
+-- (clear the editor between blocks) -- that's a paste/editor quirk, not a
+-- SQL problem.
 
--- TABLE
+-- 1) TABLE
 -- Machine-synced distributor inventory. Kept separate from `products` (Shawn's
 -- hand-curated parts) since this table is written only by the sync jobs.
 create table distributor_products (
@@ -29,7 +32,7 @@ create table distributor_products (
 -- No policies are created for `anon` - that's intentional, not an oversight.
 alter table distributor_products enable row level security;
 
--- SITE CONTENT
+-- 2) SITE CONTENT
 -- Markup percentage applied on top of dealer_cost, editable from
 -- admin-dashboard.html's existing Site Content panel.
 insert into site_content (key, value) values
@@ -37,10 +40,20 @@ insert into site_content (key, value) values
   ('catalog_manufacturers', '')   -- comma-separated allow-list, e.g. "PSA,Aero Precision,Magpul"
 on conflict (key) do nothing;
 
--- PUBLIC VIEW
+-- 3) PUBLIC VIEW
 -- What the browser actually queries. Computes the marked-up price server-side
 -- and excludes dealer_cost entirely so it never appears in a network request.
 create view distributor_products_public as
+with markup as (
+  select coalesce(
+    (
+      select value::numeric
+      from site_content
+      where key = 'catalog_markup_pct'
+    ),
+    0
+  ) as pct
+)
 select
   dp.id,
   dp.distributor,
@@ -49,7 +62,7 @@ select
   dp.category,
   dp.caliber,
   dp.description,
-  round(dp.dealer_cost * (1 + m.markup / 100.0), 2) as price,
+  round(dp.dealer_cost * (1 + markup.pct / 100.0), 2) as price,
   case
     when dp.quantity_available > 5 then 'in_stock'
     when dp.quantity_available > 0 then 'limited'
@@ -59,9 +72,8 @@ select
   dp.is_firearm,
   dp.last_synced_at
 from distributor_products dp
-cross join (
-  select coalesce((select value::numeric from site_content where key = 'catalog_markup_pct'), 0) as markup
-) m
+cross join markup
 where dp.is_hidden = false;
 
+-- 4) GRANT
 grant select on distributor_products_public to anon;
