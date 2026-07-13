@@ -1,7 +1,7 @@
--- Distributor catalog (Lipsey's / RSR / Davidson's / Orion) — run this once in the
+-- Distributor catalog (Lipsey's / RSR / Davidson's / Orion) - run this once in the
 -- Supabase SQL editor (Project > SQL Editor > New query). Paste and run top to bottom.
 
--- ── TABLE ──────────────────────────────────────────────────────────────────
+-- TABLE
 -- Machine-synced distributor inventory. Kept separate from `products` (Shawn's
 -- hand-curated parts) since this table is written only by the sync jobs.
 create table distributor_products (
@@ -26,10 +26,10 @@ create table distributor_products (
 
 -- RLS: locked down entirely. Only the service-role key (used by the Netlify
 -- sync functions, never shipped to the browser) can read/write this table.
--- No policies are created for `anon` — that's intentional, not an oversight.
+-- No policies are created for `anon` - that's intentional, not an oversight.
 alter table distributor_products enable row level security;
 
--- ── SITE CONTENT ───────────────────────────────────────────────────────────
+-- SITE CONTENT
 -- Markup percentage applied on top of dealer_cost, editable from
 -- admin-dashboard.html's existing Site Content panel.
 insert into site_content (key, value) values
@@ -37,7 +37,7 @@ insert into site_content (key, value) values
   ('catalog_manufacturers', '')   -- comma-separated allow-list, e.g. "PSA,Aero Precision,Magpul"
 on conflict (key) do nothing;
 
--- ── PUBLIC VIEW ────────────────────────────────────────────────────────────
+-- PUBLIC VIEW
 -- What the browser actually queries. Computes the marked-up price server-side
 -- and excludes dealer_cost entirely so it never appears in a network request.
 create view distributor_products_public as
