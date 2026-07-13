@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <title>Ship Something to Us | Golden Valley Guns LLC | Golden Valley, AZ</title>
-  <meta name="description" content="Shipping a parts kit or firearm to Golden Valley Guns LLC? Fill out the intake form to get a tracking code and printable slip to include in your box." />
+  <meta name="description" content="Shipping a parts kit or firearm to Golden Valley Guns LLC? Fill out the intake form and print it to include in your box." />
   <meta name="robots" content="index, follow" />
   <meta property="og:title" content="Ship Something to Us | Golden Valley Guns LLC" />
-  <meta property="og:description" content="Get a tracking code and printable slip before you ship a parts kit or firearm to Golden Valley Guns LLC." />
+  <meta property="og:description" content="Print a filled-out intake form to include in your box before you ship a parts kit or firearm to Golden Valley Guns LLC." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://goldenvalleyguns.netlify.app/intake.html" />
   <meta property="og:image" content="https://goldenvalleyguns.netlify.app/images/logo.png" />
@@ -41,19 +41,12 @@
       margin-bottom: 2px;
     }
     .slip-address { font-size: 12px; color: var(--muted); margin-bottom: 24px; }
-    .slip-code-label {
+    .slip-title {
       font-size: 11px;
       letter-spacing: 2px;
       text-transform: uppercase;
       color: var(--gold-light);
-      margin-bottom: 4px;
-    }
-    .slip-code {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 32px;
-      letter-spacing: 2px;
-      color: var(--text);
-      margin-bottom: 24px;
+      margin-bottom: 16px;
     }
     .slip-row { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-top: 1px solid var(--border); font-size: 13px; }
     .slip-row span:first-child { color: var(--muted); }
@@ -129,7 +122,7 @@
   <div class="page-header">
     <div class="section-label">Before You Ship</div>
     <h1>Ship Something to Us</h1>
-    <p>Get a tracking code and a printable slip to include in the box &mdash; that way whatever shows up here is self-identifying, and we know exactly what to do with it.</p>
+    <p>Fill this out and print it &mdash; include it in the box so whatever shows up here is self-identifying, and we know exactly what to do with it.</p>
   </div>
 
   <!-- INTAKE SECTION -->
@@ -154,9 +147,6 @@
       <!-- FORM -->
       <div class="fade-in">
         <form id="intakeForm" class="contact-form" novalidate>
-          <p style="position:absolute;left:-9999px;">
-            <label>Leave this field blank: <input name="bot-field" id="botField" /></label>
-          </p>
           <div class="form-row">
             <div class="form-group">
               <label for="i-name">Full Name</label>
@@ -210,22 +200,27 @@
             <textarea id="i-notes" placeholder="What's in the box, what you want done..."></textarea>
           </div>
           <button type="submit" id="intakeSubmitBtn" class="btn-primary" style="margin-top: 8px; width: 100%; justify-content: center;">
-            Get My Tracking Code &#8594;
+            Generate My Shipping Form &#8594;
           </button>
         </form>
 
-        <!-- SLIP (shown after successful submit) -->
+        <!-- SLIP (shown after generating the form) -->
         <div class="intake-slip" id="intakeSlip">
           <div class="slip-brand">Golden Valley Guns LLC</div>
           <div class="slip-address">7088 W Jupiter Dr, Golden Valley, AZ 86413 &middot; (928) 727-0893</div>
-          <div class="slip-code-label">Tracking Code</div>
-          <div class="slip-code" id="slipCode">&mdash;</div>
-          <div class="slip-row"><span>Name</span><span id="slipName">&mdash;</span></div>
+          <div class="slip-title">Shipment Intake Form &mdash; <span id="slipDate">&mdash;</span></div>
+          <div class="slip-row" style="border-top:none;padding-top:0;"><span>Name</span><span id="slipName">&mdash;</span></div>
           <div class="slip-row"><span>Phone</span><span id="slipPhone">&mdash;</span></div>
+          <div class="slip-row"><span>Email</span><span id="slipEmail">&mdash;</span></div>
           <div class="slip-row"><span>Service</span><span id="slipService">&mdash;</span></div>
+          <div class="slip-row"><span>Firearm Type</span><span id="slipType">&mdash;</span></div>
+          <div class="slip-row"><span>Caliber</span><span id="slipCaliber">&mdash;</span></div>
+          <div class="slip-row"><span>NFA Item</span><span id="slipNfa">&mdash;</span></div>
+          <div class="slip-row" id="slipNotesRow" style="display:none;flex-direction:column;align-items:flex-start;gap:6px;">
+            <span>Notes</span><span id="slipNotes" style="text-align:left;"></span>
+          </div>
           <div class="slip-actions">
-            <button type="button" id="printSlipBtn" class="btn-primary">Print This Slip</button>
-            <a href="track.html" class="btn-secondary">Track This Later &#8594;</a>
+            <button type="button" id="printSlipBtn" class="btn-primary">Print This Form</button>
           </div>
         </div>
         <p class="form-note" id="intakeError" style="display:none;color:#c0392b;"></p>
@@ -285,7 +280,11 @@
     const intakeForm = document.getElementById('intakeForm');
     const errorEl = document.getElementById('intakeError');
 
-    intakeForm.addEventListener('submit', async e => {
+    // Pure client-side - this just fills out and prints a form for the
+    // customer to put in their box. It doesn't create a build, assign a
+    // tracking code, or write anything anywhere; Shawn does that himself
+    // once the package is actually in front of him.
+    intakeForm.addEventListener('submit', e => {
       e.preventDefault();
       errorEl.style.display = 'none';
 
@@ -293,6 +292,10 @@
       const email   = document.getElementById('i-email').value.trim();
       const phone   = document.getElementById('i-phone').value.trim();
       const service = document.getElementById('i-service').value;
+      const type    = document.getElementById('i-type').value;
+      const caliber = document.getElementById('i-caliber').value.trim();
+      const isNfa   = document.getElementById('i-nfa').checked;
+      const notes   = document.getElementById('i-notes').value.trim();
 
       if (!name || !service || (!email && !phone)) {
         errorEl.textContent = 'Please add your name, a service type, and at least an email or phone number.';
@@ -300,44 +303,25 @@
         return;
       }
 
-      const btn = document.getElementById('intakeSubmitBtn');
-      const originalText = btn.textContent;
-      btn.textContent = 'Submitting...';
-      btn.disabled = true;
+      document.getElementById('slipDate').textContent = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      document.getElementById('slipName').textContent = name;
+      document.getElementById('slipPhone').textContent = phone || '—';
+      document.getElementById('slipEmail').textContent = email || '—';
+      document.getElementById('slipService').textContent = SERVICE_LABELS[service] || service;
+      document.getElementById('slipType').textContent = type;
+      document.getElementById('slipCaliber').textContent = caliber || '—';
+      document.getElementById('slipNfa').textContent = isNfa ? 'Yes' : 'No';
 
-      try {
-        const res = await fetch('/.netlify/functions/create-intake', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            customerName:  name,
-            customerEmail: email,
-            customerPhone: phone,
-            serviceType:   service,
-            firearmType:   document.getElementById('i-type').value,
-            caliber:       document.getElementById('i-caliber').value.trim(),
-            isNfa:         document.getElementById('i-nfa').checked,
-            notes:         document.getElementById('i-notes').value.trim(),
-            botField:      document.getElementById('botField').value
-          })
-        });
-
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Something went wrong.');
-
-        document.getElementById('slipCode').textContent = data.trackingCode;
-        document.getElementById('slipName').textContent = name;
-        document.getElementById('slipPhone').textContent = phone || email;
-        document.getElementById('slipService').textContent = SERVICE_LABELS[service] || service;
-
-        intakeForm.style.display = 'none';
-        document.getElementById('intakeSlip').classList.add('show');
-      } catch (err) {
-        errorEl.textContent = err.message || 'Something went wrong. Please call us instead.';
-        errorEl.style.display = 'block';
-        btn.textContent = originalText;
-        btn.disabled = false;
+      const notesRow = document.getElementById('slipNotesRow');
+      if (notes) {
+        document.getElementById('slipNotes').textContent = notes;
+        notesRow.style.display = 'flex';
+      } else {
+        notesRow.style.display = 'none';
       }
+
+      intakeForm.style.display = 'none';
+      document.getElementById('intakeSlip').classList.add('show');
     });
 
     document.getElementById('printSlipBtn').addEventListener('click', () => window.print());
