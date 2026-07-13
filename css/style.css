@@ -525,6 +525,78 @@ h2.section-title {
   text-transform: uppercase;
 }
 
+/* ── AGE GATE ── */
+.age-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(6,6,6,0.97);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.age-gate-card {
+  max-width: 480px;
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--gold);
+  padding: 40px 36px;
+  text-align: center;
+}
+
+.age-gate-logo {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  margin: 0 auto 20px;
+}
+
+.age-gate-card h2 {
+  font-family: 'Big Shoulders Display', sans-serif;
+  font-weight: 800;
+  font-size: 24px;
+  letter-spacing: 1px;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+
+.age-gate-card p {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--muted);
+  margin-bottom: 28px;
+}
+
+.age-gate-card p strong {
+  color: var(--gold-light);
+}
+
+.age-gate-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.age-gate-actions .btn-primary,
+.age-gate-actions .btn-secondary {
+  justify-content: center;
+  cursor: pointer;
+  width: 100%;
+  border: none;
+  font: inherit;
+  letter-spacing: 1.5px;
+}
+
+.age-gate-actions .btn-primary { border: 1px solid var(--gold); }
+.age-gate-actions .btn-secondary { border: 1px solid var(--border); }
+
+@media (max-width: 480px) {
+  .age-gate-card { padding: 32px 24px; }
+}
+
 /* ── LIGHTBOX ── */
 .lightbox {
   position: fixed;

@@ -1,3 +1,14 @@
+// Age gate
+const ageGate = document.getElementById('ageGate');
+const ageGateEnter = document.getElementById('ageGateEnter');
+if (ageGateEnter) {
+  ageGateEnter.addEventListener('click', () => {
+    localStorage.setItem('gvg_age_verified', 'true');
+    ageGate.style.display = 'none';
+    document.body.style.overflow = '';
+  });
+}
+
 // Footer copyright year (avoids the site looking stale every January)
 const copyYear = document.getElementById('copyYear');
 if (copyYear) copyYear.textContent = new Date().getFullYear();

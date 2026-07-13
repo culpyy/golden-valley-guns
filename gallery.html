@@ -111,6 +111,26 @@
 </head>
 <body>
 
+  <!-- AGE GATE -->
+  <div id="ageGate" class="age-gate">
+    <div class="age-gate-card">
+      <img src="images/logo.png" class="age-gate-logo" alt="Golden Valley Guns LLC" />
+      <h2>Age Verification Required</h2>
+      <p>You must be <strong>18 years of age or older</strong> to enter this site. Golden Valley Guns LLC is an FFL 07 licensed firearms manufacturer and dealer. By continuing, you confirm you meet the minimum age requirement under federal and Arizona law.</p>
+      <div class="age-gate-actions">
+        <button id="ageGateEnter" class="btn-primary">I Am 18 or Older &mdash; Enter</button>
+        <a href="https://www.google.com" class="btn-secondary">Exit</a>
+      </div>
+    </div>
+  </div>
+  <script>
+    if (localStorage.getItem('gvg_age_verified') === 'true') {
+      document.getElementById('ageGate').style.display = 'none';
+    } else {
+      document.body.style.overflow = 'hidden';
+    }
+  </script>
+
   <!-- NAV -->
   <nav class="nav">
     <a href="index.html" class="nav-logo">
