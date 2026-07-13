@@ -9,6 +9,18 @@ if (ageGateEnter) {
   });
 }
 
+// Build pipeline stages - single source of truth, shared by index.html
+// (homepage build preview), admin-dashboard.html, and track.html so the
+// stage list and progress math can't drift between them.
+const BUILD_STAGES_NFA = ['intake', 'parts-ordered', 'in-progress', 'testing', 'atf-filed', 'atf-approved', 'ready'];
+const BUILD_STAGES_STD = ['intake', 'parts-ordered', 'in-progress', 'testing', 'ready'];
+
+function calcProgress(status, isNfa) {
+  const stages = isNfa ? BUILD_STAGES_NFA : BUILD_STAGES_STD;
+  const si = stages.indexOf(status);
+  return si === -1 ? 0 : Math.round(((si + 1) / stages.length) * 100);
+}
+
 // Footer copyright year (avoids the site looking stale every January)
 const copyYear = document.getElementById('copyYear');
 if (copyYear) copyYear.textContent = new Date().getFullYear();

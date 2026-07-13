@@ -599,16 +599,8 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase.js"></script>
+  <script src="js/main.js"></script>
   <script>
-    // ── PROGRESS (derived from status, not manually entered) ──
-    const stagesNFA = ['intake', 'parts-ordered', 'in-progress', 'testing', 'atf-filed', 'atf-approved', 'ready'];
-    const stagesSTD = ['intake', 'parts-ordered', 'in-progress', 'testing', 'ready'];
-    function calcProgress(status, isNfa) {
-      const stages = isNfa ? stagesNFA : stagesSTD;
-      const si = stages.indexOf(status);
-      return si === -1 ? 0 : Math.round(((si + 1) / stages.length) * 100);
-    }
-
     // ── AUTH GUARD ──
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) window.location.href = 'admin.html';
@@ -735,13 +727,20 @@
         customer_phone: document.getElementById('b-customer-phone').value || ''
       };
 
-      payload.tracking_code = document.getElementById('b-tracking-code').value;
-
-      let error;
+      let error, trackingCode;
       if (id) {
+        payload.tracking_code = document.getElementById('b-tracking-code').value;
         ({ error } = await supabase.from('builds').update(payload).eq('id', id));
       } else {
-        ({ error } = await supabase.from('builds').insert(payload));
+        // Tracking codes are count-derived, and this dashboard and the public
+        // intake form can both create builds - retry with a fresh code on a
+        // rare collision (Postgres unique-violation 23505) instead of failing.
+        for (let attempt = 0; attempt < 3; attempt++) {
+          trackingCode = attempt === 0 ? document.getElementById('b-tracking-code').value : await generateTrackingCode();
+          ({ error } = await supabase.from('builds').insert({ ...payload, tracking_code: trackingCode }));
+          if (!error || error.code !== '23505') break;
+        }
+        payload.tracking_code = trackingCode;
       }
 
       if (error) { showToast('Error: ' + error.message); return; }

@@ -215,7 +215,7 @@
         </div>
         <div class="callout">
           <h4>Transfers Accepted, In and Out of State</h4>
-          <p>We handle FFL transfers from licensed dealers and private sellers. Contact us before shipping so we can confirm the details and get everything lined up on our end.</p>
+          <p>We handle FFL transfers from licensed dealers and private sellers, wherever you're shipping from.</p>
         </div>
       </div>
     </div>
@@ -233,7 +233,7 @@
       </div>
       <div class="faq-item fade-in" tabindex="0" role="button" aria-expanded="false">
         <h4>Do You Handle FFL Transfers?</h4>
-        <p>Yes, in and out of state. Call before you ship anything our way, then fill out our <a href="intake.html" style="color:var(--gold-light);">intake form</a> so we know whose it is when it arrives.</p>
+        <p>Yes, in and out of state. Call us first, then use our <a href="intake.html" style="color:var(--gold-light);">intake form</a> to get a tracking code and printable slip to include when you ship it our way.</p>
       </div>
       <div class="faq-item fade-in" tabindex="0" role="button" aria-expanded="false">
         <h4>Do You Work on NFA Items?</h4>
@@ -250,10 +250,6 @@
       <div class="faq-item fade-in" tabindex="0" role="button" aria-expanded="false">
         <h4>Do You Buy Used Firearms?</h4>
         <p>Yes. Bring it in and we'll give you a real number. We buy, sell, and trade firearms and gear at fair prices.</p>
-      </div>
-      <div class="faq-item fade-in" tabindex="0" role="button" aria-expanded="false">
-        <h4>Can I Ship a Firearm to You?</h4>
-        <p>Yes, for FFL transfers. Call us before you ship, then use our <a href="intake.html" style="color:var(--gold-light);">intake form</a> to get a tracking code and printable slip to include in the box.</p>
       </div>
       <div class="faq-item fade-in" tabindex="0" role="button" aria-expanded="false">
         <h4>What Does the Quoted Price Cover?</h4>
@@ -337,15 +333,6 @@
       'intake': 'Intake', 'parts-ordered': 'Parts Ordered', 'in-progress': 'In Progress',
       'testing': 'Testing', 'atf-filed': 'ATF Filed', 'atf-approved': 'ATF Approved', 'ready': 'Ready'
     };
-    const stagesNFA = ['intake', 'parts-ordered', 'in-progress', 'testing', 'atf-filed', 'atf-approved', 'ready'];
-    const stagesSTD = ['intake', 'parts-ordered', 'in-progress', 'testing', 'ready'];
-
-    function calcProgress(status, isNfa) {
-      const stages = isNfa ? stagesNFA : stagesSTD;
-      const si = stages.indexOf(status);
-      return si === -1 ? 0 : Math.round(((si + 1) / stages.length) * 100);
-    }
-
     async function loadBuildPreview() {
       const { data, error } = await supabase
         .from('builds')

@@ -9,16 +9,6 @@
   <meta name="robots" content="noindex, follow" />
   <link rel="stylesheet" href="css/style.css" />
   <style>
-    :root {
-      --s-intake:        #555555;
-      --s-parts-ordered: #8a6a00;
-      --s-in-progress:   #1a4f8a;
-      --s-testing:       #5a2d82;
-      --s-atf-filed:     #7a3d00;
-      --s-atf-approved:  #1a6b3a;
-      --s-ready:         #1a5c1a;
-    }
-
     /* ── PAGE WRAPPER ── */
     .track-page {
       min-height: calc(100vh - var(--nav-h));
@@ -505,9 +495,8 @@
   <script src="js/supabase.js"></script>
   <script src="js/main.js"></script>
   <script>
-    const stagesNFA     = ['intake','parts-ordered','in-progress','testing','atf-filed','atf-approved','ready'];
+    // BUILD_STAGES_NFA / BUILD_STAGES_STD / calcProgress come from js/main.js
     const stageNamesNFA = ['Intake','Parts','In Progress','Testing','ATF Filed','Approved','Ready'];
-    const stagesSTD     = ['intake','parts-ordered','in-progress','testing','ready'];
     const stageNamesSTD = ['Intake','Parts Ordered','In Progress','Testing','Ready'];
     const stageBadge = {
       'intake':        'Intake',
@@ -549,10 +538,10 @@
       badge.className   = 'status-badge ' + (b.status || '');
       document.getElementById('rStatusDesc').textContent = stagePlain[b.status] || '';
 
-      const stages     = b.is_nfa ? stagesNFA     : stagesSTD;
-      const stageNames = b.is_nfa ? stageNamesNFA : stageNamesSTD;
+      const stages     = b.is_nfa ? BUILD_STAGES_NFA : BUILD_STAGES_STD;
+      const stageNames = b.is_nfa ? stageNamesNFA    : stageNamesSTD;
       const si = stages.indexOf(b.status);
-      const pct = si === -1 ? 0 : Math.round(((si + 1) / stages.length) * 100);
+      const pct = calcProgress(b.status, b.is_nfa);
       document.getElementById('rProgressPct').textContent  = pct + '%';
       document.getElementById('rProgressFill').style.width = pct + '%';
       const stepsEl  = document.getElementById('rPipelineSteps');
