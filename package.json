@@ -1,0 +1,9 @@
+{
+  "name": "golden-valley-guns",
+  "private": true,
+  "description": "Static site with Netlify Functions for distributor catalog sync",
+  "dependencies": {
+    "@netlify/functions": "^2.8.1",
+    "@supabase/supabase-js": "^2.45.4"
+  }
+}

@@ -379,6 +379,7 @@
   <div class="tab-nav">
     <button class="tab-btn active" data-tab="builds">Builds</button>
     <button class="tab-btn" data-tab="products">Products</button>
+    <button class="tab-btn" data-tab="catalog">Distributor Catalog</button>
     <button class="tab-btn" data-tab="content">Site Content</button>
   </div>
 
@@ -546,6 +547,23 @@
       </div>
 
       <div id="productsTable"></div>
+    </div>
+
+    <!-- ── DISTRIBUTOR CATALOG TAB ── -->
+    <div class="tab-panel" id="tab-catalog">
+      <div class="section-hd">
+        <h2>Distributor Catalog</h2>
+      </div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:20px;max-width:640px;">
+        Items pulled in automatically from Lipsey's, RSR Group, Davidson's, and Orion Wholesale. Prices shown to customers are dealer cost plus the markup set below. Hide anything you don't want listed on the Shop page &mdash; it stays hidden until you unhide it.
+      </div>
+
+      <div class="form-card open" style="border-left-color: var(--gold-light); margin-bottom: 24px;">
+        <h3>Sync Status</h3>
+        <div id="catalogSyncStatus" class="form-grid"></div>
+      </div>
+
+      <div id="catalogTable"></div>
     </div>
 
     <!-- ── SITE CONTENT TAB ── -->
@@ -889,23 +907,109 @@
       loadProducts();
     }
 
+    // ── DISTRIBUTOR CATALOG ──
+    const DISTRIBUTOR_LABELS = {
+      lipseys:   "Lipsey's",
+      rsr:       'RSR Group',
+      davidsons: "Davidson's",
+      orion:     'Orion Wholesale'
+    };
+
+    async function loadCatalogStatus() {
+      const statusContainer = document.getElementById('catalogSyncStatus');
+      const { data } = await supabase
+        .from('distributor_products')
+        .select('distributor, quantity_available, last_synced_at');
+
+      statusContainer.innerHTML = Object.keys(DISTRIBUTOR_LABELS).map(dist => {
+        const rows = (data || []).filter(r => r.distributor === dist);
+        const lastSync = rows.reduce((latest, r) => {
+          const t = r.last_synced_at ? new Date(r.last_synced_at) : null;
+          return t && (!latest || t > latest) ? t : latest;
+        }, null);
+        return `
+          <div class="form-field">
+            <label>${DISTRIBUTOR_LABELS[dist]}</label>
+            <div style="font-size:13px;color:var(--text);">${rows.length} item${rows.length !== 1 ? 's' : ''} synced</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px;">${lastSync ? 'Last synced ' + lastSync.toLocaleString() : 'Not synced yet'}</div>
+          </div>`;
+      }).join('');
+    }
+
+    async function loadCatalogTable() {
+      const { data, error } = await supabase
+        .from('distributor_products')
+        .select('*')
+        .order('name');
+
+      const container = document.getElementById('catalogTable');
+      if (error || !data || data.length === 0) {
+        container.innerHTML = '<div class="empty-state">No distributor items synced yet.</div>';
+        return;
+      }
+
+      container.innerHTML = `
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Distributor</th>
+              <th>Category</th>
+              <th>Cost</th>
+              <th>Qty</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.map(p => `
+              <tr style="${p.is_hidden ? 'opacity:0.5;' : ''}">
+                <td class="title">${p.name}</td>
+                <td>${DISTRIBUTOR_LABELS[p.distributor] || p.distributor}</td>
+                <td>${p.category}</td>
+                <td>$${parseFloat(p.dealer_cost).toFixed(2)}</td>
+                <td>${p.quantity_available}</td>
+                <td>
+                  <div class="row-actions">
+                    <button class="btn-edit" onclick="toggleCatalogHidden('${p.id}', ${!p.is_hidden})">${p.is_hidden ? 'Unhide' : 'Hide'}</button>
+                  </div>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>`;
+    }
+
+    async function toggleCatalogHidden(id, hidden) {
+      const { error } = await supabase.from('distributor_products').update({ is_hidden: hidden }).eq('id', id);
+      if (error) { showToast('Error: ' + error.message); return; }
+      showToast(hidden ? 'Item hidden from Shop.' : 'Item unhidden.');
+      loadCatalogTable();
+    }
+
+    async function loadCatalog() {
+      await Promise.all([loadCatalogStatus(), loadCatalogTable()]);
+    }
+
     // ── SITE CONTENT ──
     const CONTENT_LABELS = {
-      hero_title:        'Hero Title',
-      hero_subtitle:     'Hero Subtitle',
-      hero_cta_primary:  'Primary CTA Button',
-      hero_cta_secondary:'Secondary CTA Button',
-      about_text:        'About Text'
+      hero_title:            'Hero Title',
+      hero_subtitle:         'Hero Subtitle',
+      hero_cta_primary:      'Primary CTA Button',
+      hero_cta_secondary:    'Secondary CTA Button',
+      about_text:            'About Text',
+      catalog_markup_pct:    'Distributor Catalog Markup (%)',
+      catalog_manufacturers: 'Distributor Catalog Manufacturers (comma-separated allow-list)'
     };
 
     async function loadContent() {
       const { data } = await supabase.from('site_content').select('*');
       const container = document.getElementById('contentFields');
       if (!data) return;
+      const fullWidthKeys = ['hero_subtitle', 'about_text', 'catalog_manufacturers'];
       container.innerHTML = data.map(row => `
-        <div class="form-field ${row.key === 'hero_subtitle' || row.key === 'about_text' ? 'full' : ''}">
+        <div class="form-field ${fullWidthKeys.includes(row.key) ? 'full' : ''}">
           <label>${CONTENT_LABELS[row.key] || row.key}</label>
-          ${row.key === 'hero_subtitle' || row.key === 'about_text'
+          ${fullWidthKeys.includes(row.key)
             ? `<textarea id="content-${row.key}">${row.value}</textarea>`
             : `<input type="text" id="content-${row.key}" value="${row.value}" />`}
         </div>
@@ -913,7 +1017,7 @@
     }
 
     document.getElementById('saveContentBtn').addEventListener('click', async () => {
-      const keys = ['hero_title', 'hero_subtitle', 'hero_cta_primary', 'hero_cta_secondary', 'about_text'];
+      const keys = ['hero_title', 'hero_subtitle', 'hero_cta_primary', 'hero_cta_secondary', 'about_text', 'catalog_markup_pct', 'catalog_manufacturers'];
       const updates = keys.map(key => {
         const el = document.getElementById('content-' + key);
         return el ? supabase.from('site_content').update({ value: el.value }).eq('key', key) : null;
@@ -971,6 +1075,7 @@
     // ── INIT ──
     loadBuilds();
     loadProducts();
+    loadCatalog();
     loadContent();
 
     // deep-link: ?edit=ID opens that build's edit form after load

@@ -205,6 +205,42 @@
       font-size: 13px;
     }
 
+    /* ── DISTRIBUTOR SEARCH ── */
+    .catalog-search-wrap {
+      padding: 16px 32px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .catalog-search-wrap input {
+      width: 100%;
+      max-width: 420px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 14px;
+      font-size: 13px;
+      font-family: 'Inter', sans-serif;
+    }
+    .catalog-search-wrap input:focus { outline: none; border-color: var(--gold-light); }
+
+    /* ── DISTRIBUTOR CARD EXTRAS ── */
+    .part-source {
+      display: inline-block;
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--gold-light);
+      border: 1px solid var(--gold);
+      padding: 3px 8px;
+      width: fit-content;
+    }
+    .part-note {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .part-card .btn-buy { margin-top: 4px; text-align: center; }
+
     /* ── RESPONSIVE ── */
     @media (max-width: 900px) {
       .shop-wrap { padding: 32px 20px; }
@@ -218,6 +254,7 @@
       .parts-grid { grid-template-columns: 1fr; }
       .builds-header { padding: 20px; flex-direction: column; align-items: flex-start; }
       .builds-header .btn-buy { width: 100%; text-align: center; }
+      .catalog-search-wrap { padding: 14px 16px; }
     }
   </style>
 </head>
@@ -283,6 +320,11 @@
     <button class="cat-btn" data-cat="parts">Parts &amp; Accessories</button>
   </div>
 
+  <!-- CATALOG SEARCH -->
+  <div class="catalog-search-wrap">
+    <input type="text" id="catalogSearch" placeholder="Search distributor catalog by name, manufacturer, or caliber..." />
+  </div>
+
   <!-- SHOP -->
   <div class="shop-wrap">
 
@@ -339,6 +381,7 @@
         </div>
         <a href="contact.html?subject=buysell" class="btn-buy">Request a Firearm</a>
       </div>
+      <div class="parts-grid" id="firearmsGrid"></div>
     </div>
 
     <!-- AMMO -->
@@ -350,6 +393,7 @@
         </div>
         <a href="tel:9287270893" class="btn-buy">Call to Check Stock</a>
       </div>
+      <div class="parts-grid" id="ammoGrid"></div>
     </div>
 
     <!-- PARTS & ACCESSORIES -->
@@ -431,9 +475,45 @@
 
     catBtns.forEach(b => b.addEventListener('click', () => setCategory(b.dataset.cat)));
 
-    async function loadParts() {
-      const grid = document.getElementById('partsGrid');
-      grid.innerHTML = [1, 2, 3].map(() => `
+    function productCardHtml(p) {
+      return `
+        <div class="part-card" data-search="${p.name.toLowerCase()}">
+          <div class="part-name">${p.name}</div>
+          <div class="part-desc">${p.description}</div>
+          <div class="part-footer">
+            <span class="part-price">$${parseFloat(p.price).toFixed(2)}</span>
+            <span class="part-stock stock-${p.stock}">${STOCK_LABELS[p.stock] || p.stock}</span>
+          </div>
+        </div>`;
+    }
+
+    function distCardHtml(item) {
+      const search = `${item.name} ${item.manufacturer || ''} ${item.caliber || ''}`.toLowerCase();
+      const price = parseFloat(item.price).toFixed(2);
+      const note = item.is_firearm
+        ? '<div class="part-note">Transfers through Golden Valley Guns &mdash; FFL required at pickup.</div>'
+        : '';
+      const requestUrl = `contact.html?product=${encodeURIComponent(item.name)}&price=${price}&subject=order`;
+      return `
+        <div class="part-card" data-search="${search}">
+          <span class="part-source">Distributor Stock</span>
+          <div class="part-name">${item.name}</div>
+          <div class="part-desc">${[item.manufacturer, item.caliber].filter(Boolean).join(' &middot; ')}</div>
+          ${note}
+          <div class="part-footer">
+            <span class="part-price">$${price}</span>
+            <span class="part-stock stock-${item.stock}">${STOCK_LABELS[item.stock] || item.stock}</span>
+          </div>
+          <a href="${requestUrl}" class="btn-buy outline">Request This Item</a>
+        </div>`;
+    }
+
+    async function loadShop() {
+      const partsGrid     = document.getElementById('partsGrid');
+      const firearmsGrid  = document.getElementById('firearmsGrid');
+      const ammoGrid      = document.getElementById('ammoGrid');
+
+      partsGrid.innerHTML = [1, 2, 3].map(() => `
         <div class="part-card">
           <div class="shimmer-block" style="height:20px;width:70%;margin-bottom:10px;"></div>
           <div class="shimmer-block" style="height:10px;width:90%;margin-bottom:6px;"></div>
@@ -441,29 +521,32 @@
         </div>
       `).join('');
 
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .order('name');
+      const [{ data: products, error: prodErr }, { data: distItems, error: distErr }] = await Promise.all([
+        supabase.from('products').select('*').order('name'),
+        supabase.from('distributor_products_public').select('*').order('name')
+      ]);
 
-      if (error || !data || data.length === 0) {
-        grid.innerHTML = '<div class="parts-empty">No parts in stock right now. Check back soon or <a href="contact.html" style="color:var(--gold-light);">contact us</a>.</div>';
-        return;
-      }
+      const dist = distErr ? [] : (distItems || []);
+      firearmsGrid.innerHTML = dist.filter(i => i.category === 'firearms').map(distCardHtml).join('');
+      ammoGrid.innerHTML     = dist.filter(i => i.category === 'ammo').map(distCardHtml).join('');
 
-      grid.innerHTML = data.map(p => `
-        <div class="part-card">
-          <div class="part-name">${p.name}</div>
-          <div class="part-desc">${p.description}</div>
-          <div class="part-footer">
-            <span class="part-price">$${parseFloat(p.price).toFixed(2)}</span>
-            <span class="part-stock stock-${p.stock}">${STOCK_LABELS[p.stock] || p.stock}</span>
-          </div>
-        </div>
-      `).join('');
+      const productCards  = (prodErr || !products) ? [] : products.map(productCardHtml);
+      const distPartCards = dist.filter(i => i.category === 'parts').map(distCardHtml);
+      const allPartsCards = [...productCards, ...distPartCards];
+
+      partsGrid.innerHTML = allPartsCards.length
+        ? allPartsCards.join('')
+        : '<div class="parts-empty">No parts in stock right now. Check back soon or <a href="contact.html" style="color:var(--gold-light);">contact us</a>.</div>';
     }
 
-    loadParts();
+    document.getElementById('catalogSearch').addEventListener('input', e => {
+      const q = e.target.value.trim().toLowerCase();
+      document.querySelectorAll('.part-card[data-search]').forEach(card => {
+        card.style.display = (!q || card.dataset.search.includes(q)) ? '' : 'none';
+      });
+    });
+
+    loadShop();
   </script>
 </body>
 </html>
