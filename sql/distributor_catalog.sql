@@ -27,9 +27,12 @@ create table distributor_products (
   unique (distributor, distributor_sku)
 );
 
--- RLS: locked down entirely. Only the service-role key (used by the Netlify
--- sync functions, never shipped to the browser) can read/write this table.
--- No policies are created for `anon` - that's intentional, not an oversight.
+-- RLS: no public (anon) access - dealer_cost must never reach the browser,
+-- which is why the public site queries distributor_products_public (below)
+-- instead of this table directly. Signed-in admin sessions (authenticated
+-- role) get their own narrow policies in block 5 - just enough for the
+-- admin dashboard's Distributor Catalog tab (view items, hide/unhide), not
+-- full read/write.
 alter table distributor_products enable row level security;
 
 -- 2) SITE CONTENT
@@ -77,3 +80,20 @@ where dp.is_hidden = false;
 
 -- 4) GRANT
 grant select on distributor_products_public to anon;
+
+-- 5) ADMIN ACCESS
+-- Without these, a signed-in Shawn's browser session has no more access to
+-- distributor_products than an anonymous visitor - the RLS lockdown in block
+-- 1 has zero policies at all by default, which blocks `authenticated` too,
+-- not just `anon`. This is what makes admin-dashboard.html's Distributor
+-- Catalog tab (sync status, item table, hide/unhide) actually work.
+create policy "Authenticated users can view distributor products"
+  on distributor_products for select
+  to authenticated
+  using (true);
+
+create policy "Authenticated users can hide/unhide distributor products"
+  on distributor_products for update
+  to authenticated
+  using (true)
+  with check (true);

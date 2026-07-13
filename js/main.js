@@ -9,6 +9,16 @@ if (ageGateEnter) {
   });
 }
 
+// Escape untrusted strings before interpolating into innerHTML/attributes.
+// Needed anywhere data can come from outside admin-typed content - e.g. the
+// synced distributor catalog - since a raw " or < in a feed value could
+// break out of an attribute or inject markup otherwise.
+function escapeHtml(str) {
+  return String(str ?? '').replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
 // Build pipeline stages - single source of truth, shared by index.html
 // (homepage build preview), admin-dashboard.html, and track.html so the
 // stage list and progress math can't drift between them.

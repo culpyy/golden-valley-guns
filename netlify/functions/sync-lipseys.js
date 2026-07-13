@@ -50,7 +50,23 @@ function mapCategory(item) {
   return 'parts';
 }
 
+// Returns null (never NaN) for anything that isn't finite, so a value like
+// "Call" or "N/A" from the feed can be detected and the item skipped instead
+// of silently becoming a $0 listing or a NaN that fails the whole batch upsert.
+function safeNumber(value) {
+  const n = parseFloat(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+// Returns null for normalize() to signal "skip this item" - keeps one
+// malformed distributor record from taking down the entire sync batch.
 function normalize(item) {
+  const dealerCost = safeNumber(item.price);
+  if (dealerCost === null || !item.itemNo) return null;
+
+  const quantity = parseInt(item.quantity, 10);
+  const msrp = item.msrp ? safeNumber(item.msrp) : null;
+
   return {
     distributor: 'lipseys',
     distributor_sku: String(item.itemNo),
@@ -60,9 +76,9 @@ function normalize(item) {
     category: mapCategory(item),
     caliber: item.caliber || null,
     description: item.description || '',
-    dealer_cost: parseFloat(item.price || 0),
-    msrp: item.msrp ? parseFloat(item.msrp) : null,
-    quantity_available: parseInt(item.quantity || 0, 10),
+    dealer_cost: dealerCost,
+    msrp,
+    quantity_available: Number.isFinite(quantity) ? quantity : 0,
     image_url: item.imageUrl || null,
     is_firearm: !!item.fflRequired,
     last_synced_at: new Date().toISOString()
@@ -74,7 +90,8 @@ async function run() {
   const token = await login();
   const rawItems = await fetchCatalog(token);
   const allowList = await getAllowedManufacturers(supabase);
-  const filtered = filterByAllowList(rawItems.map(normalize), allowList);
+  const normalized = rawItems.map(normalize).filter(Boolean);
+  const filtered = filterByAllowList(normalized, allowList);
   await upsertDistributorProducts(supabase, 'lipseys', filtered);
   return filtered.length;
 }

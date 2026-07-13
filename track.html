@@ -567,11 +567,18 @@
       document.getElementById('trackError').style.display  = 'block';
     }
 
+    let searchToken = 0;
+
     async function runSearch() {
       const raw = document.getElementById('codeInput').value.trim().toUpperCase();
       if (!raw) return;
+      const thisSearch = ++searchToken;
       const { data, error } = await supabase
         .from('builds').select('*').eq('tracking_code', raw).single();
+      // If the user fired off another lookup while this one was in flight,
+      // ignore this response so a slow/stale request can't overwrite a
+      // faster, more recent one.
+      if (thisSearch !== searchToken) return;
       if (error || !data) {
         showError();
       } else {

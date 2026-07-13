@@ -346,9 +346,9 @@
         const progress = calcProgress(b.status, b.is_nfa);
         return `
         <a href="inshop.html" class="build-preview-card fade-in">
-          <div class="bp-label">0${i + 1} &nbsp;·&nbsp; ${b.type}</div>
-          <div class="bp-title">${b.title}</div>
-          <div class="bp-meta">${b.caliber}</div>
+          <div class="bp-label">0${i + 1} &nbsp;·&nbsp; ${escapeHtml(b.type)}</div>
+          <div class="bp-title">${escapeHtml(b.title)}</div>
+          <div class="bp-meta">${escapeHtml(b.caliber)}</div>
           <div class="bp-progress-wrap">
             <div class="bp-progress-labels"><span>Progress</span><span>${progress}%</span></div>
             <div class="bp-progress-bar"><div class="bp-progress-fill" style="width:${progress}%"></div></div>

@@ -682,9 +682,8 @@
   <script src="js/supabase.js"></script>
   <script src="js/main.js"></script>
   <script>
-    const stagesNFA    = ['intake','parts-ordered','in-progress','testing','atf-filed','atf-approved','ready'];
+    // BUILD_STAGES_NFA / BUILD_STAGES_STD / calcProgress come from js/main.js
     const stageNamesNFA = ['Intake','Parts','In Progress','Testing','ATF Filed','ATF Approved','Ready'];
-    const stagesSTD    = ['intake','parts-ordered','in-progress','testing','ready'];
     const stageNamesSTD = ['Intake','Parts Ordered','In Progress','Testing','Ready'];
     const statusLabels = {
       'intake':        'Intake',
@@ -755,10 +754,10 @@
       }
 
       list.innerHTML = sorted.map(b => {
-        const stages     = b.is_nfa ? stagesNFA     : stagesSTD;
-        const stageNames = b.is_nfa ? stageNamesNFA : stageNamesSTD;
+        const stages     = b.is_nfa ? BUILD_STAGES_NFA : BUILD_STAGES_STD;
+        const stageNames = b.is_nfa ? stageNamesNFA    : stageNamesSTD;
         const si = stages.indexOf(b.status);
-        const progress = si === -1 ? 0 : Math.round(((si + 1) / stages.length) * 100);
+        const progress = calcProgress(b.status, b.is_nfa);
         const pipelineBars = stages.map((s, i) =>
           `<div class="pipe-seg ${i <= si ? 'done' : ''}"></div>`).join('');
         const pipelineLabels = stages.map((s, i) =>
@@ -775,13 +774,13 @@
 
         const atfBlock = isAtf && b.atf_filed ? `
           <div class="atf-block">
-            ${b.atf_form ? `<div class="atf-item"><div class="atf-lbl">ATF Form</div><div class="atf-val form-ref">${b.atf_form}</div></div>` : ''}
+            ${b.atf_form ? `<div class="atf-item"><div class="atf-lbl">ATF Form</div><div class="atf-val form-ref">${escapeHtml(b.atf_form)}</div></div>` : ''}
             <div class="atf-item"><div class="atf-lbl">Filed</div><div class="atf-val">${formatDate(b.atf_filed)}</div></div>
             ${daysAgo(b.atf_filed) !== null ? `<div class="atf-item"><div class="atf-lbl">Days Pending</div><div class="atf-val ${daysAgo(b.atf_filed) > 60 ? 'days-long' : ''}">${daysAgo(b.atf_filed)}</div></div>` : ''}
             ${b.status === 'atf-approved' ? `<div style="width:100%;"><div class="atf-approved-tag">ATF Approved — Ready to Transfer</div></div>` : ''}
           </div>` : '';
 
-        const notesBlock = b.notes ? `<div class="build-notes">${b.notes}</div>` : '';
+        const notesBlock = b.notes ? `<div class="build-notes">${escapeHtml(b.notes)}</div>` : '';
 
         const trackLink = b.tracking_code
           ? `<a href="track.html?code=${encodeURIComponent(b.tracking_code)}" class="track-link">Track this build</a>`
@@ -795,8 +794,8 @@
           <div class="build-card status-${b.status}">
             <div class="card-top">
               <div class="card-top-left">
-                <div class="build-title">${b.title}</div>
-                <div class="build-subtitle"><span>${b.type}</span>${b.caliber ? ' &nbsp;·&nbsp; ' + b.caliber : ''}</div>
+                <div class="build-title">${escapeHtml(b.title)}</div>
+                <div class="build-subtitle"><span>${escapeHtml(b.type)}</span>${b.caliber ? ' &nbsp;·&nbsp; ' + escapeHtml(b.caliber) : ''}</div>
               </div>
               <div class="card-status-block">
                 <div class="status-badge">${statusLabels[b.status] || b.status}</div>
@@ -850,7 +849,15 @@
 
       showBuildsSkeleton();
       const { data, error } = await supabase.from('builds').select('*').order('received', { ascending: false });
-      if (error) { console.error(error); return; }
+      if (error) {
+        console.error(error);
+        document.getElementById('buildsList').innerHTML = `
+          <div class="builds-empty">
+            <h3>Couldn't load the build board.</h3>
+            <p>Give the page a refresh, or call us at <a href="tel:9287270893" class="tel-link">(928) 727-0893</a>.</p>
+          </div>`;
+        return;
+      }
       builds = data || [];
       renderBoardUpdated();
       renderSummary();

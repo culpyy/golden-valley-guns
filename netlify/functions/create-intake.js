@@ -14,17 +14,28 @@ const SERVICE_TYPE_LABELS = {
   other:        'Other'
 };
 
+// Derived from the highest code already issued this year, not a row count -
+// a count-based scheme collides forever once any build is ever deleted
+// (admin dashboard supports deleting builds), since the count drops but
+// codes already in use don't.
 async function generateTrackingCode(supabase, offset = 0) {
   const year = new Date().getFullYear();
-  const { count } = await supabase.from('builds').select('*', { count: 'exact', head: true });
-  const num = String((count || 0) + 1 + offset).padStart(3, '0');
+  const { data, error } = await supabase
+    .from('builds')
+    .select('tracking_code')
+    .like('tracking_code', `GVG-${year}-%`)
+    .order('tracking_code', { ascending: false })
+    .limit(1);
+  if (error) throw error;
+  const last = data && data[0] ? parseInt(data[0].tracking_code.split('-')[2], 10) : 0;
+  const num = String((Number.isFinite(last) ? last : 0) + 1 + offset).padStart(3, '0');
   return `GVG-${year}-${num}`;
 }
 
-// Tracking codes are derived from a row count, and this function and the
-// admin dashboard can both create builds - two submissions landing at the
-// same moment can compute the same code. Retry with an incrementing offset
-// on a unique-constraint violation (Postgres code 23505) instead of failing.
+// This function and the admin dashboard can both create builds - two
+// submissions landing at the same moment can compute the same code. Retry
+// with an incrementing offset on a unique-constraint violation (Postgres
+// code 23505) instead of failing.
 async function insertWithUniqueTrackingCode(supabase, buildData, attempts = 3) {
   for (let i = 0; i < attempts; i++) {
     const trackingCode = await generateTrackingCode(supabase, i);

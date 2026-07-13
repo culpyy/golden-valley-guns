@@ -476,9 +476,9 @@
 
     function productCardHtml(p) {
       return `
-        <div class="part-card" data-search="${p.name.toLowerCase()}">
-          <div class="part-name">${p.name}</div>
-          <div class="part-desc">${p.description}</div>
+        <div class="part-card" data-search="${escapeHtml(p.name.toLowerCase())}">
+          <div class="part-name">${escapeHtml(p.name)}</div>
+          <div class="part-desc">${escapeHtml(p.description)}</div>
           <div class="part-footer">
             <span class="part-price">$${parseFloat(p.price).toFixed(2)}</span>
             <span class="part-stock stock-${p.stock}">${STOCK_LABELS[p.stock] || p.stock}</span>
@@ -494,10 +494,10 @@
         : '';
       const requestUrl = `contact.html?product=${encodeURIComponent(item.name)}&price=${price}&subject=order`;
       return `
-        <div class="part-card" data-search="${search}">
+        <div class="part-card" data-search="${escapeHtml(search)}">
           <span class="part-source">Distributor Stock</span>
-          <div class="part-name">${item.name}</div>
-          <div class="part-desc">${[item.manufacturer, item.caliber].filter(Boolean).join(' &middot; ')}</div>
+          <div class="part-name">${escapeHtml(item.name)}</div>
+          <div class="part-desc">${[item.manufacturer, item.caliber].filter(Boolean).map(escapeHtml).join(' &middot; ')}</div>
           ${note}
           <div class="part-footer">
             <span class="part-price">$${price}</span>
@@ -536,14 +536,22 @@
       partsGrid.innerHTML = allPartsCards.length
         ? allPartsCards.join('')
         : '<div class="parts-empty">No parts in stock right now. Check back soon or <a href="contact.html" style="color:var(--gold-light);">contact us</a>.</div>';
+
+      // Re-apply any search already typed while data was loading - the
+      // shimmer placeholders above have no data-search attr, so a query
+      // typed mid-load would otherwise match nothing and then get silently
+      // dropped once real cards replace them.
+      applyCatalogSearch();
     }
 
-    document.getElementById('catalogSearch').addEventListener('input', e => {
-      const q = e.target.value.trim().toLowerCase();
+    function applyCatalogSearch() {
+      const q = document.getElementById('catalogSearch').value.trim().toLowerCase();
       document.querySelectorAll('.part-card[data-search]').forEach(card => {
         card.style.display = (!q || card.dataset.search.includes(q)) ? '' : 'none';
       });
-    });
+    }
+
+    document.getElementById('catalogSearch').addEventListener('input', applyCatalogSearch);
 
     loadShop();
   </script>
