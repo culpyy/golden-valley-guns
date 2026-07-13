@@ -331,7 +331,7 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
 }
 
 /* ── SECTION BASE ── */
-section { padding: 72px 48px; }
+section { padding: 56px 48px; }
 
 .section-label {
   display: inline-flex;
@@ -1055,7 +1055,7 @@ footer {
   .hero-logo { display: none; }
   .nav-logo-img { height: 38px; }
 
-  section { padding: 48px 20px; }
+  section { padding: 40px 20px; }
   .hero { padding: 20px; padding-top: calc(var(--nav-h) + 32px); padding-bottom: 48px; align-items: flex-start; }
   .page-header { padding: calc(var(--nav-h) + 32px) 20px 20px; }
   .hero h1 { font-size: clamp(42px, 11vw, 60px); }
@@ -1261,7 +1261,7 @@ footer {
   .nav-logo-img { height: 32px; }
   .footer-logo-img { height: 68px; }
 
-  section { padding: 40px 16px; }
+  section { padding: 32px 16px; }
   .page-header { padding: calc(var(--nav-h) + 24px) 16px 24px; }
 
   .gallery-grid { grid-template-columns: 1fr; gap: 8px; }
