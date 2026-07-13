@@ -685,24 +685,7 @@
     // BUILD_STAGES_NFA / BUILD_STAGES_STD / calcProgress come from js/main.js
     const stageNamesNFA = ['Intake','Parts','In Progress','Testing','ATF Filed','ATF Approved','Ready'];
     const stageNamesSTD = ['Intake','Parts Ordered','In Progress','Testing','Ready'];
-    const statusLabels = {
-      'intake':        'Intake',
-      'parts-ordered': 'Parts Ordered',
-      'in-progress':   'In Progress',
-      'testing':       'Testing',
-      'atf-filed':     'ATF Filed',
-      'atf-approved':  'ATF Approved',
-      'ready':         'Ready'
-    };
-    const statusDesc = {
-      'intake':        'Checked in — being assessed',
-      'parts-ordered': 'Waiting on parts to arrive',
-      'in-progress':   'On the bench',
-      'testing':       'Function check in progress',
-      'atf-filed':     'ATF paperwork submitted — pending approval',
-      'atf-approved':  'ATF approved — ready to transfer',
-      'ready':         'Done — ready for pickup'
-    };
+    // STATUS_LABELS / STATUS_DESCRIPTIONS come from js/main.js
 
     let builds = [];
     let isAdmin = false;
@@ -798,8 +781,8 @@
                 <div class="build-subtitle"><span>${escapeHtml(b.type)}</span>${b.caliber ? ' &nbsp;·&nbsp; ' + escapeHtml(b.caliber) : ''}</div>
               </div>
               <div class="card-status-block">
-                <div class="status-badge">${statusLabels[b.status] || b.status}</div>
-                <div class="status-desc">${statusDesc[b.status] || ''}</div>
+                <div class="status-badge">${escapeHtml(STATUS_LABELS[b.status] || b.status)}</div>
+                <div class="status-desc">${escapeHtml(STATUS_DESCRIPTIONS[b.status] || '')}</div>
               </div>
             </div>
 

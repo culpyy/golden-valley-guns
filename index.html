@@ -325,10 +325,6 @@
     });
   </script>
   <script>
-    const STATUS_LABELS = {
-      'intake': 'Intake', 'parts-ordered': 'Parts Ordered', 'in-progress': 'In Progress',
-      'testing': 'Testing', 'atf-filed': 'ATF Filed', 'atf-approved': 'ATF Approved', 'ready': 'Ready'
-    };
     async function loadBuildPreview() {
       const { data, error } = await supabase
         .from('builds')

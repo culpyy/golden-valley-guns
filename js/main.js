@@ -25,6 +25,21 @@ function escapeHtml(str) {
 const BUILD_STAGES_NFA = ['intake', 'parts-ordered', 'in-progress', 'testing', 'atf-filed', 'atf-approved', 'ready'];
 const BUILD_STAGES_STD = ['intake', 'parts-ordered', 'in-progress', 'testing', 'ready'];
 
+const STATUS_LABELS = {
+  'intake': 'Intake', 'parts-ordered': 'Parts Ordered', 'in-progress': 'In Progress',
+  'testing': 'Testing', 'atf-filed': 'ATF Filed', 'atf-approved': 'ATF Approved', 'ready': 'Ready'
+};
+
+const STATUS_DESCRIPTIONS = {
+  'intake':        'Checked in — being assessed',
+  'parts-ordered': 'Waiting on parts',
+  'in-progress':   'On the bench',
+  'testing':       'Function check',
+  'atf-filed':     'ATF pending approval',
+  'atf-approved':  'ATF approved — ready to transfer',
+  'ready':         'Done — ready for pickup'
+};
+
 function calcProgress(status, isNfa) {
   const stages = isNfa ? BUILD_STAGES_NFA : BUILD_STAGES_STD;
   const si = stages.indexOf(status);

@@ -600,7 +600,40 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase.js"></script>
   <script src="js/main.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <script>
+    // ── EMAIL NOTIFICATIONS ──
+    // Fill these in once an EmailJS account exists (emailjs.com, free tier):
+    // add an Email Service (e.g. connect Gmail), build a Template using the
+    // variables sent below (to_email, to_name, tracking_code, status_label,
+    // status_desc), then paste the three IDs from the EmailJS dashboard here.
+    // The public key is meant to be used client-side - it's not a secret the
+    // way the Supabase service-role key is - but EmailJS's dashboard has an
+    // "Allowed origins" setting worth restricting to this site's domain.
+    const EMAILJS_PUBLIC_KEY  = 'YOUR_EMAILJS_PUBLIC_KEY';
+    const EMAILJS_SERVICE_ID  = 'YOUR_EMAILJS_SERVICE_ID';
+    const EMAILJS_TEMPLATE_ID = 'YOUR_EMAILJS_TEMPLATE_ID';
+    const EMAILJS_CONFIGURED  = !EMAILJS_PUBLIC_KEY.startsWith('YOUR_');
+
+    if (EMAILJS_CONFIGURED) emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+
+    async function sendStatusChangeEmail(build) {
+      if (!EMAILJS_CONFIGURED || !build.customer_email) return;
+      try {
+        await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+          to_email:      build.customer_email,
+          to_name:       build.customer_name || 'there',
+          tracking_code: build.tracking_code || '',
+          status_label:  STATUS_LABELS[build.status] || build.status,
+          status_desc:   STATUS_DESCRIPTIONS[build.status] || ''
+        });
+      } catch (err) {
+        // The build itself already saved successfully by the time this
+        // runs - don't let an email hiccup look like a failed save.
+        console.error('Status email failed to send:', err);
+      }
+    }
+
     // ── AUTH GUARD ──
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) window.location.href = 'admin.html';
@@ -663,7 +696,10 @@
     });
 
     // ── BUILDS ──
+    let editingBuildOriginalStatus = null;
+
     async function openBuildForm(build) {
+      editingBuildOriginalStatus = build ? build.status : null;
       const form = document.getElementById('buildForm');
       document.getElementById('buildFormTitle').textContent = build ? 'Edit Build' : 'Add Build';
       document.getElementById('buildId').value = build ? build.id : '';
@@ -772,13 +808,17 @@
       saveBtn.disabled = false;
       if (error) { showToast('Error: ' + error.message); return; }
 
+      const statusChanged = !isNew && editingBuildOriginalStatus !== null && editingBuildOriginalStatus !== payload.status;
+      const willEmail = statusChanged && EMAILJS_CONFIGURED && !!payload.customer_email;
+      if (statusChanged) sendStatusChangeEmail(payload);
+
       closeBuildForm();
       loadBuilds();
 
       if (isNew) {
         showCodeModal(payload.tracking_code);
       } else {
-        showToast('Build updated.');
+        showToast(willEmail ? 'Build updated. Customer notified.' : 'Build updated.');
       }
     });
 
