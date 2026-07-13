@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <title>Shop | Golden Valley Guns LLC | Golden Valley, AZ</title>
-  <meta name="description" content="Firearms, ammo, and custom builds from Golden Valley Guns LLC. FFL 07 manufacturer in Golden Valley, AZ. We can order any firearm." />
+  <meta name="description" content="Firearms, ammo, and custom builds from Golden Valley Guns LLC. FFL 07 manufacturer in Golden Valley, AZ. We can source almost any firearm." />
   <meta property="og:title" content="Shop | Golden Valley Guns LLC | Golden Valley, AZ" />
   <meta property="og:description" content="Firearms, ammo, and custom builds from Golden Valley Guns LLC. FFL 07 manufacturer in Golden Valley, AZ." />
   <meta property="og:type" content="website" />
@@ -376,7 +376,7 @@
       <div class="builds-header">
         <div>
           <h2>Firearms</h2>
-          <p>We don't carry a wall of guns but we can source almost anything. Tell us what you want and we'll get you a price and timeline.</p>
+          <p>We don't carry a wall of guns, but we can source almost anything. Tell us what you want and we'll get you a price and timeline.</p>
         </div>
         <a href="contact.html?subject=buysell" class="btn-buy">Request a Firearm</a>
       </div>
@@ -490,7 +490,7 @@
       const search = `${item.name} ${item.manufacturer || ''} ${item.caliber || ''}`.toLowerCase();
       const price = parseFloat(item.price).toFixed(2);
       const note = item.is_firearm
-        ? '<div class="part-note">Transfers through Golden Valley Guns &mdash; FFL required at pickup.</div>'
+        ? '<div class="part-note">Transfers through Golden Valley Guns LLC &mdash; FFL required at pickup.</div>'
         : '';
       const requestUrl = `contact.html?product=${encodeURIComponent(item.name)}&price=${price}&subject=order`;
       return `
