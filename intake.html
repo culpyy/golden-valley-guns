@@ -54,16 +54,28 @@
     .slip-actions { display: flex; gap: 12px; margin-top: 28px; flex-wrap: wrap; }
 
     @media print {
-      body * { visibility: hidden; }
-      .intake-slip, .intake-slip * { visibility: visible; }
+      /* `visibility: hidden` alone leaves every hidden element's layout
+         height in place (nav, hero padding, footer, etc. easily add up to
+         more than one page), which pushed the slip itself past a page
+         boundary and printed it split across two pages with a border
+         re-drawn on each half. `display: none` removes that height
+         entirely so the slip is the only thing left in the page flow. */
+      #ageGate, nav, .page-header, .contact-info, footer { display: none !important; }
+      section, .contact-grid, .fade-in { padding: 0 !important; margin: 0 !important; gap: 0 !important; }
+      .contact-grid { grid-template-columns: 1fr !important; }
+
+      @page { margin: 0.5in; }
+
       .intake-slip {
         display: block !important;
-        position: absolute;
-        top: 0; left: 0;
+        position: static;
         border: 1px solid #000;
         width: 100%;
         max-width: none;
+        padding: 24px;
+        break-inside: avoid;
       }
+      .slip-row { padding: 6px 0; }
       .slip-actions { display: none !important; }
     }
 
