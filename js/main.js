@@ -135,7 +135,7 @@ document.querySelectorAll('.fade-in').forEach(el => {
   observer.observe(el);
 });
 
-// Contact form (submits to Netlify Forms via AJAX so the page doesn't reload)
+// Contact form (submits to Formspree via AJAX so the page doesn't reload)
 const form = document.getElementById('contactForm');
 if (form) {
   form.addEventListener('submit', e => {
@@ -145,9 +145,12 @@ if (form) {
     btn.textContent = 'Sending...';
     btn.disabled = true;
 
-    fetch('/', {
+    fetch('https://formspree.io/f/YOUR_FORM_ID', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json',
+      },
       body: new URLSearchParams(new FormData(form)).toString(),
     })
       .then(res => {
