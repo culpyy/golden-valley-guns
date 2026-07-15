@@ -37,54 +37,8 @@
   }
   </script>
   <style>
-    /* ── ADMIN BAR ── */
-    .admin-bar {
-      display: none;
-      background: rgba(139,105,20,0.1);
-      border-bottom: 1px solid rgba(139,105,20,0.35);
-      padding: 10px 48px;
-      padding-top: calc(var(--nav-h) + 10px);
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-    .admin-bar.visible { display: flex; }
+    /* .admin-bar base styles now live in css/style.css so any page can reuse them */
     .admin-bar.visible + .track-strip { padding-top: 20px; }
-    .admin-bar-label {
-      font-size: 10px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: var(--gold-light);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .admin-bar-label::before {
-      content: '';
-      width: 6px; height: 6px;
-      border-radius: 50%;
-      background: var(--gold-light);
-    }
-    .admin-bar-actions { display: flex; gap: 10px; flex-wrap: wrap; }
-    .admin-bar a, .admin-bar button {
-      font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
-      font-size: 13px;
-      letter-spacing: 2px;
-      padding: 7px 16px;
-      border: 1px solid var(--gold);
-      color: var(--gold-light);
-      background: none;
-      cursor: pointer;
-      text-decoration: none;
-      transition: background 0.2s, color 0.2s;
-    }
-    .admin-bar a:hover, .admin-bar button:hover {
-      background: var(--gold);
-      color: #fff;
-    }
-    .admin-bar a.solid { background: var(--gold); color: #fff; }
-    .admin-bar a.solid:hover { background: var(--gold-light); }
 
     /* ── TRACK STRIP ── */
     .track-strip {
@@ -530,7 +484,6 @@
     /* ── RESPONSIVE ── */
     @media (max-width: 900px) {
       .track-strip { padding: 16px 20px; padding-top: calc(var(--nav-h) + 16px); }
-      .admin-bar { padding: 10px 20px; padding-top: calc(var(--nav-h) + 10px); }
       .admin-bar.visible + .track-strip { padding-top: 16px; }
     }
     @media (max-width: 580px) {

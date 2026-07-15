@@ -99,51 +99,6 @@
       max-width: 480px;
       line-height: 1.7;
     }
-    .build-request-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 2px;
-    }
-    .build-request-card {
-      background: var(--bg);
-      padding: 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      transition: background 0.2s;
-    }
-    .build-request-card:hover { background: var(--surface); }
-    .br-label {
-      font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
-      font-size: 11px;
-      letter-spacing: 3px;
-      color: var(--gold-light);
-    }
-    .br-name {
-      font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
-      font-size: 20px;
-      letter-spacing: 1.5px;
-      color: var(--text);
-    }
-    .br-desc {
-      font-size: 12px;
-      color: var(--muted);
-      line-height: 1.6;
-      flex: 1;
-    }
-    .br-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 8px;
-    }
-    .br-price {
-      font-size: 11px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-
     /* ── PARTS GRID ── */
     .parts-grid {
       display: grid;
@@ -241,16 +196,19 @@
     }
     .part-card .btn-buy { margin-top: 4px; text-align: center; }
 
+    /* .page-header normally carries extra top padding to clear the fixed nav —
+       when the admin bar is visible, it clears the nav itself, so this would
+       otherwise be a large redundant gap (see inshop.html for the same pattern). */
+    .admin-bar.visible + .page-header { padding-top: 40px; }
+
     /* ── RESPONSIVE ── */
     @media (max-width: 900px) {
       .shop-wrap { padding: 40px 20px; }
-      .build-request-grid { grid-template-columns: repeat(2, 1fr); }
       .parts-grid { grid-template-columns: repeat(2, 1fr); }
     }
     @media (max-width: 580px) {
       .shop-wrap { padding: 32px 16px; }
       .cat-btn { padding: 10px 16px; font-size: 12px; letter-spacing: 1.5px; }
-      .build-request-grid { grid-template-columns: 1fr; }
       .parts-grid { grid-template-columns: 1fr; }
       .builds-header { padding: 20px; flex-direction: column; align-items: flex-start; }
       .builds-header .btn-buy { width: 100%; text-align: center; }
@@ -304,17 +262,26 @@
     </div>
   </nav>
 
+  <!-- ADMIN BAR (shown only when logged in) -->
+  <div class="admin-bar" id="adminBar">
+    <span class="admin-bar-label">Admin Mode</span>
+    <div class="admin-bar-actions">
+      <a href="admin-dashboard.html?newProduct=1" class="solid">+ Add Product</a>
+      <a href="admin-dashboard.html">Dashboard</a>
+      <button onclick="adminSignOut()">Sign Out</button>
+    </div>
+  </div>
+
   <!-- PAGE HEADER -->
   <div class="page-header">
     <div class="section-label">Golden Valley Guns</div>
     <h1>Shop</h1>
-    <p>Kit builds are the main thing. We also move firearms and keep ammo in stock.</p>
+    <p>Firearms, ammo, and parts we actually have. Looking for a custom build instead? <a href="services.html" class="tel-link">See what we build</a>.</p>
   </div>
 
   <!-- CATEGORY BAR -->
   <div class="cat-bar">
     <button class="cat-btn active" data-cat="all">All</button>
-    <button class="cat-btn" data-cat="builds">Kit Builds</button>
     <button class="cat-btn" data-cat="firearms">Firearms</button>
     <button class="cat-btn" data-cat="ammo">Ammo</button>
     <button class="cat-btn" data-cat="parts">Parts &amp; Accessories</button>
@@ -328,51 +295,8 @@
   <!-- SHOP -->
   <div class="shop-wrap">
 
-    <!-- CUSTOM BUILDS REQUEST -->
-    <div class="builds-section" id="buildsSection">
-      <div class="builds-header">
-        <div>
-          <h2>Kit Builds</h2>
-          <p>This is what we do. Parts kit builds, bring-your-own-kit work, and full custom rifles. Tell us what you want and we'll get you a quote and timeline.</p>
-        </div>
-      </div>
-      <div class="build-request-grid">
-
-        <div class="build-request-card">
-          <div class="br-label">01 · Rifle</div>
-          <div class="br-name">Custom AK Build</div>
-          <div class="br-desc">Parts kit or built from spec. Caliber, furniture, and configuration to your order.</div>
-          <div class="br-footer">
-            <span class="br-price">Price on request</span>
-            <a href="contact.html" class="btn-buy outline">Request</a>
-          </div>
-        </div>
-
-        <div class="build-request-card">
-          <div class="br-label">02 · Rifle / Pistol</div>
-          <div class="br-name">Custom AR-15 Build</div>
-          <div class="br-desc">Rifle, pistol, or SBR configuration. Upper and lower to your spec. We source parts or work with yours.</div>
-          <div class="br-footer">
-            <span class="br-price">Price on request</span>
-            <a href="contact.html" class="btn-buy outline">Request</a>
-          </div>
-        </div>
-
-        <div class="build-request-card">
-          <div class="br-label">03 · Any Platform</div>
-          <div class="br-name">Bring Your Own Kit</div>
-          <div class="br-desc">Ship us your parts kit and we'll handle the build. Call before you ship, then fill out our intake form so we know whose box is whose.</div>
-          <div class="br-footer">
-            <span class="br-price">Price on request</span>
-            <a href="intake.html" class="btn-buy outline">Start Intake</a>
-          </div>
-        </div>
-
-      </div>
-    </div>
-
     <!-- FIREARMS -->
-    <div class="builds-section" id="firearmsSection" style="margin-top: 2px;">
+    <div class="builds-section" id="firearmsSection">
       <div class="builds-header">
         <div>
           <h2>Firearms</h2>
@@ -407,6 +331,21 @@
       <div class="parts-grid" id="partsGrid"></div>
     </div>
 
+  </div>
+
+  <!-- CUSTOM BUILD CTA -->
+  <div class="cta-strip">
+    <div class="cta-strip-inner">
+      <div>
+        <div class="section-label">Not Seeing It Here?</div>
+        <h2>We Build Custom, Too</h2>
+        <p>Kit builds, bring-your-own-kit work, and full custom rifles are what we do most. See <a href="services.html" class="tel-link">what we build</a> or jump straight to a quote.</p>
+      </div>
+      <div class="cta-strip-actions">
+        <a href="contact.html?subject=build" class="btn-primary">Request a Build</a>
+        <a href="intake.html" class="btn-secondary">Start Intake (BYOK)</a>
+      </div>
+    </div>
   </div>
 
   <!-- FOOTER -->
@@ -452,7 +391,6 @@
   <script src="js/main.js"></script>
   <script>
     const catBtns         = document.querySelectorAll('.cat-btn');
-    const buildsSection   = document.getElementById('buildsSection');
     const firearmsSection = document.getElementById('firearmsSection');
     const ammoSection     = document.getElementById('ammoSection');
     const partsSection    = document.getElementById('partsSection');
@@ -464,9 +402,16 @@
       out:      'Out of Stock'
     };
 
+    // Lower number = shown first. Actually-purchasable stock beats "call to
+    // check", which beats "out of stock" - so real inventory always leads.
+    const STOCK_ORDER = { in_stock: 0, limited: 1, call: 2, out: 3 };
+    function byStockThenName(a, b) {
+      const stockDiff = (STOCK_ORDER[a.stock] ?? 9) - (STOCK_ORDER[b.stock] ?? 9);
+      return stockDiff !== 0 ? stockDiff : a.name.localeCompare(b.name);
+    }
+
     function setCategory(cat) {
       catBtns.forEach(b => b.classList.toggle('active', b.dataset.cat === cat));
-      buildsSection.style.display   = (cat === 'all' || cat === 'builds')   ? '' : 'none';
       firearmsSection.style.display = (cat === 'all' || cat === 'firearms') ? '' : 'none';
       ammoSection.style.display     = (cat === 'all' || cat === 'ammo')     ? '' : 'none';
       partsSection.style.display    = (cat === 'all' || cat === 'parts')    ? '' : 'none';
@@ -525,16 +470,18 @@
         supabase.from('distributor_products_public').select('*').order('name')
       ]);
 
-      const dist = distErr ? [] : (distItems || []);
+      const dist = (distErr ? [] : (distItems || [])).slice().sort(byStockThenName);
       firearmsGrid.innerHTML = dist.filter(i => i.category === 'firearms').map(distCardHtml).join('');
       ammoGrid.innerHTML     = dist.filter(i => i.category === 'ammo').map(distCardHtml).join('');
 
-      const productCards  = (prodErr || !products) ? [] : products.map(productCardHtml);
-      const distPartCards = dist.filter(i => i.category === 'parts').map(distCardHtml);
-      const allPartsCards = [...productCards, ...distPartCards];
+      // Combine both sources before sorting, so an in-stock distributor part
+      // outranks an out-of-stock own product instead of always trailing it.
+      const ownParts  = (prodErr || !products) ? [] : products.map(p => ({ ...p, html: productCardHtml(p) }));
+      const distParts = dist.filter(i => i.category === 'parts').map(i => ({ ...i, html: distCardHtml(i) }));
+      const allParts  = [...ownParts, ...distParts].sort(byStockThenName);
 
-      partsGrid.innerHTML = allPartsCards.length
-        ? allPartsCards.join('')
+      partsGrid.innerHTML = allParts.length
+        ? allParts.map(p => p.html).join('')
         : '<div class="parts-empty">No parts in stock right now. Check back soon or <a href="contact.html" style="color:var(--gold-light);">contact us</a>.</div>';
 
       // Re-apply any search already typed while data was loading - the
@@ -553,7 +500,20 @@
 
     document.getElementById('catalogSearch').addEventListener('input', applyCatalogSearch);
 
-    loadShop();
+    // admin sign out
+    async function adminSignOut() {
+      await supabase.auth.signOut();
+      document.getElementById('adminBar').classList.remove('visible');
+    }
+
+    // check admin session then load
+    async function init() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) document.getElementById('adminBar').classList.add('visible');
+      loadShop();
+    }
+
+    init();
   </script>
 </body>
 </html>

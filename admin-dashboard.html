@@ -1186,6 +1186,23 @@
         setTimeout(() => openBuildForm(null), 300);
       }
     }
+
+    // deep-link: ?editProduct=ID opens that product's edit form after load
+    // deep-link: ?newProduct=1 opens the new product form after load
+    const _editProductId = _urlParams.get('editProduct');
+    const _newProduct = _urlParams.get('newProduct');
+    if (_editProductId || _newProduct) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.querySelector('.tab-btn[data-tab="products"]').classList.add('active');
+      document.getElementById('tab-products').classList.add('active');
+
+      if (_editProductId) {
+        editProduct(_editProductId);
+      } else {
+        setTimeout(() => openProductForm(null), 300);
+      }
+    }
   </script>
 </body>
 </html>
