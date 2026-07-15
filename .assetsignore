@@ -1,0 +1,9 @@
+node_modules
+src
+sql
+supabase
+wrangler.jsonc
+package.json
+package-lock.json
+.git
+.gitignore
