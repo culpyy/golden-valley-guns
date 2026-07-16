@@ -74,8 +74,8 @@ select
   end as stock,
   dp.image_url,
   dp.is_firearm,
-  dp.firearm_type,
-  dp.last_synced_at
+  dp.last_synced_at,
+  dp.firearm_type
 from distributor_products dp
 cross join markup
 where dp.is_hidden = false;
@@ -133,8 +133,8 @@ select
   end as stock,
   dp.image_url,
   dp.is_firearm,
-  dp.firearm_type,
-  dp.last_synced_at
+  dp.last_synced_at,
+  dp.firearm_type
 from distributor_products dp
 cross join markup
 where dp.is_hidden = false;
