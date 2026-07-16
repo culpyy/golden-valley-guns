@@ -16,7 +16,7 @@ create table distributor_products (
   manufacturer        text,
   category            text not null check (category in ('firearms','ammo','parts')),
   caliber             text,
-  firearm_type        text,   -- e.g. "Rifle", "Shotgun", "Semi-Auto Pistol", "Revolver" - only set when category = 'firearms', drives the shop page's firearm-type filter
+  firearm_type        text,   -- "Handgun"/"Rifle"/"Shotgun"/"Muzzleloader"/"Other" - bucketed by sync/lipseys.js's mapFirearmType() from the distributor's raw classification, only set when category = 'firearms', drives the shop page's firearm-type filter
   description         text,
   dealer_cost         numeric not null,       -- wholesale cost, never exposed publicly
   msrp                numeric,

@@ -563,7 +563,11 @@
         <div id="catalogSyncStatus" class="form-grid"></div>
       </div>
 
+      <div class="form-field" style="max-width: 360px; margin-bottom: 16px;">
+        <input type="text" id="catalogTableSearch" placeholder="Search by name or manufacturer..." />
+      </div>
       <div id="catalogTable"></div>
+      <div id="catalogTablePagination" style="display:flex; align-items:center; gap:16px; margin-top:16px;"></div>
     </div>
 
     <!-- ── SITE CONTENT TAB ── -->
@@ -990,11 +994,30 @@
       orion:     'Orion Wholesale'
     };
 
+    // Supabase caps a single select() at 1000 rows. distributor_products
+    // already runs to ~7,000 - without paging through, Sync Status
+    // undercounted every distributor's item count, and the table below
+    // silently hid everything past the 1000th row alphabetically (same bug
+    // that hit the public Shop page's queries).
+    async function fetchAllRows(buildQuery) {
+      const pageSize = 1000;
+      let allRows = [];
+      let from = 0;
+      while (true) {
+        const { data, error } = await buildQuery().range(from, from + pageSize - 1);
+        if (error) return { data: allRows, error };
+        allRows = allRows.concat(data || []);
+        if (!data || data.length < pageSize) break;
+        from += pageSize;
+      }
+      return { data: allRows, error: null };
+    }
+
     async function loadCatalogStatus() {
       const statusContainer = document.getElementById('catalogSyncStatus');
-      const { data } = await supabase
+      const { data } = await fetchAllRows(() => supabase
         .from('distributor_products')
-        .select('distributor, quantity_available, last_synced_at');
+        .select('distributor, quantity_available, last_synced_at'));
 
       statusContainer.innerHTML = Object.keys(DISTRIBUTOR_LABELS).map(dist => {
         const rows = (data || []).filter(r => r.distributor === dist);
@@ -1011,17 +1034,39 @@
       }).join('');
     }
 
+    const CATALOG_PAGE_SIZE = 50;
+    let catalogAllRows = [];
+    let catalogPage = 1;
+
     async function loadCatalogTable() {
-      const { data, error } = await supabase
+      const { data, error } = await fetchAllRows(() => supabase
         .from('distributor_products')
         .select('*')
-        .order('name');
+        .order('name'));
 
+      catalogAllRows = error ? [] : (data || []);
+      catalogPage = 1;
+      renderCatalogTable();
+    }
+
+    function renderCatalogTable() {
       const container = document.getElementById('catalogTable');
-      if (error || !data || data.length === 0) {
-        container.innerHTML = '<div class="empty-state">No distributor items synced yet.</div>';
+      const paginationEl = document.getElementById('catalogTablePagination');
+      const q = (document.getElementById('catalogTableSearch').value || '').trim().toLowerCase();
+      const filtered = q
+        ? catalogAllRows.filter(p => `${p.name} ${p.manufacturer || ''}`.toLowerCase().includes(q))
+        : catalogAllRows;
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="empty-state">${catalogAllRows.length === 0 ? 'No distributor items synced yet.' : 'No items match your search.'}</div>`;
+        paginationEl.innerHTML = '';
         return;
       }
+
+      const totalPages = Math.max(1, Math.ceil(filtered.length / CATALOG_PAGE_SIZE));
+      if (catalogPage > totalPages) catalogPage = totalPages;
+      const start = (catalogPage - 1) * CATALOG_PAGE_SIZE;
+      const pageRows = filtered.slice(start, start + CATALOG_PAGE_SIZE);
 
       container.innerHTML = `
         <table class="data-table">
@@ -1036,7 +1081,7 @@
             </tr>
           </thead>
           <tbody>
-            ${data.map(p => `
+            ${pageRows.map(p => `
               <tr style="${p.is_hidden ? 'opacity:0.5;' : ''}">
                 <td class="title">${escapeHtml(p.name)}</td>
                 <td>${escapeHtml(DISTRIBUTOR_LABELS[p.distributor] || p.distributor)}</td>
@@ -1052,13 +1097,34 @@
             `).join('')}
           </tbody>
         </table>`;
+
+      paginationEl.innerHTML = totalPages <= 1 ? '' : `
+        <button class="btn-edit" data-dir="prev" ${catalogPage === 1 ? 'disabled' : ''}>&larr; Prev</button>
+        <span style="font-size:12px;color:var(--muted);">Page ${catalogPage} of ${totalPages} &middot; ${filtered.length} items</span>
+        <button class="btn-edit" data-dir="next" ${catalogPage === totalPages ? 'disabled' : ''}>Next &rarr;</button>
+      `;
+      paginationEl.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          catalogPage += btn.dataset.dir === 'next' ? 1 : -1;
+          renderCatalogTable();
+        });
+      });
     }
+
+    document.getElementById('catalogTableSearch').addEventListener('input', () => {
+      catalogPage = 1;
+      renderCatalogTable();
+    });
 
     async function toggleCatalogHidden(id, hidden) {
       const { error } = await supabase.from('distributor_products').update({ is_hidden: hidden }).eq('id', id);
       if (error) { showToast('Error: ' + error.message); return; }
       showToast(hidden ? 'Item hidden from Shop.' : 'Item unhidden.');
-      loadCatalogTable();
+      // Patch the row locally instead of re-fetching ~7,000 rows for a
+      // single toggle - loadCatalogTable() would work too, just far slower.
+      const row = catalogAllRows.find(p => p.id === id);
+      if (row) row.is_hidden = hidden;
+      renderCatalogTable();
     }
 
     async function loadCatalog() {
