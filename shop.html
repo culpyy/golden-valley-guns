@@ -149,7 +149,7 @@
     .part-img-wrap img {
       width: 100%;
       height: 100%;
-      object-fit: cover;
+      object-fit: contain;
       display: block;
     }
     .part-img-placeholder {
@@ -208,6 +208,37 @@
       text-align: center;
       color: var(--muted);
       font-size: 13px;
+    }
+
+    /* ── PAGINATION ── */
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      padding: 20px;
+      background: var(--surface);
+    }
+    .pagination:empty { display: none; }
+    .page-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 18px;
+      font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
+      font-size: 12px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .page-btn:hover:not(:disabled) { background: var(--gold); color: #fff; }
+    .page-btn:disabled { opacity: 0.35; cursor: default; }
+    .page-info {
+      font-size: 12px;
+      letter-spacing: 1px;
+      color: var(--muted);
+      white-space: nowrap;
     }
 
     /* ── DISTRIBUTOR SEARCH ── */
@@ -356,6 +387,7 @@
       </div>
       <div class="type-bar" id="firearmTypeBar" style="display:none;"></div>
       <div class="parts-grid" id="firearmsGrid"></div>
+      <div class="pagination" id="firearmsPagination"></div>
     </div>
 
     <!-- AMMO -->
@@ -368,6 +400,7 @@
         <a href="tel:9287270893" class="btn-buy">Call to Check Stock</a>
       </div>
       <div class="parts-grid" id="ammoGrid"></div>
+      <div class="pagination" id="ammoPagination"></div>
     </div>
 
     <!-- PARTS & ACCESSORIES -->
@@ -380,6 +413,7 @@
         <a href="contact.html" class="btn-buy outline">Ask About an Item</a>
       </div>
       <div class="parts-grid" id="partsGrid"></div>
+      <div class="pagination" id="partsPagination"></div>
     </div>
 
   </div>
@@ -461,7 +495,12 @@
       return stockDiff !== 0 ? stockDiff : a.name.localeCompare(b.name);
     }
 
+    const PAGE_SIZE = 24;
+    let allFirearms = [];
+    let allAmmo = [];
+    let allParts = [];
     let selectedFirearmType = 'all';
+    let currentPage = { firearms: 1, ammo: 1, parts: 1 };
 
     function setCategory(cat) {
       catBtns.forEach(b => b.classList.toggle('active', b.dataset.cat === cat));
@@ -489,7 +528,7 @@
 
     function productCardHtml(p) {
       return `
-        <div class="part-card" data-search="${escapeHtml(p.name.toLowerCase())}">
+        <div class="part-card">
           ${imageHtml(p.image_url, p.name)}
           <div class="part-name">${escapeHtml(p.name)}</div>
           <div class="part-desc">${escapeHtml(p.description)}</div>
@@ -501,15 +540,13 @@
     }
 
     function distCardHtml(item) {
-      const search = `${item.name} ${item.manufacturer || ''} ${item.caliber || ''}`.toLowerCase();
       const price = parseFloat(item.price).toFixed(2);
       const note = item.is_firearm
         ? '<div class="part-note">Transfers through Golden Valley Guns LLC &mdash; FFL required at pickup.</div>'
         : '';
       const requestUrl = `contact.html?product=${encodeURIComponent(item.name)}&price=${price}&subject=order`;
-      const firearmType = (item.firearm_type || '').toLowerCase();
       return `
-        <div class="part-card" data-search="${escapeHtml(search)}" data-firearm-type="${escapeHtml(firearmType)}">
+        <div class="part-card">
           ${imageHtml(item.image_url, item.name)}
           <span class="part-source">Distributor Stock</span>
           <div class="part-name">${escapeHtml(item.name)}</div>
@@ -523,15 +560,26 @@
         </div>`;
     }
 
+    // products (own catalog) and distributor_products_public have different
+    // shapes - own products are marked with _own at load time so the right
+    // template runs without needing a second lookup at render time.
+    function partCardHtml(item) {
+      return item._own ? productCardHtml(item) : distCardHtml(item);
+    }
+
+    function itemSearchText(item) {
+      return `${item.name} ${item.manufacturer || ''} ${item.caliber || ''}`.toLowerCase();
+    }
+
     function buildFirearmTypeBar(firearmsItems) {
       const bar = document.getElementById('firearmTypeBar');
       const types = [...new Set(firearmsItems.map(i => i.firearm_type).filter(Boolean))].sort();
+      selectedFirearmType = 'all';
       if (types.length === 0) {
         bar.style.display = 'none';
         bar.innerHTML = '';
         return;
       }
-      selectedFirearmType = 'all';
       bar.style.display = '';
       bar.innerHTML = ['<button class="type-btn active" data-type="all">All Types</button>']
         .concat(types.map(t => `<button class="type-btn" data-type="${escapeHtml(t.toLowerCase())}">${escapeHtml(t)}</button>`))
@@ -540,15 +588,96 @@
         btn.addEventListener('click', () => {
           selectedFirearmType = btn.dataset.type;
           bar.querySelectorAll('.type-btn').forEach(b => b.classList.toggle('active', b === btn));
-          applyFilters();
+          currentPage.firearms = 1;
+          renderAll();
         });
       });
     }
 
+    function getFilteredFirearms() {
+      const q = document.getElementById('catalogSearch').value.trim().toLowerCase();
+      return allFirearms.filter(i => {
+        const matchesSearch = !q || itemSearchText(i).includes(q);
+        const matchesType = selectedFirearmType === 'all' || (i.firearm_type || '').toLowerCase() === selectedFirearmType;
+        return matchesSearch && matchesType;
+      });
+    }
+
+    function getFilteredAmmo() {
+      const q = document.getElementById('catalogSearch').value.trim().toLowerCase();
+      return !q ? allAmmo : allAmmo.filter(i => itemSearchText(i).includes(q));
+    }
+
+    function getFilteredParts() {
+      const q = document.getElementById('catalogSearch').value.trim().toLowerCase();
+      return !q ? allParts : allParts.filter(i => itemSearchText(i).includes(q));
+    }
+
+    // One paginator for all three grids - slices the already-filtered list
+    // to the current page, renders it, and rebuilds the Prev/Next controls.
+    // pageKey indexes into currentPage so each section tracks its own page
+    // independently (switching category or typing a search doesn't reset
+    // pages other than the ones actually affected).
+    function renderPaginatedGrid(gridId, paginationId, items, cardFn, pageKey, emptyMessage) {
+      const grid = document.getElementById(gridId);
+      const paginationEl = document.getElementById(paginationId);
+      const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+      if (currentPage[pageKey] > totalPages) currentPage[pageKey] = totalPages;
+      const start = (currentPage[pageKey] - 1) * PAGE_SIZE;
+      const pageItems = items.slice(start, start + PAGE_SIZE);
+
+      grid.innerHTML = pageItems.length ? pageItems.map(cardFn).join('') : emptyMessage;
+
+      if (totalPages <= 1) {
+        paginationEl.innerHTML = '';
+        return;
+      }
+      const cur = currentPage[pageKey];
+      paginationEl.innerHTML = `
+        <button class="page-btn" data-dir="prev" ${cur === 1 ? 'disabled' : ''}>&larr; Prev</button>
+        <span class="page-info">Page ${cur} of ${totalPages} &middot; ${items.length} items</span>
+        <button class="page-btn" data-dir="next" ${cur === totalPages ? 'disabled' : ''}>Next &rarr;</button>
+      `;
+      paginationEl.querySelectorAll('.page-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          currentPage[pageKey] += btn.dataset.dir === 'next' ? 1 : -1;
+          renderAll();
+          grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      });
+    }
+
+    function renderAll() {
+      renderPaginatedGrid('firearmsGrid', 'firearmsPagination', getFilteredFirearms(), distCardHtml, 'firearms',
+        '<div class="parts-empty">No firearms match your search.</div>');
+      renderPaginatedGrid('ammoGrid', 'ammoPagination', getFilteredAmmo(), distCardHtml, 'ammo',
+        '<div class="parts-empty">No ammo matches your search.</div>');
+      renderPaginatedGrid('partsGrid', 'partsPagination', getFilteredParts(), partCardHtml, 'parts',
+        '<div class="parts-empty">No parts in stock right now. Check back soon or <a href="contact.html" style="color:var(--gold-light);">contact us</a>.</div>');
+    }
+
+    // Supabase caps a single select() at 1000 rows regardless of how many
+    // actually match. distributor_products_public alone runs to ~7,000, so a
+    // plain .select() silently truncated to the first 1000 rows by name -
+    // most manufacturers past early-alphabet names (GLOCK, Ruger, SIG, Smith
+    // and Wesson, Taurus, Walther, Winchester...) never made it to the page
+    // at all. Page through with .range() until a page comes back short.
+    async function fetchAllRows(buildQuery) {
+      const pageSize = 1000;
+      let allRows = [];
+      let from = 0;
+      while (true) {
+        const { data, error } = await buildQuery().range(from, from + pageSize - 1);
+        if (error) return { data: allRows, error };
+        allRows = allRows.concat(data || []);
+        if (!data || data.length < pageSize) break;
+        from += pageSize;
+      }
+      return { data: allRows, error: null };
+    }
+
     async function loadShop() {
-      const partsGrid     = document.getElementById('partsGrid');
-      const firearmsGrid  = document.getElementById('firearmsGrid');
-      const ammoGrid      = document.getElementById('ammoGrid');
+      const partsGrid = document.getElementById('partsGrid');
 
       partsGrid.innerHTML = [1, 2, 3].map(() => `
         <div class="part-card">
@@ -559,46 +688,30 @@
       `).join('');
 
       const [{ data: products, error: prodErr }, { data: distItems, error: distErr }] = await Promise.all([
-        supabase.from('products').select('*').order('name'),
-        supabase.from('distributor_products_public').select('*').order('name')
+        fetchAllRows(() => supabase.from('products').select('*').order('name')),
+        fetchAllRows(() => supabase.from('distributor_products_public').select('*').order('name'))
       ]);
 
       const dist = (distErr ? [] : (distItems || [])).slice().sort(byStockThenName);
-      const firearmsItems = dist.filter(i => i.category === 'firearms');
-      firearmsGrid.innerHTML = firearmsItems.map(distCardHtml).join('');
-      ammoGrid.innerHTML     = dist.filter(i => i.category === 'ammo').map(distCardHtml).join('');
-      buildFirearmTypeBar(firearmsItems);
+      allFirearms = dist.filter(i => i.category === 'firearms');
+      allAmmo     = dist.filter(i => i.category === 'ammo');
 
       // Combine both sources before sorting, so an in-stock distributor part
       // outranks an out-of-stock own product instead of always trailing it.
-      const ownParts  = (prodErr || !products) ? [] : products.map(p => ({ ...p, html: productCardHtml(p) }));
-      const distParts = dist.filter(i => i.category === 'parts').map(i => ({ ...i, html: distCardHtml(i) }));
-      const allParts  = [...ownParts, ...distParts].sort(byStockThenName);
+      const ownParts = (prodErr || !products) ? [] : products.map(p => ({ ...p, _own: true }));
+      const distParts = dist.filter(i => i.category === 'parts');
+      allParts = [...ownParts, ...distParts].sort(byStockThenName);
 
-      partsGrid.innerHTML = allParts.length
-        ? allParts.map(p => p.html).join('')
-        : '<div class="parts-empty">No parts in stock right now. Check back soon or <a href="contact.html" style="color:var(--gold-light);">contact us</a>.</div>';
-
-      // Re-apply any search already typed while data was loading - the
-      // shimmer placeholders above have no data-search attr, so a query
-      // typed mid-load would otherwise match nothing and then get silently
-      // dropped once real cards replace them.
-      applyFilters();
+      buildFirearmTypeBar(allFirearms);
+      renderAll();
     }
 
-    function applyFilters() {
-      const q = document.getElementById('catalogSearch').value.trim().toLowerCase();
-      document.querySelectorAll('.part-card[data-search]').forEach(card => {
-        const matchesSearch = !q || card.dataset.search.includes(q);
-        // Firearm-type buttons only exist for the Firearms grid - cards
-        // elsewhere have no data-firearm-type attr and just pass through.
-        const inFirearmsGrid = card.parentElement && card.parentElement.id === 'firearmsGrid';
-        const matchesType = !inFirearmsGrid || selectedFirearmType === 'all' || card.dataset.firearmType === selectedFirearmType;
-        card.style.display = (matchesSearch && matchesType) ? '' : 'none';
-      });
-    }
-
-    document.getElementById('catalogSearch').addEventListener('input', applyFilters);
+    document.getElementById('catalogSearch').addEventListener('input', () => {
+      currentPage.firearms = 1;
+      currentPage.ammo = 1;
+      currentPage.parts = 1;
+      renderAll();
+    });
 
     // admin sign out
     async function adminSignOut() {

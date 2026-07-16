@@ -56,6 +56,19 @@ function mapCategory(item) {
   return 'parts';
 }
 
+// item.type carries Lipsey's granular classification (13 distinct values as
+// of 2026-07-16, e.g. "Semi-Auto Pistol" vs "Revolver" vs "Specialty
+// Handgun") - too fine-grained for a shopper-facing filter, so bucket down
+// to the handful of categories a customer actually thinks in.
+function mapFirearmType(item) {
+  const type = (item.type || '').toLowerCase();
+  if (type.includes('pistol') || type.includes('revolver')) return 'Handgun';
+  if (type.includes('rifle')) return 'Rifle';
+  if (type.includes('shotgun')) return 'Shotgun';
+  if (type.includes('muzzleloader')) return 'Muzzleloader';
+  return 'Other';
+}
+
 // Returns null (never NaN) for anything that isn't finite, so a value like
 // "Call" or "N/A" from the feed can be detected and the item skipped instead
 // of silently becoming a $0 listing or a NaN that fails the whole batch upsert.
