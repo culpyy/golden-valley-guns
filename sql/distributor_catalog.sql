@@ -40,7 +40,7 @@ alter table distributor_products enable row level security;
 -- admin-dashboard.html's existing Site Content panel.
 insert into site_content (key, value) values
   ('catalog_markup_pct', '25'),
-  ('catalog_manufacturers', '')   -- comma-separated allow-list, e.g. "PSA,Aero Precision,Magpul"
+  ('catalog_manufacturers', '')   -- comma-separated allow-list, e.g. "PSA,Aero Precision,Magpul"; "*" allows every manufacturer
 on conflict (key) do nothing;
 
 -- 3) PUBLIC VIEW

@@ -17,18 +17,26 @@ export async function getAllowedManufacturers(supabase) {
 
 // Empty allow-list = sync nothing. Prevents a misconfigured/empty list from
 // accidentally dumping a distributor's entire catalog onto the site.
+// A literal "*" is an explicit opt-in to sync every manufacturer, distinct
+// from "never configured" - so the two cases can't be confused with each other.
 export function filterByAllowList(items, allowList) {
+  if (allowList.length === 1 && allowList[0] === '*') return items;
   if (allowList.length === 0) return [];
   const allowSet = new Set(allowList.map(m => m.toLowerCase()));
   return items.filter(i => i.manufacturer && allowSet.has(i.manufacturer.toLowerCase()));
 }
 
-export async function upsertDistributorProducts(supabase, distributor, items) {
+// syncTime is a single timestamp shared by every item in this run (set by the
+// caller, stamped onto each item's last_synced_at during normalize). Used
+// below to identify stale rows without listing every current SKU - a
+// distributor catalog easily runs to thousands of items, and inlining them
+// all into a `not in (...)` filter blows past Supabase's request-size limit.
+export async function upsertDistributorProducts(supabase, distributor, items, syncTime) {
   // "Sync nothing" (empty allow-list, or every item filtered out) must mean
   // exactly that - touch nothing. Without this guard, an empty `items` list
-  // fell through to the stale-zero query below with no SKU filter attached,
-  // which zeroed quantity_available for every existing row from this
-  // distributor instead of leaving them alone.
+  // fell through to the stale-zero query below with no lower bound on
+  // last_synced_at, which zeroed quantity_available for every existing row
+  // from this distributor instead of leaving them alone.
   if (items.length === 0) return;
 
   const { error: upsertError } = await supabase
@@ -38,12 +46,13 @@ export async function upsertDistributorProducts(supabase, distributor, items) {
 
   // Zero out stock for anything previously synced from this distributor that
   // didn't appear in this run (delisted SKU, allow-list narrowed, etc) so
-  // stale "in stock" items don't linger on the Shop page.
-  const currentSkus = items.map(i => i.distributor_sku.replace(/"/g, '\\"'));
+  // stale "in stock" items don't linger on the Shop page. Every item just
+  // upserted now has last_synced_at === syncTime, so anything still older
+  // than that is exactly what's missing from this run.
   const { error: staleError } = await supabase
     .from('distributor_products')
-    .update({ quantity_available: 0, last_synced_at: new Date().toISOString() })
+    .update({ quantity_available: 0, last_synced_at: syncTime })
     .eq('distributor', distributor)
-    .not('distributor_sku', 'in', `(${currentSkus.map(s => `"${s}"`).join(',')})`);
+    .lt('last_synced_at', syncTime);
   if (staleError) throw staleError;
 }

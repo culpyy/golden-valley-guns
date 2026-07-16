@@ -66,7 +66,9 @@ function safeNumber(value) {
 
 // Returns null for normalize() to signal "skip this item" - keeps one
 // malformed distributor record from taking down the entire sync batch.
-function normalize(item) {
+// syncTime is stamped onto every item from this run so upsertDistributorProducts
+// can identify stale rows by comparison instead of listing every current SKU.
+function normalize(item, syncTime) {
   const dealerCost = safeNumber(item.currentPrice ?? item.price);
   if (dealerCost === null || !item.itemNo) return null;
 
@@ -87,7 +89,7 @@ function normalize(item) {
     quantity_available: Number.isFinite(quantity) ? quantity : 0,
     image_url: item.imageName ? `${LIPSEYS_IMAGE_BASE}/${item.imageName}` : null,
     is_firearm: !!item.fflRequired,
-    last_synced_at: new Date().toISOString()
+    last_synced_at: syncTime
   };
 }
 
@@ -96,8 +98,9 @@ export async function run(env) {
   const token = await login(env);
   const rawItems = await fetchCatalog(token);
   const allowList = await getAllowedManufacturers(supabase);
-  const normalized = rawItems.map(normalize).filter(Boolean);
+  const syncTime = new Date().toISOString();
+  const normalized = rawItems.map(item => normalize(item, syncTime)).filter(Boolean);
   const filtered = filterByAllowList(normalized, allowList);
-  await upsertDistributorProducts(supabase, 'lipseys', filtered);
+  await upsertDistributorProducts(supabase, 'lipseys', filtered, syncTime);
   return filtered.length;
 }
