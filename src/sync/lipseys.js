@@ -10,15 +10,21 @@
 //   SUPABASE_URL               - already set as a plain var in wrangler.jsonc
 //   SUPABASE_SERVICE_ROLE_KEY  - Project Settings > API > service_role (secret, NOT the anon key)
 //
-// NOTE: the exact response field names below (itemNo, description, etc.) are
-// per Lipsey's published integration docs but haven't been verified against a
-// live response yet — do that first thing once real credentials are in place,
-// and adjust normalize()/mapCategory() to match what actually comes back.
-
+// Verified 2026-07-16 against a live response (18,987 items). Auth uses a
+// custom `Token` header (NOT `Authorization: Bearer`), and CatalogFeed wraps
+// items in a top-level `data` array, not `items`.
+//
 import { getSupabaseAdmin } from '../lib/supabaseAdmin.js';
 import { getAllowedManufacturers, filterByAllowList, upsertDistributorProducts } from '../lib/catalogSync.js';
 
 const LIPSEYS_BASE = 'https://api.lipseys.com';
+
+// CatalogFeed only returns a bare filename (item.imageName), not a URL.
+// Lipsey's own dealer portal (SPA at www.lipseys.com) loads product photos
+// from lipseyscloud.com - found by pulling their app bundle and finding the
+// base path, then verified with a live 200 against a real filename. Not
+// documented anywhere public, confirmed 2026-07-16.
+const LIPSEYS_IMAGE_BASE = 'https://www.lipseyscloud.com/images';
 
 async function login(env) {
   const res = await fetch(`${LIPSEYS_BASE}/api/Integration/Authentication/Login`, {
@@ -36,11 +42,11 @@ async function login(env) {
 
 async function fetchCatalog(token) {
   const res = await fetch(`${LIPSEYS_BASE}/api/Integration/Items/CatalogFeed`, {
-    headers: { Authorization: `Bearer ${token}` }
+    headers: { Token: token }
   });
   if (!res.ok) throw new Error(`Lipsey's catalog fetch failed: ${res.status}`);
   const data = await res.json();
-  return Array.isArray(data) ? data : (data.items || []);
+  return Array.isArray(data) ? data : (data.data || []);
 }
 
 function mapCategory(item) {
@@ -61,7 +67,7 @@ function safeNumber(value) {
 // Returns null for normalize() to signal "skip this item" - keeps one
 // malformed distributor record from taking down the entire sync batch.
 function normalize(item) {
-  const dealerCost = safeNumber(item.price);
+  const dealerCost = safeNumber(item.currentPrice ?? item.price);
   if (dealerCost === null || !item.itemNo) return null;
 
   const quantity = parseInt(item.quantity, 10);
@@ -71,15 +77,15 @@ function normalize(item) {
     distributor: 'lipseys',
     distributor_sku: String(item.itemNo),
     upc: item.upc || null,
-    name: item.description || 'Unnamed item',
+    name: item.description1 || 'Unnamed item',
     manufacturer: item.manufacturer || null,
     category: mapCategory(item),
-    caliber: item.caliber || null,
-    description: item.description || '',
+    caliber: item.caliberGauge || null,
+    description: item.description1 || '',
     dealer_cost: dealerCost,
     msrp,
     quantity_available: Number.isFinite(quantity) ? quantity : 0,
-    image_url: item.imageUrl || null,
+    image_url: item.imageName ? `${LIPSEYS_IMAGE_BASE}/${item.imageName}` : null,
     is_firearm: !!item.fflRequired,
     last_synced_at: new Date().toISOString()
   };

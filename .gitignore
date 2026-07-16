@@ -5,3 +5,6 @@ node_modules/
 
 # Local Supabase CLI state
 supabase/.temp/
+
+# Local Wrangler dev/build cache
+.wrangler/
