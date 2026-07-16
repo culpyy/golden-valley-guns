@@ -14,62 +14,148 @@
   <meta name="robots" content="index, follow" />
   <link rel="stylesheet" href="css/style.css" />
   <style>
-    /* ── CATEGORY BAR ── */
-    .cat-bar {
+    /* ── SHOP LAYOUT ── */
+    .shop-wrap {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 56px 48px;
+    }
+    .shop-layout {
       display: flex;
+      align-items: flex-start;
       gap: 2px;
       background: var(--border);
-      border-bottom: 1px solid var(--border);
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
     }
-    .cat-bar::-webkit-scrollbar { display: none; }
-    .cat-btn {
+    .shop-main {
+      flex: 1;
+      min-width: 0;
+      background: var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    /* ── FILTER SIDEBAR ── */
+    .filters-sidebar {
+      width: 260px;
+      flex-shrink: 0;
       background: var(--surface);
-      border: none;
-      padding: 14px 24px;
+    }
+    .filter-group {
+      padding: 20px 22px;
+      border-bottom: 1px solid var(--border);
+    }
+    .filter-title {
       font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
       font-size: 14px;
       letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+    .filter-options {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+    .filter-options-scroll {
+      max-height: 220px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+    .filter-option {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-size: 13px;
       color: var(--muted);
       cursor: pointer;
-      white-space: nowrap;
-      transition: background 0.15s, color 0.15s;
-      flex-shrink: 0;
+      transition: color 0.15s;
     }
-    .cat-btn:hover { background: var(--surface2); color: var(--silver); }
-    .cat-btn.active { background: var(--bg); color: var(--gold-light); border-bottom: 2px solid var(--gold-light); }
+    .filter-option:hover { color: var(--silver); }
+    .filter-option input { accent-color: var(--gold); cursor: pointer; flex-shrink: 0; }
+    .filter-option.active-radio { color: var(--gold-light); }
+    .filter-option-label { flex: 1; }
+    .filter-option-count { font-size: 11px; color: var(--muted); }
+    .filter-option-empty { font-size: 12px; color: var(--muted); font-style: italic; }
+    .clear-filters-btn {
+      display: block;
+      width: 100%;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 10px;
+      font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
+      font-size: 12px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .clear-filters-btn:hover { border-color: var(--gold); color: var(--gold-light); }
+    .filters-toggle {
+      display: none;
+      width: 100%;
+      background: var(--surface);
+      border: none;
+      color: var(--text);
+      padding: 14px 22px;
+      font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
+      font-size: 14px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      cursor: pointer;
+      text-align: left;
+    }
 
-    /* ── FIREARM TYPE SUB-FILTER ── */
-    .type-bar {
+    /* ── ACTIVE FILTER CHIPS ── */
+    .active-filters {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
-      padding: 14px 32px;
-      background: var(--bg);
-      border-bottom: 1px solid var(--border);
-    }
-    .type-btn {
+      align-items: center;
+      padding: 16px 22px;
       background: var(--surface);
-      border: 1px solid var(--border);
-      padding: 6px 14px;
-      font-size: 11px;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      color: var(--muted);
-      cursor: pointer;
-      white-space: nowrap;
-      transition: background 0.15s, color 0.15s, border-color 0.15s;
     }
-    .type-btn:hover { color: var(--silver); border-color: var(--silver); }
-    .type-btn.active { background: var(--gold); color: #fff; border-color: var(--gold); }
+    .active-filters:empty { display: none; }
+    .filter-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface2);
+      border: 1px solid var(--gold);
+      color: var(--gold-light);
+      padding: 5px 8px 5px 12px;
+      font-size: 12px;
+      letter-spacing: 0.5px;
+    }
+    .filter-chip button {
+      background: none;
+      border: none;
+      color: var(--gold-light);
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1;
+      padding: 0;
+    }
+    .clear-all-chip {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 12px;
+      text-decoration: underline;
+      cursor: pointer;
+      padding: 5px 4px;
+    }
+    .clear-all-chip:hover { color: var(--silver); }
 
-    /* ── SHOP LAYOUT ── */
-    .shop-wrap {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 56px 48px;
+    /* ── RESULTS BAR ── */
+    .results-bar {
+      padding: 12px 22px;
+      background: var(--bg);
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 0.5px;
     }
 
     /* ── BUTTONS ── */
@@ -290,10 +376,13 @@
     @media (max-width: 900px) {
       .shop-wrap { padding: 40px 20px; }
       .parts-grid { grid-template-columns: repeat(2, 1fr); }
+      .filters-toggle { display: block; }
+      .filters-sidebar { width: 100%; display: none; }
+      .filters-sidebar.open { display: block; }
+      .shop-layout { flex-direction: column; }
     }
     @media (max-width: 580px) {
       .shop-wrap { padding: 32px 16px; }
-      .cat-btn { padding: 10px 16px; font-size: 12px; letter-spacing: 1.5px; }
       .parts-grid { grid-template-columns: 1fr; }
       .builds-header { padding: 20px; flex-direction: column; align-items: flex-start; }
       .builds-header .btn-buy { width: 100%; text-align: center; }
@@ -364,62 +453,49 @@
     <p>Firearms, ammo, and parts we actually have. Looking for a custom build instead? <a href="services.html" class="tel-link">See what we build</a>.</p>
   </div>
 
-  <!-- CATEGORY BAR -->
-  <div class="cat-bar">
-    <button class="cat-btn active" data-cat="all">All</button>
-    <button class="cat-btn" data-cat="firearms">Firearms</button>
-    <button class="cat-btn" data-cat="ammo">Ammo</button>
-    <button class="cat-btn" data-cat="parts">Parts &amp; Accessories</button>
-  </div>
-
   <!-- CATALOG SEARCH -->
   <div class="catalog-search-wrap">
-    <input type="text" id="catalogSearch" placeholder="Search distributor catalog by name, manufacturer, or caliber..." />
+    <input type="text" id="catalogSearch" placeholder="Search by name, manufacturer, or caliber..." />
   </div>
 
   <!-- SHOP -->
   <div class="shop-wrap">
+    <button class="filters-toggle" id="filtersToggle">Filters &#9662;</button>
+    <div class="shop-layout">
 
-    <!-- FIREARMS -->
-    <div class="builds-section" id="firearmsSection">
-      <div class="builds-header">
-        <div>
-          <h2>Firearms</h2>
-          <p>We don't carry a wall of guns, but we can source almost anything. Tell us what you want and we'll get you a price and timeline.</p>
+      <!-- FILTER SIDEBAR -->
+      <aside class="filters-sidebar" id="filtersSidebar">
+        <div class="filter-group">
+          <div class="filter-title">Category</div>
+          <div class="filter-options" id="categoryFilters"></div>
         </div>
-        <a href="contact.html?subject=buysell" class="btn-buy">Request a Firearm</a>
-      </div>
-      <div class="type-bar" id="firearmTypeBar" style="display:none;"></div>
-      <div class="parts-grid" id="firearmsGrid"></div>
-      <div class="pagination" id="firearmsPagination"></div>
-    </div>
-
-    <!-- AMMO -->
-    <div class="builds-section" id="ammoSection" style="margin-top: 2px;">
-      <div class="builds-header">
-        <div>
-          <h2>Ammo</h2>
-          <p>We keep common calibers in stock: 9mm, 5.56, .22 LR, 7.62x39, and others. Stock rotates so call ahead or stop in to see what we have.</p>
+        <div class="filter-group" id="firearmTypeGroup" style="display:none;">
+          <div class="filter-title">Firearm Type</div>
+          <div class="filter-options" id="firearmTypeFilters"></div>
         </div>
-        <a href="tel:9287270893" class="btn-buy">Call to Check Stock</a>
-      </div>
-      <div class="parts-grid" id="ammoGrid"></div>
-      <div class="pagination" id="ammoPagination"></div>
-    </div>
-
-    <!-- PARTS & ACCESSORIES -->
-    <div class="builds-section" id="partsSection" style="margin-top: 2px;">
-      <div class="builds-header">
-        <div>
-          <h2>Parts &amp; Accessories</h2>
-          <p>Grips, magazines, cleaning gear, and more. Stop in or contact us to check availability and pricing.</p>
+        <div class="filter-group" id="manufacturerGroup">
+          <div class="filter-title">Manufacturer</div>
+          <div class="filter-options filter-options-scroll" id="manufacturerFilters"></div>
         </div>
-        <a href="contact.html" class="btn-buy outline">Ask About an Item</a>
-      </div>
-      <div class="parts-grid" id="partsGrid"></div>
-      <div class="pagination" id="partsPagination"></div>
-    </div>
+        <div class="filter-group" id="caliberGroup">
+          <div class="filter-title">Caliber</div>
+          <div class="filter-options filter-options-scroll" id="caliberFilters"></div>
+        </div>
+        <div class="filter-group" style="border-bottom: none;">
+          <button class="clear-filters-btn" id="clearFiltersBtn">Clear All Filters</button>
+        </div>
+      </aside>
 
+      <!-- MAIN -->
+      <div class="shop-main">
+        <div class="builds-header" id="categoryHeader"></div>
+        <div class="active-filters" id="activeFilters"></div>
+        <div class="results-bar" id="resultsBar"></div>
+        <div class="parts-grid" id="productGrid"></div>
+        <div class="pagination" id="productPagination"></div>
+      </div>
+
+    </div>
   </div>
 
   <!-- CUSTOM BUILD CTA -->
@@ -479,11 +555,6 @@
   <script src="js/supabase.js"></script>
   <script src="js/main.js"></script>
   <script>
-    const catBtns         = document.querySelectorAll('.cat-btn');
-    const firearmsSection = document.getElementById('firearmsSection');
-    const ammoSection     = document.getElementById('ammoSection');
-    const partsSection    = document.getElementById('partsSection');
-
     const STOCK_LABELS = {
       in_stock: 'In Stock',
       limited:  'Limited Stock',
@@ -500,20 +571,43 @@
     }
 
     const PAGE_SIZE = 24;
-    let allFirearms = [];
-    let allAmmo = [];
-    let allParts = [];
-    let selectedFirearmType = 'all';
-    let currentPage = { firearms: 1, ammo: 1, parts: 1 };
+    let allItems = [];
+    let currentPage = 1;
 
-    function setCategory(cat) {
-      catBtns.forEach(b => b.classList.toggle('active', b.dataset.cat === cat));
-      firearmsSection.style.display = (cat === 'all' || cat === 'firearms') ? '' : 'none';
-      ammoSection.style.display     = (cat === 'all' || cat === 'ammo')     ? '' : 'none';
-      partsSection.style.display    = (cat === 'all' || cat === 'parts')    ? '' : 'none';
-    }
+    // Filter state - category is single-select (it's really a view switch),
+    // the rest are multi-select facets (OR within a group, AND across groups).
+    let selectedCategory = 'all';
+    let selectedFirearmTypes = new Set();
+    let selectedManufacturers = new Set();
+    let selectedCalibers = new Set();
 
-    catBtns.forEach(b => b.addEventListener('click', () => setCategory(b.dataset.cat)));
+    const CATEGORY_LABELS = { all: 'All Products', firearms: 'Firearms', ammo: 'Ammo', parts: 'Parts & Accessories' };
+    const CATEGORY_INFO = {
+      all: {
+        title: 'All Products',
+        desc: 'Firearms, ammo, and parts we actually have. Looking for a custom build instead? <a href="services.html" class="tel-link">See what we build</a>.',
+        cta: null
+      },
+      firearms: {
+        title: 'Firearms',
+        desc: "We don't carry a wall of guns, but we can source almost anything. Tell us what you want and we'll get you a price and timeline.",
+        cta: { href: 'contact.html?subject=buysell', label: 'Request a Firearm', cls: 'btn-buy' }
+      },
+      ammo: {
+        title: 'Ammo',
+        desc: 'We keep common calibers in stock: 9mm, 5.56, .22 LR, 7.62x39, and others. Stock rotates so call ahead or stop in to see what we have.',
+        cta: { href: 'tel:9287270893', label: 'Call to Check Stock', cls: 'btn-buy' }
+      },
+      parts: {
+        title: 'Parts &amp; Accessories',
+        desc: 'Grips, magazines, cleaning gear, and more. Stop in or contact us to check availability and pricing.',
+        cta: { href: 'contact.html', label: 'Ask About an Item', cls: 'btn-buy outline' }
+      }
+    };
+
+    document.getElementById('filtersToggle').addEventListener('click', () => {
+      document.getElementById('filtersSidebar').classList.toggle('open');
+    });
 
     // Missing/broken images fall back to a plain placeholder instead of a
     // broken-image icon - distributor feeds frequently have gaps or dead
@@ -591,89 +685,215 @@
       });
     }
 
-    function buildFirearmTypeBar(firearmsItems) {
-      const bar = document.getElementById('firearmTypeBar');
-      const types = sortFirearmTypes([...new Set(firearmsItems.map(i => i.firearm_type).filter(Boolean))]);
-      selectedFirearmType = 'all';
-      if (types.length === 0) {
-        bar.style.display = 'none';
-        bar.innerHTML = '';
-        return;
-      }
-      bar.style.display = '';
-      bar.innerHTML = ['<button class="type-btn active" data-type="all">All Types</button>']
-        .concat(types.map(t => `<button class="type-btn" data-type="${escapeHtml(t.toLowerCase())}">${escapeHtml(t)}</button>`))
-        .join('');
-      bar.querySelectorAll('.type-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          selectedFirearmType = btn.dataset.type;
-          bar.querySelectorAll('.type-btn').forEach(b => b.classList.toggle('active', b === btn));
-          currentPage.firearms = 1;
-          renderAll();
+    // Every facet check except the group's own is applied - this is what
+    // makes counts meaningful (e.g. Manufacturer counts already reflect the
+    // selected Caliber, so ticking another manufacturer never surprises you
+    // with a count that ignores filters you already set), while still
+    // letting a group's own options be OR'd together instead of collapsing
+    // to zero the moment one is checked.
+    function matchesFilters(item, excludeGroup) {
+      const q = document.getElementById('catalogSearch').value.trim().toLowerCase();
+      if (q && !itemSearchText(item).includes(q)) return false;
+      if (excludeGroup !== 'category' && selectedCategory !== 'all' && item.category !== selectedCategory) return false;
+      if (excludeGroup !== 'firearmType' && selectedFirearmTypes.size && !(item.firearm_type && selectedFirearmTypes.has(item.firearm_type))) return false;
+      if (excludeGroup !== 'manufacturer' && selectedManufacturers.size && !(item.manufacturer && selectedManufacturers.has(item.manufacturer))) return false;
+      if (excludeGroup !== 'caliber' && selectedCalibers.size && !(item.caliber && selectedCalibers.has(item.caliber))) return false;
+      return true;
+    }
+
+    function itemsMatchingExcept(excludeGroup) {
+      return allItems.filter(item => matchesFilters(item, excludeGroup));
+    }
+
+    function getFilteredItems() {
+      return itemsMatchingExcept(null);
+    }
+
+    function countBy(items, field) {
+      const counts = {};
+      items.forEach(i => { if (i[field]) counts[i[field]] = (counts[i[field]] || 0) + 1; });
+      return counts;
+    }
+
+    function renderCategoryHeader() {
+      const info = CATEGORY_INFO[selectedCategory];
+      const cta = info.cta ? `<a href="${info.cta.href}" class="${info.cta.cls}">${info.cta.label}</a>` : '';
+      document.getElementById('categoryHeader').innerHTML = `
+        <div>
+          <h2>${info.title}</h2>
+          <p>${info.desc}</p>
+        </div>
+        ${cta}
+      `;
+    }
+
+    function renderCategoryFilter() {
+      const container = document.getElementById('categoryFilters');
+      const scoped = itemsMatchingExcept('category');
+      const counts = countBy(scoped, 'category');
+      container.innerHTML = ['all', 'firearms', 'ammo', 'parts'].map(cat => {
+        const count = cat === 'all' ? scoped.length : (counts[cat] || 0);
+        const checked = selectedCategory === cat;
+        return `<label class="filter-option${checked ? ' active-radio' : ''}">
+          <input type="radio" name="categoryFilter" value="${cat}" ${checked ? 'checked' : ''}>
+          <span class="filter-option-label">${CATEGORY_LABELS[cat]}</span>
+          <span class="filter-option-count">${count}</span>
+        </label>`;
+      }).join('');
+      container.querySelectorAll('input').forEach(input => {
+        input.addEventListener('change', () => {
+          selectedCategory = input.value;
+          currentPage = 1;
+          renderShop();
         });
       });
     }
 
-    function getFilteredFirearms() {
-      const q = document.getElementById('catalogSearch').value.trim().toLowerCase();
-      return allFirearms.filter(i => {
-        const matchesSearch = !q || itemSearchText(i).includes(q);
-        const matchesType = selectedFirearmType === 'all' || (i.firearm_type || '').toLowerCase() === selectedFirearmType;
-        return matchesSearch && matchesType;
+    function renderFirearmTypeFilter() {
+      const group = document.getElementById('firearmTypeGroup');
+      if (selectedCategory === 'ammo' || selectedCategory === 'parts') {
+        group.style.display = 'none';
+        selectedFirearmTypes.clear();
+        return;
+      }
+      const scoped = itemsMatchingExcept('firearmType');
+      const counts = countBy(scoped, 'firearm_type');
+      const types = sortFirearmTypes(Object.keys(counts));
+      if (types.length === 0) {
+        group.style.display = 'none';
+        return;
+      }
+      group.style.display = '';
+      const container = document.getElementById('firearmTypeFilters');
+      container.innerHTML = types.map(t => {
+        const checked = selectedFirearmTypes.has(t);
+        return `<label class="filter-option">
+          <input type="checkbox" value="${escapeHtml(t)}" ${checked ? 'checked' : ''}>
+          <span class="filter-option-label">${escapeHtml(t)}</span>
+          <span class="filter-option-count">${counts[t]}</span>
+        </label>`;
+      }).join('');
+      container.querySelectorAll('input').forEach(input => {
+        input.addEventListener('change', () => {
+          if (input.checked) selectedFirearmTypes.add(input.value); else selectedFirearmTypes.delete(input.value);
+          currentPage = 1;
+          renderShop();
+        });
       });
     }
 
-    function getFilteredAmmo() {
-      const q = document.getElementById('catalogSearch').value.trim().toLowerCase();
-      return !q ? allAmmo : allAmmo.filter(i => itemSearchText(i).includes(q));
+    // Shared by Manufacturer and Caliber - both are plain multi-select
+    // checkbox facets built from whatever distinct values are actually
+    // present in the currently-scoped item set, sorted alphabetically.
+    function renderChecklistFilter(containerId, field, excludeGroup, selectedSet) {
+      const container = document.getElementById(containerId);
+      const scoped = itemsMatchingExcept(excludeGroup);
+      const counts = countBy(scoped, field);
+      const values = Object.keys(counts).sort();
+      if (values.length === 0) {
+        container.innerHTML = '<div class="filter-option-empty">No items</div>';
+        return;
+      }
+      container.innerHTML = values.map(v => {
+        const checked = selectedSet.has(v);
+        return `<label class="filter-option">
+          <input type="checkbox" value="${escapeHtml(v)}" ${checked ? 'checked' : ''}>
+          <span class="filter-option-label">${escapeHtml(v)}</span>
+          <span class="filter-option-count">${counts[v]}</span>
+        </label>`;
+      }).join('');
+      container.querySelectorAll('input').forEach(input => {
+        input.addEventListener('change', () => {
+          if (input.checked) selectedSet.add(input.value); else selectedSet.delete(input.value);
+          currentPage = 1;
+          renderShop();
+        });
+      });
     }
 
-    function getFilteredParts() {
-      const q = document.getElementById('catalogSearch').value.trim().toLowerCase();
-      return !q ? allParts : allParts.filter(i => itemSearchText(i).includes(q));
+    function renderActiveFilters() {
+      const container = document.getElementById('activeFilters');
+      const chips = [];
+      if (selectedCategory !== 'all') {
+        chips.push({ label: CATEGORY_LABELS[selectedCategory], onRemove: () => { selectedCategory = 'all'; } });
+      }
+      selectedFirearmTypes.forEach(t => chips.push({ label: t, onRemove: () => selectedFirearmTypes.delete(t) }));
+      selectedManufacturers.forEach(m => chips.push({ label: m, onRemove: () => selectedManufacturers.delete(m) }));
+      selectedCalibers.forEach(c => chips.push({ label: c, onRemove: () => selectedCalibers.delete(c) }));
+      const q = document.getElementById('catalogSearch').value.trim();
+      if (q) chips.push({ label: `"${q}"`, onRemove: () => { document.getElementById('catalogSearch').value = ''; } });
+
+      if (chips.length === 0) {
+        container.innerHTML = '';
+        return;
+      }
+      container.innerHTML = chips.map((c, i) => `<span class="filter-chip">${escapeHtml(c.label)}<button data-idx="${i}">&times;</button></span>`).join('')
+        + '<button class="clear-all-chip" id="clearAllChip">Clear all</button>';
+      container.querySelectorAll('.filter-chip button').forEach((btn, i) => {
+        btn.addEventListener('click', () => {
+          chips[i].onRemove();
+          currentPage = 1;
+          renderShop();
+        });
+      });
+      document.getElementById('clearAllChip').addEventListener('click', clearAllFilters);
     }
 
-    // One paginator for all three grids - slices the already-filtered list
-    // to the current page, renders it, and rebuilds the Prev/Next controls.
-    // pageKey indexes into currentPage so each section tracks its own page
-    // independently (switching category or typing a search doesn't reset
-    // pages other than the ones actually affected).
-    function renderPaginatedGrid(gridId, paginationId, items, cardFn, pageKey, emptyMessage) {
-      const grid = document.getElementById(gridId);
-      const paginationEl = document.getElementById(paginationId);
+    function clearAllFilters() {
+      selectedCategory = 'all';
+      selectedFirearmTypes.clear();
+      selectedManufacturers.clear();
+      selectedCalibers.clear();
+      document.getElementById('catalogSearch').value = '';
+      currentPage = 1;
+      renderShop();
+    }
+
+    document.getElementById('clearFiltersBtn').addEventListener('click', clearAllFilters);
+
+    function renderResultsAndGrid() {
+      const items = getFilteredItems();
       const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
-      if (currentPage[pageKey] > totalPages) currentPage[pageKey] = totalPages;
-      const start = (currentPage[pageKey] - 1) * PAGE_SIZE;
+      if (currentPage > totalPages) currentPage = totalPages;
+      const start = (currentPage - 1) * PAGE_SIZE;
       const pageItems = items.slice(start, start + PAGE_SIZE);
 
-      grid.innerHTML = pageItems.length ? pageItems.map(cardFn).join('') : emptyMessage;
+      document.getElementById('resultsBar').textContent = items.length
+        ? `Showing ${start + 1}–${Math.min(start + PAGE_SIZE, items.length)} of ${items.length}`
+        : 'No items match your filters.';
 
+      const grid = document.getElementById('productGrid');
+      grid.innerHTML = pageItems.length
+        ? pageItems.map(partCardHtml).join('')
+        : '<div class="parts-empty">Nothing matches your filters. Try clearing some or <a href="contact.html" style="color:var(--gold-light);">contact us</a> about what you\'re after.</div>';
+
+      const paginationEl = document.getElementById('productPagination');
       if (totalPages <= 1) {
         paginationEl.innerHTML = '';
         return;
       }
-      const cur = currentPage[pageKey];
       paginationEl.innerHTML = `
-        <button class="page-btn" data-dir="prev" ${cur === 1 ? 'disabled' : ''}>&larr; Prev</button>
-        <span class="page-info">Page ${cur} of ${totalPages} &middot; ${items.length} items</span>
-        <button class="page-btn" data-dir="next" ${cur === totalPages ? 'disabled' : ''}>Next &rarr;</button>
+        <button class="page-btn" data-dir="prev" ${currentPage === 1 ? 'disabled' : ''}>&larr; Prev</button>
+        <span class="page-info">Page ${currentPage} of ${totalPages} &middot; ${items.length} items</span>
+        <button class="page-btn" data-dir="next" ${currentPage === totalPages ? 'disabled' : ''}>Next &rarr;</button>
       `;
       paginationEl.querySelectorAll('.page-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-          currentPage[pageKey] += btn.dataset.dir === 'next' ? 1 : -1;
-          renderAll();
+          currentPage += btn.dataset.dir === 'next' ? 1 : -1;
+          renderShop();
           grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
       });
     }
 
-    function renderAll() {
-      renderPaginatedGrid('firearmsGrid', 'firearmsPagination', getFilteredFirearms(), distCardHtml, 'firearms',
-        '<div class="parts-empty">No firearms match your search.</div>');
-      renderPaginatedGrid('ammoGrid', 'ammoPagination', getFilteredAmmo(), distCardHtml, 'ammo',
-        '<div class="parts-empty">No ammo matches your search.</div>');
-      renderPaginatedGrid('partsGrid', 'partsPagination', getFilteredParts(), partCardHtml, 'parts',
-        '<div class="parts-empty">No parts in stock right now. Check back soon or <a href="contact.html" style="color:var(--gold-light);">contact us</a>.</div>');
+    function renderShop() {
+      renderCategoryHeader();
+      renderCategoryFilter();
+      renderFirearmTypeFilter();
+      renderChecklistFilter('manufacturerFilters', 'manufacturer', 'manufacturer', selectedManufacturers);
+      renderChecklistFilter('caliberFilters', 'caliber', 'caliber', selectedCalibers);
+      renderActiveFilters();
+      renderResultsAndGrid();
     }
 
     // Supabase caps a single select() at 1000 rows regardless of how many
@@ -697,9 +917,8 @@
     }
 
     async function loadShop() {
-      const partsGrid = document.getElementById('partsGrid');
-
-      partsGrid.innerHTML = [1, 2, 3].map(() => `
+      const grid = document.getElementById('productGrid');
+      grid.innerHTML = [1, 2, 3].map(() => `
         <div class="part-card">
           <div class="shimmer-block" style="height:20px;width:70%;margin-bottom:10px;"></div>
           <div class="shimmer-block" style="height:10px;width:90%;margin-bottom:6px;"></div>
@@ -712,25 +931,18 @@
         fetchAllRows(() => supabase.from('distributor_products_public').select('*').order('name'))
       ]);
 
-      const dist = (distErr ? [] : (distItems || [])).slice().sort(byStockThenName);
-      allFirearms = dist.filter(i => i.category === 'firearms');
-      allAmmo     = dist.filter(i => i.category === 'ammo');
-
-      // Combine both sources before sorting, so an in-stock distributor part
-      // outranks an out-of-stock own product instead of always trailing it.
+      const dist = (distErr ? [] : (distItems || [])).slice();
+      // own products (Shawn's hand-curated parts) already carry category:
+      // 'parts' from the table itself - just tag which template to use.
       const ownParts = (prodErr || !products) ? [] : products.map(p => ({ ...p, _own: true }));
-      const distParts = dist.filter(i => i.category === 'parts');
-      allParts = [...ownParts, ...distParts].sort(byStockThenName);
+      allItems = [...dist, ...ownParts].sort(byStockThenName);
 
-      buildFirearmTypeBar(allFirearms);
-      renderAll();
+      renderShop();
     }
 
     document.getElementById('catalogSearch').addEventListener('input', () => {
-      currentPage.firearms = 1;
-      currentPage.ammo = 1;
-      currentPage.parts = 1;
-      renderAll();
+      currentPage = 1;
+      renderShop();
     });
 
     // admin sign out
