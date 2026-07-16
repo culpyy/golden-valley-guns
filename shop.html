@@ -139,9 +139,13 @@
       transition: background 0.2s;
     }
     .part-card:hover { background: var(--surface); }
+    /* Distributor photos are inconsistent - some are shot on white, some on
+       transparent. A dark card background made the transparent ones blend in
+       and the white ones look like a mistake sitting next to them. Forcing
+       every frame to the same white backdrop makes both look intentional. */
     .part-img-wrap {
       aspect-ratio: 4 / 3;
-      background: var(--surface2);
+      background: #fff;
       overflow: hidden;
       margin: -24px -24px 8px -24px;
       width: calc(100% + 48px);
@@ -158,7 +162,7 @@
       display: none;
       align-items: center;
       justify-content: center;
-      color: var(--muted);
+      color: #777;
       font-size: 10px;
       letter-spacing: 1.5px;
       text-transform: uppercase;
@@ -571,9 +575,25 @@
       return `${item.name} ${item.manufacturer || ''} ${item.caliber || ''}`.toLowerCase();
     }
 
+    // Matches the bucket order sync/lipseys.js's mapFirearmType() produces -
+    // most-shopped-for first, "Other" (the catch-all) always last rather than
+    // wherever it happens to land alphabetically. Anything unrecognized falls
+    // back to alphabetical after the known buckets instead of disappearing.
+    const FIREARM_TYPE_ORDER = ['Handgun', 'Rifle', 'Shotgun', 'Muzzleloader', 'Other'];
+    function sortFirearmTypes(types) {
+      return types.slice().sort((a, b) => {
+        const ai = FIREARM_TYPE_ORDER.indexOf(a);
+        const bi = FIREARM_TYPE_ORDER.indexOf(b);
+        if (ai === -1 && bi === -1) return a.localeCompare(b);
+        if (ai === -1) return 1;
+        if (bi === -1) return -1;
+        return ai - bi;
+      });
+    }
+
     function buildFirearmTypeBar(firearmsItems) {
       const bar = document.getElementById('firearmTypeBar');
-      const types = [...new Set(firearmsItems.map(i => i.firearm_type).filter(Boolean))].sort();
+      const types = sortFirearmTypes([...new Set(firearmsItems.map(i => i.firearm_type).filter(Boolean))]);
       selectedFirearmType = 'all';
       if (types.length === 0) {
         bar.style.display = 'none';
