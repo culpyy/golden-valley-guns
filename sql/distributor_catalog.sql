@@ -16,6 +16,7 @@ create table distributor_products (
   manufacturer        text,
   category            text not null check (category in ('firearms','ammo','parts')),
   caliber             text,
+  firearm_type        text,   -- e.g. "Rifle", "Shotgun", "Semi-Auto Pistol", "Revolver" - only set when category = 'firearms', drives the shop page's firearm-type filter
   description         text,
   dealer_cost         numeric not null,       -- wholesale cost, never exposed publicly
   msrp                numeric,
@@ -73,6 +74,7 @@ select
   end as stock,
   dp.image_url,
   dp.is_firearm,
+  dp.firearm_type,
   dp.last_synced_at
 from distributor_products dp
 cross join markup
@@ -97,3 +99,42 @@ create policy "Authenticated users can hide/unhide distributor products"
   to authenticated
   using (true)
   with check (true);
+
+-- 6) MIGRATION: firearm_type (2026-07-16)
+-- Table/view above already reflect this column for anyone running the file
+-- fresh - this block is what to run against the live database, which
+-- already has the table from blocks 1-5.
+alter table distributor_products add column if not exists firearm_type text;
+
+create or replace view distributor_products_public as
+with markup as (
+  select coalesce(
+    (
+      select value::numeric
+      from site_content
+      where key = 'catalog_markup_pct'
+    ),
+    0
+  ) as pct
+)
+select
+  dp.id,
+  dp.distributor,
+  dp.name,
+  dp.manufacturer,
+  dp.category,
+  dp.caliber,
+  dp.description,
+  round(dp.dealer_cost * (1 + markup.pct / 100.0), 2) as price,
+  case
+    when dp.quantity_available > 5 then 'in_stock'
+    when dp.quantity_available > 0 then 'limited'
+    else 'out'
+  end as stock,
+  dp.image_url,
+  dp.is_firearm,
+  dp.firearm_type,
+  dp.last_synced_at
+from distributor_products dp
+cross join markup
+where dp.is_hidden = false;

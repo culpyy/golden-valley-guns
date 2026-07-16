@@ -41,6 +41,30 @@
     .cat-btn:hover { background: var(--surface2); color: var(--silver); }
     .cat-btn.active { background: var(--bg); color: var(--gold-light); border-bottom: 2px solid var(--gold-light); }
 
+    /* ── FIREARM TYPE SUB-FILTER ── */
+    .type-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 14px 32px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+    }
+    .type-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 6px 14px;
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .type-btn:hover { color: var(--silver); border-color: var(--silver); }
+    .type-btn.active { background: var(--gold); color: #fff; border-color: var(--gold); }
+
     /* ── SHOP LAYOUT ── */
     .shop-wrap {
       max-width: 1200px;
@@ -115,6 +139,32 @@
       transition: background 0.2s;
     }
     .part-card:hover { background: var(--surface); }
+    .part-img-wrap {
+      aspect-ratio: 4 / 3;
+      background: var(--surface2);
+      overflow: hidden;
+      margin: -24px -24px 8px -24px;
+      width: calc(100% + 48px);
+    }
+    .part-img-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .part-img-placeholder {
+      width: 100%;
+      height: 100%;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+    .part-img-wrap:not(:has(img)) .part-img-placeholder,
+    .part-img-wrap.img-error .part-img-placeholder { display: flex; }
     .part-name {
       font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
       font-size: 19px;
@@ -304,6 +354,7 @@
         </div>
         <a href="contact.html?subject=buysell" class="btn-buy">Request a Firearm</a>
       </div>
+      <div class="type-bar" id="firearmTypeBar" style="display:none;"></div>
       <div class="parts-grid" id="firearmsGrid"></div>
     </div>
 
@@ -410,6 +461,8 @@
       return stockDiff !== 0 ? stockDiff : a.name.localeCompare(b.name);
     }
 
+    let selectedFirearmType = 'all';
+
     function setCategory(cat) {
       catBtns.forEach(b => b.classList.toggle('active', b.dataset.cat === cat));
       firearmsSection.style.display = (cat === 'all' || cat === 'firearms') ? '' : 'none';
@@ -419,9 +472,25 @@
 
     catBtns.forEach(b => b.addEventListener('click', () => setCategory(b.dataset.cat)));
 
+    // Missing/broken images fall back to a plain placeholder instead of a
+    // broken-image icon - distributor feeds frequently have gaps or dead
+    // links. Placeholder div is always rendered (hidden by CSS by default)
+    // rather than injected via onerror, since building nested-quote HTML
+    // inside an inline event-handler attribute is a real corruption risk -
+    // a stray unescaped quote there closes the attribute early and can
+    // prematurely close the surrounding .part-card itself.
+    function imageHtml(url, alt) {
+      if (!url) return '<div class="part-img-wrap"><div class="part-img-placeholder">No Image</div></div>';
+      return `<div class="part-img-wrap">
+        <img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}" loading="lazy" onerror="this.remove(); this.parentElement.classList.add('img-error');">
+        <div class="part-img-placeholder">No Image</div>
+      </div>`;
+    }
+
     function productCardHtml(p) {
       return `
         <div class="part-card" data-search="${escapeHtml(p.name.toLowerCase())}">
+          ${imageHtml(p.image_url, p.name)}
           <div class="part-name">${escapeHtml(p.name)}</div>
           <div class="part-desc">${escapeHtml(p.description)}</div>
           <div class="part-footer">
@@ -438,8 +507,10 @@
         ? '<div class="part-note">Transfers through Golden Valley Guns LLC &mdash; FFL required at pickup.</div>'
         : '';
       const requestUrl = `contact.html?product=${encodeURIComponent(item.name)}&price=${price}&subject=order`;
+      const firearmType = (item.firearm_type || '').toLowerCase();
       return `
-        <div class="part-card" data-search="${escapeHtml(search)}">
+        <div class="part-card" data-search="${escapeHtml(search)}" data-firearm-type="${escapeHtml(firearmType)}">
+          ${imageHtml(item.image_url, item.name)}
           <span class="part-source">Distributor Stock</span>
           <div class="part-name">${escapeHtml(item.name)}</div>
           <div class="part-desc">${[item.manufacturer, item.caliber].filter(Boolean).map(escapeHtml).join(' &middot; ')}</div>
@@ -450,6 +521,28 @@
           </div>
           <a href="${requestUrl}" class="btn-buy outline">Request This Item</a>
         </div>`;
+    }
+
+    function buildFirearmTypeBar(firearmsItems) {
+      const bar = document.getElementById('firearmTypeBar');
+      const types = [...new Set(firearmsItems.map(i => i.firearm_type).filter(Boolean))].sort();
+      if (types.length === 0) {
+        bar.style.display = 'none';
+        bar.innerHTML = '';
+        return;
+      }
+      selectedFirearmType = 'all';
+      bar.style.display = '';
+      bar.innerHTML = ['<button class="type-btn active" data-type="all">All Types</button>']
+        .concat(types.map(t => `<button class="type-btn" data-type="${escapeHtml(t.toLowerCase())}">${escapeHtml(t)}</button>`))
+        .join('');
+      bar.querySelectorAll('.type-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          selectedFirearmType = btn.dataset.type;
+          bar.querySelectorAll('.type-btn').forEach(b => b.classList.toggle('active', b === btn));
+          applyFilters();
+        });
+      });
     }
 
     async function loadShop() {
@@ -471,8 +564,10 @@
       ]);
 
       const dist = (distErr ? [] : (distItems || [])).slice().sort(byStockThenName);
-      firearmsGrid.innerHTML = dist.filter(i => i.category === 'firearms').map(distCardHtml).join('');
+      const firearmsItems = dist.filter(i => i.category === 'firearms');
+      firearmsGrid.innerHTML = firearmsItems.map(distCardHtml).join('');
       ammoGrid.innerHTML     = dist.filter(i => i.category === 'ammo').map(distCardHtml).join('');
+      buildFirearmTypeBar(firearmsItems);
 
       // Combine both sources before sorting, so an in-stock distributor part
       // outranks an out-of-stock own product instead of always trailing it.
@@ -488,17 +583,22 @@
       // shimmer placeholders above have no data-search attr, so a query
       // typed mid-load would otherwise match nothing and then get silently
       // dropped once real cards replace them.
-      applyCatalogSearch();
+      applyFilters();
     }
 
-    function applyCatalogSearch() {
+    function applyFilters() {
       const q = document.getElementById('catalogSearch').value.trim().toLowerCase();
       document.querySelectorAll('.part-card[data-search]').forEach(card => {
-        card.style.display = (!q || card.dataset.search.includes(q)) ? '' : 'none';
+        const matchesSearch = !q || card.dataset.search.includes(q);
+        // Firearm-type buttons only exist for the Firearms grid - cards
+        // elsewhere have no data-firearm-type attr and just pass through.
+        const inFirearmsGrid = card.parentElement && card.parentElement.id === 'firearmsGrid';
+        const matchesType = !inFirearmsGrid || selectedFirearmType === 'all' || card.dataset.firearmType === selectedFirearmType;
+        card.style.display = (matchesSearch && matchesType) ? '' : 'none';
       });
     }
 
-    document.getElementById('catalogSearch').addEventListener('input', applyCatalogSearch);
+    document.getElementById('catalogSearch').addEventListener('input', applyFilters);
 
     // admin sign out
     async function adminSignOut() {
