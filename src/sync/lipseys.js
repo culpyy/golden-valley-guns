@@ -96,11 +96,7 @@ function normalize(item, syncTime) {
     manufacturer: item.manufacturer || null,
     category: mapCategory(item),
     caliber: item.caliberGauge || null,
-    // item.itemType is useless for this (always just "Firearm") - item.type is
-    // where Lipsey's actually puts the real classification, e.g. "Rifle",
-    // "Shotgun", "Semi-Auto Pistol", "Revolver". Confirmed against a live
-    // response 2026-07-16.
-    firearm_type: item.fflRequired ? (item.type || null) : null,
+    firearm_type: item.fflRequired ? mapFirearmType(item) : null,
     description: item.description1 || '',
     dealer_cost: dealerCost,
     msrp,
