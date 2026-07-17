@@ -145,6 +145,25 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
   border-radius: 1px;
 }
 
+/* Cart link + live item-count badge (js/cart.js) - shared here rather than
+   duplicated per-page since every customer-facing page carries it. */
+.nav-cart-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.cart-badge {
+  background: var(--gold);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 3px 6px;
+  border-radius: 10px;
+  display: none;
+}
+
 .nav-cta {
   font-size: 12px;
   font-weight: 600;
