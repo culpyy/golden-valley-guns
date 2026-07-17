@@ -11,6 +11,6 @@
 //     -> "Manage Public Client Key" -> Client Key (Accept.js-specific, NOT the Transaction Key)
 // Keep AUTHORIZENET_ENVIRONMENT here in sync with the same-named var in wrangler.jsonc.
 
-const AUTHORIZENET_ENVIRONMENT = 'sandbox'; // 'sandbox' | 'production'
-const AUTHORIZENET_API_LOGIN_ID = 'REPLACE_WITH_API_LOGIN_ID';
+const AUTHORIZENET_ENVIRONMENT = 'production'; // 'sandbox' | 'production' - keep in sync with wrangler.jsonc
+const AUTHORIZENET_API_LOGIN_ID = '4TtBp36JF9';
 const AUTHORIZENET_CLIENT_KEY = 'REPLACE_WITH_PUBLIC_CLIENT_KEY';

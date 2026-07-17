@@ -5,7 +5,15 @@
   "main": "src/worker.js",
   "assets": {
     "directory": "./",
-    "binding": "ASSETS"
+    "binding": "ASSETS",
+    // Without this, Cloudflare serves static files straight from its edge
+    // cache and skips invoking src/worker.js entirely for anything that
+    // matches a real file - meaning fetch()'s security-header wrapping
+    // (src/lib/securityHeaders.js) would silently never run for actual
+    // page requests, only for routes like /api/checkout that aren't real
+    // files. Confirmed empirically 2026-07-18: headers showed up on
+    // /api/checkout but not on /shop.html until this was added.
+    "run_worker_first": true
   },
   "triggers": {
     "crons": ["0 8 * * *"]
@@ -27,13 +35,16 @@
     "SITE_HOSTNAME": "goldenvalleygunsllc.com",
     // "sandbox" or "production" - switches both the Authorize.net API endpoint
     // (src/lib/authorizeNet.js) and which Accept.js script checkout.html loads.
-    // Flip to "production" only once real (non-sandbox) API credentials are set below.
-    "AUTHORIZENET_ENVIRONMENT": "sandbox"
+    // Set to "production" 2026-07-18: real (non-sandbox) API credentials are in use
+    // below. Authorize.net's own Transaction Processing Mode is still "Not enabled"
+    // pending their merchant account approval, so no real charge can complete yet
+    // even though this points at the live endpoint - safe to leave as-is until they approve.
+    "AUTHORIZENET_ENVIRONMENT": "production"
   }
   // Secrets (not stored here - set via `wrangler secret put NAME`):
   //   SUPABASE_SERVICE_ROLE_KEY     - already set (Project Settings > API > service_role)
   //   LIPSEYS_EMAIL / LIPSEYS_PASSWORD - already set
-  //   AUTHORIZENET_API_LOGIN_ID     - not set yet, needs Shawn's Authorize.net merchant account
-  //   AUTHORIZENET_TRANSACTION_KEY  - not set yet, generated alongside the API Login ID
+  //   AUTHORIZENET_API_LOGIN_ID     - set 2026-07-18
+  //   AUTHORIZENET_TRANSACTION_KEY  - set 2026-07-18
   // See src/lib/authorizeNet.js and js/checkout-config.js for how these are used.
 }
