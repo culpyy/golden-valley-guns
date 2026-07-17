@@ -4,13 +4,10 @@
 // the Transaction Key, which stays a server-only secret (see
 // src/lib/authorizeNet.js) and must never appear here.
 //
-// PLACEHOLDERS - checkout will not work until these are replaced. Get real
-// values once Shawn has an Authorize.net merchant account:
-//   Account > Settings > Security Settings > API Credentials & Keys
-//     -> API Login ID            (same value as AUTHORIZENET_API_LOGIN_ID secret)
-//     -> "Manage Public Client Key" -> Client Key (Accept.js-specific, NOT the Transaction Key)
-// Keep AUTHORIZENET_ENVIRONMENT here in sync with the same-named var in wrangler.jsonc.
+// Real values set 2026-07-18 from Account > Settings > Security Settings >
+// API Credentials & Keys. Keep AUTHORIZENET_ENVIRONMENT here in sync with
+// the same-named var in wrangler.jsonc.
 
 const AUTHORIZENET_ENVIRONMENT = 'production'; // 'sandbox' | 'production' - keep in sync with wrangler.jsonc
 const AUTHORIZENET_API_LOGIN_ID = '4TtBp36JF9';
-const AUTHORIZENET_CLIENT_KEY = 'REPLACE_WITH_PUBLIC_CLIENT_KEY';
+const AUTHORIZENET_CLIENT_KEY = '4S3nzJC5Ed362vnZgCyFfZj24A5hBHB4NGL866pEbnqSH8SZhcRq8NmZf8e9DV76';
