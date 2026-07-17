@@ -70,7 +70,7 @@ function renderCartBadge() {
   const count = cartCount();
   document.querySelectorAll('[data-cart-count]').forEach(el => {
     el.textContent = count;
-    el.style.display = count > 0 ? '' : 'none';
+    el.style.display = count > 0 ? 'flex' : 'none';
   });
 }
 

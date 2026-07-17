@@ -145,23 +145,36 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
   border-radius: 1px;
 }
 
-/* Cart link + live item-count badge (js/cart.js) - shared here rather than
+/* Cart icon + live item-count badge (js/cart.js) - a distinct action, not
+   another page link, so it sits outside .nav-links as its own icon rather
+   than reading as one more item in the text nav. Shared here rather than
    duplicated per-page since every customer-facing page carries it. */
-.nav-cart-link {
+.nav-cart-icon {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 6px;
+  color: var(--muted);
+  transition: color 0.2s;
 }
+.nav-cart-icon:hover,
+.nav-cart-icon.active { color: var(--text); }
+.nav-cart-icon svg { width: 21px; height: 21px; }
 .cart-badge {
+  position: absolute;
+  top: -7px;
+  right: -9px;
   background: var(--gold);
   color: #fff;
   font-size: 10px;
   font-weight: 700;
   line-height: 1;
-  padding: 3px 6px;
-  border-radius: 10px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  border-radius: 999px;
   display: none;
+  align-items: center;
+  justify-content: center;
 }
 
 .nav-cta {
