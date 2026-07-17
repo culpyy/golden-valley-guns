@@ -1,0 +1,15 @@
+[Unit]
+Description=Lipsey's API static-IP relay
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/lipseys-relay
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=5
+EnvironmentFile=/opt/lipseys-relay/.env
+User=lipseysrelay
+
+[Install]
+WantedBy=multi-user.target

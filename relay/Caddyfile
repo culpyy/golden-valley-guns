@@ -1,0 +1,10 @@
+# Terminates TLS and reverse-proxies to the Node relay on localhost. Caddy
+# auto-provisions and renews the Let's Encrypt cert for the domain below with
+# zero extra config, as long as DNS for it points at this box's IP first.
+#
+# Replace the domain with the real subdomain before deploying, e.g.
+# lipseys-relay.goldenvalleygunsllc.com
+
+lipseys-relay.goldenvalleygunsllc.com {
+  reverse_proxy 127.0.0.1:8787
+}

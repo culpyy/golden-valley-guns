@@ -9,6 +9,8 @@
 //   LIPSEYS_PASSWORD           - Lipsey's dealer account password (secret)
 //   SUPABASE_URL               - already set as a plain var in wrangler.jsonc
 //   SUPABASE_SERVICE_ROLE_KEY  - Project Settings > API > service_role (secret, NOT the anon key)
+//   LIPSEYS_RELAY_URL          - e.g. https://lipseys-relay.goldenvalleygunsllc.com (secret - see relay/)
+//   LIPSEYS_RELAY_SECRET       - shared secret the relay checks, must match its RELAY_SHARED_SECRET (secret)
 //
 // Verified 2026-07-16 against a live response (18,987 items). Auth uses a
 // custom `Token` header (NOT `Authorization: Bearer`), and CatalogFeed wraps
@@ -20,10 +22,27 @@
 // Lipsey's dealer agreement requires adhering to every manufacturer's MAP
 // program; a flat percentage markup alone doesn't guarantee that on its own.
 //
+// 2026-07-18: PAUSED (see SYNC_JOBS in src/worker.js) pending two compliance
+// fixes: (1) requests now route through relay/ instead of api.lipseys.com
+// directly, since Cloudflare Workers have no stable IPv4 to give Lipsey's for
+// their required API IP whitelist - LIPSEYS_RELAY_URL must be set once that
+// box exists; (2) image_url below still hotlinks lipseyscloud.com directly,
+// against Lipsey's explicit "do not hotlink our images" rule - still needs
+// fixing to download to our own storage before this can go back in SYNC_JOBS.
+//
 import { getSupabaseAdmin } from '../lib/supabaseAdmin.js';
 import { getAllowedManufacturers, filterByAllowList, upsertDistributorProducts } from '../lib/catalogSync.js';
 
-const LIPSEYS_BASE = 'https://api.lipseys.com';
+function relayBase(env) {
+  if (!env.LIPSEYS_RELAY_URL || !env.LIPSEYS_RELAY_SECRET) {
+    throw new Error('LIPSEYS_RELAY_URL and LIPSEYS_RELAY_SECRET must be set (wrangler secret put) - direct calls to api.lipseys.com are not used, see relay/.');
+  }
+  return env.LIPSEYS_RELAY_URL;
+}
+
+function relayHeaders(env, extra = {}) {
+  return { 'X-Relay-Secret': env.LIPSEYS_RELAY_SECRET, ...extra };
+}
 
 // CatalogFeed only returns a bare filename (item.imageName), not a URL.
 // Lipsey's own dealer portal (SPA at www.lipseys.com) loads product photos
@@ -33,9 +52,9 @@ const LIPSEYS_BASE = 'https://api.lipseys.com';
 const LIPSEYS_IMAGE_BASE = 'https://www.lipseyscloud.com/images';
 
 async function login(env) {
-  const res = await fetch(`${LIPSEYS_BASE}/api/Integration/Authentication/Login`, {
+  const res = await fetch(`${relayBase(env)}/api/Integration/Authentication/Login`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: relayHeaders(env, { 'Content-Type': 'application/json' }),
     body: JSON.stringify({
       Email: env.LIPSEYS_EMAIL,
       Password: env.LIPSEYS_PASSWORD
@@ -46,9 +65,9 @@ async function login(env) {
   return data.token;
 }
 
-async function fetchCatalog(token) {
-  const res = await fetch(`${LIPSEYS_BASE}/api/Integration/Items/CatalogFeed`, {
-    headers: { Token: token }
+async function fetchCatalog(env, token) {
+  const res = await fetch(`${relayBase(env)}/api/Integration/Items/CatalogFeed`, {
+    headers: relayHeaders(env, { Token: token })
   });
   if (!res.ok) throw new Error(`Lipsey's catalog fetch failed: ${res.status}`);
   const data = await res.json();
@@ -123,7 +142,7 @@ function normalize(item, syncTime) {
 export async function run(env) {
   const supabase = getSupabaseAdmin(env);
   const token = await login(env);
-  const rawItems = await fetchCatalog(token);
+  const rawItems = await fetchCatalog(env, token);
   const allowList = await getAllowedManufacturers(supabase);
   const syncTime = new Date().toISOString();
   const normalized = rawItems.map(item => normalize(item, syncTime)).filter(Boolean);
