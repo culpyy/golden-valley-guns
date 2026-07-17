@@ -509,6 +509,10 @@
           <div class="filter-title">Category</div>
           <div class="filter-options" id="categoryFilters"></div>
         </div>
+        <div class="filter-group">
+          <div class="filter-title">Availability</div>
+          <div class="filter-options" id="sourceFilters"></div>
+        </div>
         <div class="filter-group" id="firearmTypeGroup" style="display:none;">
           <div class="filter-title">Firearm Type</div>
           <div class="filter-options" id="firearmTypeFilters"></div>
@@ -619,12 +623,20 @@
     let allItems = [];
     let currentPage = 1;
 
-    // Filter state - category is single-select (it's really a view switch),
-    // the rest are multi-select facets (OR within a group, AND across groups).
+    // Filter state - category and source are single-select (they're really
+    // view switches), the rest are multi-select facets (OR within a group,
+    // AND across groups).
     let selectedCategory = 'all';
+    let selectedSource = 'all';
     let selectedFirearmTypes = new Set();
     let selectedManufacturers = new Set();
     let selectedCalibers = new Set();
+
+    // Own products (Shawn's hand-curated stock, added from admin) vs. the
+    // ~7,000-item Lipsey's distributor catalog - lets a customer filter to
+    // just what Golden Valley Guns actually has on hand instead of it
+    // getting buried in the much larger distributor listing.
+    const SOURCE_LABELS = { all: 'All Availability', own: 'Golden Valley Guns Stock', distributor: 'Distributor Stock' };
 
     const CATEGORY_LABELS = { all: 'All Products', firearms: 'Firearms', ammo: 'Ammo', parts: 'Parts & Accessories' };
     const CATEGORY_INFO = {
@@ -749,10 +761,15 @@
     // with a count that ignores filters you already set), while still
     // letting a group's own options be OR'd together instead of collapsing
     // to zero the moment one is checked.
+    function itemSource(item) {
+      return item._own ? 'own' : 'distributor';
+    }
+
     function matchesFilters(item, excludeGroup) {
       const q = document.getElementById('catalogSearch').value.trim().toLowerCase();
       if (q && !itemSearchText(item).includes(q)) return false;
       if (excludeGroup !== 'category' && selectedCategory !== 'all' && item.category !== selectedCategory) return false;
+      if (excludeGroup !== 'source' && selectedSource !== 'all' && itemSource(item) !== selectedSource) return false;
       if (excludeGroup !== 'firearmType' && selectedFirearmTypes.size && !(item.firearm_type && selectedFirearmTypes.has(item.firearm_type))) return false;
       if (excludeGroup !== 'manufacturer' && selectedManufacturers.size && !(item.manufacturer && selectedManufacturers.has(item.manufacturer))) return false;
       if (excludeGroup !== 'caliber' && selectedCalibers.size && !(item.caliber && selectedCalibers.has(item.caliber))) return false;
@@ -803,6 +820,29 @@
       container.querySelectorAll('input').forEach(input => {
         input.addEventListener('change', () => {
           selectedCategory = input.value;
+          currentPage = 1;
+          renderShop();
+        });
+      });
+    }
+
+    function renderSourceFilter() {
+      const container = document.getElementById('sourceFilters');
+      const scoped = itemsMatchingExcept('source');
+      const counts = { own: 0, distributor: 0 };
+      scoped.forEach(i => counts[itemSource(i)]++);
+      container.innerHTML = ['all', 'own', 'distributor'].map(src => {
+        const count = src === 'all' ? scoped.length : counts[src];
+        const checked = selectedSource === src;
+        return `<label class="filter-option${checked ? ' active-radio' : ''}">
+          <input type="radio" name="sourceFilter" value="${src}" ${checked ? 'checked' : ''}>
+          <span class="filter-option-label">${SOURCE_LABELS[src]}</span>
+          <span class="filter-option-count">${count}</span>
+        </label>`;
+      }).join('');
+      container.querySelectorAll('input').forEach(input => {
+        input.addEventListener('change', () => {
+          selectedSource = input.value;
           currentPage = 1;
           renderShop();
         });
@@ -877,6 +917,9 @@
       if (selectedCategory !== 'all') {
         chips.push({ label: CATEGORY_LABELS[selectedCategory], onRemove: () => { selectedCategory = 'all'; } });
       }
+      if (selectedSource !== 'all') {
+        chips.push({ label: SOURCE_LABELS[selectedSource], onRemove: () => { selectedSource = 'all'; } });
+      }
       selectedFirearmTypes.forEach(t => chips.push({ label: t, onRemove: () => selectedFirearmTypes.delete(t) }));
       selectedManufacturers.forEach(m => chips.push({ label: m, onRemove: () => selectedManufacturers.delete(m) }));
       selectedCalibers.forEach(c => chips.push({ label: c, onRemove: () => selectedCalibers.delete(c) }));
@@ -901,6 +944,7 @@
 
     function clearAllFilters() {
       selectedCategory = 'all';
+      selectedSource = 'all';
       selectedFirearmTypes.clear();
       selectedManufacturers.clear();
       selectedCalibers.clear();
@@ -949,6 +993,7 @@
     function renderShop() {
       renderCategoryHeader();
       renderCategoryFilter();
+      renderSourceFilter();
       renderFirearmTypeFilter();
       renderChecklistFilter('manufacturerFilters', 'manufacturer', 'manufacturer', selectedManufacturers);
       renderChecklistFilter('caliberFilters', 'caliber', 'caliber', selectedCalibers);

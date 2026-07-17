@@ -10,12 +10,20 @@
 // uses (Supabase, Authorize.net's Accept.js, Formspree, Google Fonts).
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://js.authorize.net https://jstest.authorize.net",
+  // *.authorize.net (not just js./jstest.) on purpose - Accept.js's own
+  // dispatchData() call reaches out to api2.authorize.net internally to
+  // tokenize the card, which isn't visible anywhere in our own source and
+  // isn't documented. Learned the hard way 2026-07-18: checkout hung on
+  // "Processing..." forever because that connection was silently CSP-
+  // blocked, no error ever surfaced. Wildcarding the whole subdomain avoids
+  // playing whack-a-mole with whichever numbered endpoint they load-balance
+  // to next.
+  "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://*.authorize.net",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com",
   "img-src 'self' data: https:",
-  "connect-src 'self' https://tyqgvpiunplgqzkygnii.supabase.co https://formspree.io https://api.authorize.net https://apitest.authorize.net https://js.authorize.net https://jstest.authorize.net",
-  "frame-src https://js.authorize.net https://jstest.authorize.net",
+  "connect-src 'self' https://tyqgvpiunplgqzkygnii.supabase.co https://formspree.io https://*.authorize.net",
+  "frame-src https://*.authorize.net",
   "object-src 'none'",
   "frame-ancestors 'none'",
   "base-uri 'self'",
