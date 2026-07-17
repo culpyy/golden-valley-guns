@@ -784,7 +784,7 @@
       if (isAdmin) document.getElementById('adminBar').classList.add('visible');
 
       showBuildsSkeleton();
-      const { data, error } = await supabase.from('builds').select('*').order('received', { ascending: false });
+      const { data, error } = await supabase.from('builds_public').select('*').order('received', { ascending: false });
       if (error) {
         console.error(error);
         document.getElementById('buildsList').innerHTML = `

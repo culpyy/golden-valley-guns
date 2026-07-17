@@ -16,6 +16,12 @@
       "binding": "DISTRIBUTOR_IMAGES"
     }
   ],
+  "kv_namespaces": [
+    {
+      "binding": "RATE_LIMIT",
+      "id": "7dd7a106dd81433cbd73dcbebb3727e5"
+    }
+  ],
   "vars": {
     "SUPABASE_URL": "https://tyqgvpiunplgqzkygnii.supabase.co",
     "SITE_HOSTNAME": "goldenvalleygunsllc.com",

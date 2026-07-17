@@ -2,6 +2,7 @@ import { run as runRsr } from './sync/rsr.js';
 import { run as runDavidsons } from './sync/davidsons.js';
 import { run as runOrion } from './sync/orion.js';
 import { handleCheckout } from './api/checkout.js';
+import { checkRateLimit } from './lib/rateLimit.js';
 
 // Lipsey's sync is PAUSED as of 2026-07-17 - their API docs require Domains
 // And IP Addresses to be pre-approved before use (not done for this custom
@@ -38,6 +39,19 @@ export default {
     }
 
     if (url.pathname === '/api/checkout' && request.method === 'POST') {
+      // Checkout endpoints are a standard target for card-testing/carding
+      // fraud (submit many stolen card numbers to find which ones work) -
+      // 5 attempts per 10 minutes per IP is generous for a real customer
+      // (who'd rarely retry that many times) but meaningfully throttles that.
+      const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+      const { allowed, retryAfterSeconds } = await checkRateLimit(env, `checkout:${ip}`, { limit: 5, windowSeconds: 600 });
+      if (!allowed) {
+        return new Response(JSON.stringify({ error: 'Too many attempts. Please try again later or contact us directly.' }), {
+          status: 429,
+          headers: { 'Content-Type': 'application/json', 'Retry-After': String(retryAfterSeconds) }
+        });
+      }
+
       try {
         return await handleCheckout(request, env);
       } catch (err) {

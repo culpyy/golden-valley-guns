@@ -557,7 +557,7 @@
       if (!raw) return;
       const thisSearch = ++searchToken;
       const { data, error } = await supabase
-        .from('builds').select('*').eq('tracking_code', raw).single();
+        .from('builds_public').select('*').eq('tracking_code', raw).single();
       // If the user fired off another lookup while this one was in flight,
       // ignore this response so a slow/stale request can't overwrite a
       // faster, more recent one.
