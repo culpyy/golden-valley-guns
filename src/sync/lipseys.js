@@ -14,6 +14,12 @@
 // custom `Token` header (NOT `Authorization: Bearer`), and CatalogFeed wraps
 // items in a top-level `data` array, not `items`.
 //
+// 2026-07-17: now also captures item.retailMap (per-SKU manufacturer MAP
+// floor) so the site's displayed price can never undercut it, regardless of
+// the flat catalog_markup_pct - see sql/distributor_catalog.sql block 7.
+// Lipsey's dealer agreement requires adhering to every manufacturer's MAP
+// program; a flat percentage markup alone doesn't guarantee that on its own.
+//
 import { getSupabaseAdmin } from '../lib/supabaseAdmin.js';
 import { getAllowedManufacturers, filterByAllowList, upsertDistributorProducts } from '../lib/catalogSync.js';
 
@@ -87,6 +93,12 @@ function normalize(item, syncTime) {
 
   const quantity = parseInt(item.quantity, 10);
   const msrp = item.msrp ? safeNumber(item.msrp) : null;
+  // Lipsey's dealer agreement requires adhering to each manufacturer's MAP
+  // program - retailMap is that per-item floor straight from the feed, not
+  // something we compute. distributor_products_public's price calc takes the
+  // greater of (dealer_cost * markup%) and this, so a flat markup% can never
+  // accidentally undercut a manufacturer's actual MAP on a given SKU.
+  const retailMap = item.retailMap ? safeNumber(item.retailMap) : null;
 
   return {
     distributor: 'lipseys',
@@ -100,6 +112,7 @@ function normalize(item, syncTime) {
     description: item.description1 || '',
     dealer_cost: dealerCost,
     msrp,
+    retail_map: retailMap,
     quantity_available: Number.isFinite(quantity) ? quantity : 0,
     image_url: item.imageName ? `${LIPSEYS_IMAGE_BASE}/${item.imageName}` : null,
     is_firearm: !!item.fflRequired,

@@ -138,3 +138,52 @@ select
 from distributor_products dp
 cross join markup
 where dp.is_hidden = false;
+
+-- 7) MIGRATION: retail_map floor (2026-07-17)
+-- Lipsey's dealer agreement requires adhering to every manufacturer's MAP
+-- (Minimum Advertised Price) program. The markup% in block 2 is a flat
+-- percentage over dealer_cost - fine on average, but nothing stopped it from
+-- landing below a specific SKU's actual MAP on any item where the
+-- manufacturer set MAP high relative to cost. Lipsey's CatalogFeed already
+-- returns a per-item `retailMap` value (captured by sync/lipseys.js as
+-- retail_map); this migration makes the view take whichever is higher, the
+-- markup-based price or the real MAP floor, so the displayed price can never
+-- undercut it. retail_map is null for items Lipsey's doesn't set a MAP on
+-- (coalesce falls back to the plain markup price in that case).
+alter table distributor_products add column if not exists retail_map numeric;
+
+create or replace view distributor_products_public as
+with markup as (
+  select coalesce(
+    (
+      select value::numeric
+      from site_content
+      where key = 'catalog_markup_pct'
+    ),
+    0
+  ) as pct
+)
+select
+  dp.id,
+  dp.distributor,
+  dp.name,
+  dp.manufacturer,
+  dp.category,
+  dp.caliber,
+  dp.description,
+  greatest(
+    round(dp.dealer_cost * (1 + markup.pct / 100.0), 2),
+    coalesce(dp.retail_map, 0)
+  ) as price,
+  case
+    when dp.quantity_available > 5 then 'in_stock'
+    when dp.quantity_available > 0 then 'limited'
+    else 'out'
+  end as stock,
+  dp.image_url,
+  dp.is_firearm,
+  dp.last_synced_at,
+  dp.firearm_type
+from distributor_products dp
+cross join markup
+where dp.is_hidden = false;
