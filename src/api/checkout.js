@@ -74,6 +74,30 @@ export async function handleCheckout(request, env) {
   const total = Math.round(subtotal * 100) / 100;
   const orderNumber = generateOrderNumber();
 
+  // Order row is written BEFORE the card is charged, not after. Charging
+  // first and persisting second means a transient failure on the insert
+  // (after Authorize.net already approved the charge) leaves no record of
+  // it anywhere - the customer sees a generic failure, has no way to know
+  // they were actually charged, and the only thing the UI suggests is
+  // "try again," which charges them a second time (Authorize.net gets no
+  // idempotency key from this integration, so a retry is a brand-new
+  // transaction). Writing 'pending' first means the record exists
+  // regardless of what happens next; the failure window left afterward
+  // (the UPDATE below failing right after this INSERT just succeeded, on
+  // the same table/connection) is far smaller than "call an external
+  // payment API, then hope our own database write afterward succeeds."
+  const { data: orderRow, error: insertError } = await supabase.from('orders').insert({
+    order_number: orderNumber,
+    customer_name: `${customer.firstName} ${customer.lastName}`,
+    customer_email: customer.email,
+    customer_phone: customer.phone || null,
+    items: priced,
+    subtotal: total,
+    total,
+    status: 'pending'
+  }).select().single();
+  if (insertError) throw insertError;
+
   const result = await chargeCreditCard(env, {
     opaqueData,
     amount: total,
@@ -82,19 +106,23 @@ export async function handleCheckout(request, env) {
     customer
   });
 
-  const { error: insertError } = await supabase.from('orders').insert({
-    order_number: orderNumber,
-    customer_name: `${customer.firstName} ${customer.lastName}`,
-    customer_email: customer.email,
-    customer_phone: customer.phone || null,
-    items: priced,
-    subtotal: total,
-    total,
+  const { error: updateError } = await supabase.from('orders').update({
     status: result.approved ? 'paid' : 'failed',
     authorize_net_transaction_id: result.transactionId,
     authorize_net_response: result.raw
-  });
-  if (insertError) throw insertError;
+  }).eq('id', orderRow.id);
+  if (updateError) {
+    // The charge attempt already happened and its outcome is known - don't
+    // let a follow-up DB error mask that from the customer as a generic
+    // failure (which would invite a duplicate charge via retry). The
+    // 'pending' row still exists with the order number for manual
+    // reconciliation even though it doesn't reflect the final status yet.
+    console.error(`Order ${orderNumber} status update failed after charge (approved=${result.approved}):`, updateError);
+    if (result.approved) {
+      return jsonResponse({ success: true, orderNumber, transactionId: result.transactionId });
+    }
+    return jsonResponse({ error: result.errorText, orderNumber }, 402);
+  }
 
   if (!result.approved) {
     return jsonResponse({ error: result.errorText, orderNumber }, 402);

@@ -1125,6 +1125,12 @@ footer {
   .nav-cta { display: none; }
   .nav-logo .sub-ffl { display: none; }
   .hamburger { display: flex; }
+  /* With nav-links/nav-cta hidden, .nav's space-between would otherwise
+     strand the cart icon alone at the horizontal midpoint (logo, cart-icon,
+     hamburger are the only visible flex children left) - push it flush
+     against the hamburger instead, where a persistent cart action belongs
+     on a collapsed mobile nav. */
+  .nav-cart-icon { margin-left: auto; }
 
   .nav-mobile-open .nav-links {
     display: flex;

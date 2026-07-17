@@ -378,6 +378,20 @@
       padding: 3px 8px;
       width: fit-content;
     }
+    /* Admin's free-text "badge" field (New, Sale, etc.) - solid fill instead
+       of .part-source's outline so it reads as promotional flair, not a
+       data-source label. */
+    .part-badge-pill {
+      display: inline-block;
+      font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #fff;
+      background: var(--gold);
+      padding: 3px 8px;
+      width: fit-content;
+    }
     .part-note {
       font-size: 11px;
       color: var(--muted);
@@ -623,7 +637,11 @@
     // getting buried in the much larger distributor listing.
     const SOURCE_LABELS = { all: 'All Availability', own: 'Golden Valley Guns Stock', distributor: 'Distributor Stock' };
 
-    const CATEGORY_LABELS = { all: 'All Products', firearms: 'Firearms', ammo: 'Ammo', parts: 'Parts & Accessories' };
+    // 'other' included so admin-dashboard.html's "Other" product category
+    // option is actually reachable via this filter - without an entry here,
+    // an Other-category product only ever showed up under "All Products"
+    // with no dedicated tab, effectively invisible to anyone browsing by category.
+    const CATEGORY_LABELS = { all: 'All Products', firearms: 'Firearms', ammo: 'Ammo', parts: 'Parts & Accessories', other: 'Other' };
     const CATEGORY_INFO = {
       all: {
         title: 'All Products',
@@ -643,6 +661,11 @@
       parts: {
         title: 'Parts &amp; Accessories',
         desc: 'Grips, magazines, cleaning gear, and more. Stop in or contact us to check availability and pricing.',
+        cta: { href: 'contact.html', label: 'Ask About an Item', cls: 'btn-buy outline' }
+      },
+      other: {
+        title: 'Other',
+        desc: 'Everything else Golden Valley Guns has on hand that doesn\'t fit neatly elsewhere.',
         cta: { href: 'contact.html', label: 'Ask About an Item', cls: 'btn-buy outline' }
       }
     };
@@ -679,9 +702,11 @@
       const cartBtn = canAddToCart(p)
         ? `<button class="btn-buy" data-add-to-cart='${escapeHtml(JSON.stringify({ id: p.id, name: p.name, price: p.price, image_url: p.image_url || null }))}'>Add to Cart</button>`
         : '';
+      const badge = p.badge ? `<span class="part-badge-pill">${escapeHtml(p.badge)}</span>` : '';
       return `
         <div class="part-card">
           ${imageHtml(p.image_url, p.name)}
+          ${badge}
           <div class="part-name">${escapeHtml(p.name)}</div>
           <div class="part-desc">${escapeHtml(p.description)}</div>
           <div class="part-footer">
@@ -750,14 +775,16 @@
       return item._own ? 'own' : 'distributor';
     }
 
+    // excludeGroup can be a single group name or an array of them.
     function matchesFilters(item, excludeGroup) {
+      const excluded = Array.isArray(excludeGroup) ? excludeGroup : [excludeGroup];
       const q = document.getElementById('catalogSearch').value.trim().toLowerCase();
       if (q && !itemSearchText(item).includes(q)) return false;
-      if (excludeGroup !== 'category' && selectedCategory !== 'all' && item.category !== selectedCategory) return false;
-      if (excludeGroup !== 'source' && selectedSource !== 'all' && itemSource(item) !== selectedSource) return false;
-      if (excludeGroup !== 'firearmType' && selectedFirearmTypes.size && !(item.firearm_type && selectedFirearmTypes.has(item.firearm_type))) return false;
-      if (excludeGroup !== 'manufacturer' && selectedManufacturers.size && !(item.manufacturer && selectedManufacturers.has(item.manufacturer))) return false;
-      if (excludeGroup !== 'caliber' && selectedCalibers.size && !(item.caliber && selectedCalibers.has(item.caliber))) return false;
+      if (!excluded.includes('category') && selectedCategory !== 'all' && item.category !== selectedCategory) return false;
+      if (!excluded.includes('source') && selectedSource !== 'all' && itemSource(item) !== selectedSource) return false;
+      if (!excluded.includes('firearmType') && selectedFirearmTypes.size && !(item.firearm_type && selectedFirearmTypes.has(item.firearm_type))) return false;
+      if (!excluded.includes('manufacturer') && selectedManufacturers.size && !(item.manufacturer && selectedManufacturers.has(item.manufacturer))) return false;
+      if (!excluded.includes('caliber') && selectedCalibers.size && !(item.caliber && selectedCalibers.has(item.caliber))) return false;
       return true;
     }
 
@@ -791,9 +818,14 @@
 
     function renderCategoryFilter() {
       const container = document.getElementById('categoryFilters');
-      const scoped = itemsMatchingExcept('category');
+      // Also exclude firearmType: only firearms ever carry a firearm_type
+      // (ammo/parts never do), so with any Firearm Type box checked, scoping
+      // by 'category' alone collapsed Ammo/Parts counts to 0 even though
+      // clicking either would clear the now-irrelevant firearm-type filter
+      // anyway (see renderFirearmTypeFilter) and show real results.
+      const scoped = itemsMatchingExcept(['category', 'firearmType']);
       const counts = countBy(scoped, 'category');
-      container.innerHTML = ['all', 'firearms', 'ammo', 'parts'].map(cat => {
+      container.innerHTML = ['all', 'firearms', 'ammo', 'parts', 'other'].map(cat => {
         const count = cat === 'all' ? scoped.length : (counts[cat] || 0);
         const checked = selectedCategory === cat;
         return `<label class="filter-option${checked ? ' active-radio' : ''}">

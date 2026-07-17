@@ -347,6 +347,13 @@
 
     document.getElementById('checkoutForm').addEventListener('submit', (e) => {
       e.preventDefault();
+      // Re-entrancy guard - the button's pointer-events:none (CSS, tied to
+      // data-submitting) only blocks a second click, not a second submit
+      // event. A customer pressing Enter again in a card field while
+      // "Processing…" is showing (easy to do, waiting on a payment form is
+      // exactly when people get impatient) would otherwise fire a second
+      // concurrent Accept.dispatchData + POST /api/checkout.
+      if (e.target.hasAttribute('data-submitting')) return;
       hideError();
       if (!e.target.reportValidity()) return;
       setSubmitting(true);
