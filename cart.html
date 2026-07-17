@@ -50,15 +50,18 @@
     .cart-qty {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
     }
+    /* 40x40 not 28x28 - this is a repeated-tap control (customers adjust
+       qty up/down multiple times), so a small target compounds into a real
+       mis-tap risk rather than a one-off nitpick. */
     .cart-qty button {
-      width: 28px; height: 28px;
+      width: 40px; height: 40px;
       background: var(--surface2);
       border: 1px solid var(--border);
       color: var(--text);
       cursor: pointer;
-      font-size: 14px;
+      font-size: 16px;
     }
     .cart-qty button:hover { border-color: var(--gold); color: var(--gold-light); }
     .cart-qty span { min-width: 20px; text-align: center; font-size: 14px; color: var(--text); }

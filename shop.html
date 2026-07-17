@@ -71,6 +71,11 @@
       color: var(--muted);
       cursor: pointer;
       transition: color 0.15s;
+      /* Padding bumps each row's real tap target from ~21px to ~35px+ -
+         matters most in .filter-options-scroll (Manufacturer/Caliber),
+         where many options are packed into a small scrollable area and a
+         thumb mid-scroll can easily land on the wrong adjacent row. */
+      padding: 6px 0;
     }
     .filter-option:hover { color: var(--silver); }
     .filter-option input { accent-color: var(--gold); cursor: pointer; flex-shrink: 0; }

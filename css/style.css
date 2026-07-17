@@ -153,6 +153,11 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
   position: relative;
   display: flex;
   align-items: center;
+  /* Padding (not just the 21px SVG) so the actual tap target is ~40x40px,
+     matching .hamburger right next to it - the icon alone was only ~21x21px,
+     an easy-to-miss target on a page whose whole point is "go to checkout." */
+  padding: 10px;
+  margin: -10px;
   color: var(--muted);
   transition: color 0.2s;
 }
@@ -161,8 +166,8 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
 .nav-cart-icon svg { width: 21px; height: 21px; }
 .cart-badge {
   position: absolute;
-  top: -7px;
-  right: -9px;
+  top: 3px;
+  right: 1px;
   background: var(--gold);
   color: #fff;
   font-size: 10px;
