@@ -1,11 +1,19 @@
-import { run as runLipseys } from './sync/lipseys.js';
 import { run as runRsr } from './sync/rsr.js';
 import { run as runDavidsons } from './sync/davidsons.js';
 import { run as runOrion } from './sync/orion.js';
 import { handleCheckout } from './api/checkout.js';
 
+// Lipsey's sync is PAUSED as of 2026-07-17 - their API docs require Domains
+// And IP Addresses to be pre-approved before use (not done for this custom
+// integration, we're not going through one of their Preferred Partners), and
+// separately their docs explicitly say not to hotlink product images from
+// lipseyscloud.com, which sync/lipseys.js was doing. Re-enable only after:
+//   1. Submitting the API Access Request form (NOT integrating with a
+//      preferred partner) with this domain + a real outbound IP
+//   2. Fixing image hosting so synced photos are downloaded to our own
+//      storage instead of hotlinked from lipseyscloud.com
+// See sql/distributor_catalog.sql for the matching anon-access revoke.
 const SYNC_JOBS = [
-  ['lipseys', runLipseys],
   ['rsr', runRsr],
   ['davidsons', runDavidsons],
   ['orion', runOrion],

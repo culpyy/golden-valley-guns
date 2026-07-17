@@ -187,3 +187,18 @@ select
 from distributor_products dp
 cross join markup
 where dp.is_hidden = false;
+
+-- 8) COMPLIANCE PAUSE: revoke public access (2026-07-17)
+-- Lipsey's API docs require Domains And IP Addresses to be pre-approved
+-- before use (not done for this custom integration - we're not going
+-- through one of their Preferred Partners), and separately their docs
+-- explicitly say not to hotlink product images from lipseyscloud.com, which
+-- image_url on every synced row was doing. shop.html and src/worker.js's
+-- cron were already updated to stop displaying/syncing this data, but block
+-- 4's `grant select ... to anon` means distributor_products_public was
+-- ALSO directly queryable by anyone hitting the Supabase REST API with just
+-- the public anon key, regardless of what the site itself renders - this
+-- closes that door too. Re-grant (see block 4) only after the API Access
+-- Request form is submitted (domain + real outbound IP) and image hosting
+-- is fixed to download to our own storage instead of hotlinking.
+revoke select on distributor_products_public from anon;

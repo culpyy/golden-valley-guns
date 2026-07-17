@@ -494,7 +494,7 @@
   <div class="catalog-search-wrap">
     <div class="catalog-search-inner">
       <svg class="catalog-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input type="text" id="catalogSearch" placeholder="Search all 7,000+ firearms, ammo, and parts by name, manufacturer, or caliber..." />
+      <input type="text" id="catalogSearch" placeholder="Search parts and accessories by name or manufacturer..." />
     </div>
   </div>
 
@@ -986,16 +986,17 @@
         </div>
       `).join('');
 
-      const [{ data: products, error: prodErr }, { data: distItems, error: distErr }] = await Promise.all([
-        fetchAllRows(() => supabase.from('products').select('*').order('name')),
-        fetchAllRows(() => supabase.from('distributor_products_public').select('*').order('name'))
-      ]);
+      // Distributor catalog (distributor_products_public) is PAUSED as of
+      // 2026-07-17 - Lipsey's requires domain/IP pre-approval we haven't
+      // completed, and their images were being hotlinked from lipseyscloud.com
+      // against their explicit terms. Only Shawn's own products show until
+      // that's resolved - see src/worker.js and sql/distributor_catalog.sql.
+      const { data: products, error: prodErr } = await fetchAllRows(() => supabase.from('products').select('*').order('name'));
 
-      const dist = (distErr ? [] : (distItems || [])).slice();
       // own products (Shawn's hand-curated parts) already carry category:
       // 'parts' from the table itself - just tag which template to use.
       const ownParts = (prodErr || !products) ? [] : products.map(p => ({ ...p, _own: true }));
-      allItems = [...dist, ...ownParts].sort(byStockThenName);
+      allItems = [...ownParts].sort(byStockThenName);
 
       renderShop();
     }
