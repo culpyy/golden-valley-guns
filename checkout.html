@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <title>Checkout | Golden Valley Guns LLC | Golden Valley, AZ</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .checkout-wrap {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 56px 48px;
+      display: grid;
+      grid-template-columns: 1.3fr 1fr;
+      gap: 2px;
+      background: var(--border);
+      align-items: start;
+    }
+    .checkout-summary,
+    .checkout-form-panel {
+      background: var(--bg);
+      padding: 28px;
+    }
+    .checkout-summary { background: var(--surface); }
+    .summary-line {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: var(--muted);
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .summary-line .name { color: var(--text); }
+    .summary-total {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
+      font-size: 20px;
+      color: var(--text);
+    }
+    .summary-total span { color: var(--gold-light); }
+    .checkout-section-title {
+      font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
+      font-size: 14px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text);
+      margin-bottom: 16px;
+    }
+    .card-fields { display: flex; flex-direction: column; gap: 14px; margin-top: 6px; }
+    .card-fields-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .checkout-error {
+      display: none;
+      background: rgba(139, 20, 20, 0.15);
+      border: 1px solid #8B1414;
+      color: #e08080;
+      padding: 12px 16px;
+      font-size: 13px;
+      margin-top: 16px;
+    }
+    .checkout-success {
+      display: none;
+      text-align: center;
+      padding: 40px 20px;
+    }
+    .checkout-success h2 {
+      font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
+      color: var(--gold-light);
+      margin-bottom: 12px;
+    }
+    .checkout-success p { color: var(--muted); margin-bottom: 20px; }
+    #checkoutForm[data-submitting] button[type="submit"] { opacity: 0.6; pointer-events: none; }
+    @media (max-width: 800px) {
+      .checkout-wrap { grid-template-columns: 1fr; padding: 32px 16px; }
+      .card-fields-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- AGE GATE -->
+  <div id="ageGate" class="age-gate">
+    <div class="age-gate-card">
+      <img src="images/logo.png" class="age-gate-logo" alt="Golden Valley Guns LLC" />
+      <h2>Age Verification Required</h2>
+      <p>You must be <strong>18 years of age or older</strong> to enter this site. Golden Valley Guns LLC is an FFL 07 licensed firearms manufacturer and dealer. By continuing, you confirm you meet the minimum age requirement under federal and Arizona law.</p>
+      <div class="age-gate-actions">
+        <button id="ageGateEnter" class="btn-primary">I Am 18 or Older &mdash; Enter</button>
+        <a href="https://www.google.com" class="btn-secondary">Exit</a>
+      </div>
+    </div>
+  </div>
+  <script>
+    if (localStorage.getItem('gvg_age_verified') === 'true') {
+      document.getElementById('ageGate').style.display = 'none';
+    } else {
+      document.body.style.overflow = 'hidden';
+    }
+  </script>
+
+  <!-- NAV -->
+  <nav class="nav">
+    <a href="index.html" class="nav-logo">
+      <img src="images/logo.png" class="nav-logo-img" alt="" />
+      <div class="nav-logo-text">
+        <span class="wordmark">Golden Valley Guns LLC</span>
+        <span class="sub">Golden Valley, Arizona<span class="sub-ffl"> · FFL 07 Manufacturer</span></span>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="services.html">Services</a></li>
+      <li><a href="inshop.html">In Shop</a></li>
+      <li><a href="gallery.html">Gallery</a></li>
+      <li><a href="shop.html">Shop</a></li>
+      <li><a href="updates.html">Updates</a></li>
+      <li><a href="contact.html">Contact</a></li>
+      <li><a href="cart.html">Cart</a></li>
+    </ul>
+    <a href="contact.html" class="nav-cta">Get In Touch</a>
+    <div class="hamburger" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </div>
+  </nav>
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div class="section-label">Golden Valley Guns</div>
+    <h1>Checkout</h1>
+    <p>Secure card payment processed through Authorize.net. We never see or store your card number.</p>
+  </div>
+
+  <!-- CHECKOUT -->
+  <div class="checkout-wrap">
+
+    <!-- ORDER SUMMARY -->
+    <div class="checkout-summary">
+      <div class="checkout-section-title">Order Summary</div>
+      <div id="summaryLines"></div>
+      <div class="summary-total">Total <span id="summaryTotal">$0.00</span></div>
+    </div>
+
+    <!-- FORM -->
+    <div class="checkout-form-panel">
+      <form id="checkoutForm" novalidate>
+
+        <div class="checkout-section-title">Contact Info</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="firstName">First Name</label>
+            <input type="text" id="firstName" name="firstName" required />
+          </div>
+          <div class="form-group">
+            <label for="lastName">Last Name</label>
+            <input type="text" id="lastName" name="lastName" required />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" required />
+        </div>
+        <div class="form-group">
+          <label for="phone">Phone (optional)</label>
+          <input type="tel" id="phone" name="phone" />
+        </div>
+
+        <div class="checkout-section-title" style="margin-top: 24px;">Payment</div>
+        <!-- Card fields intentionally have no "name" attribute - Accept.js
+             requires this so raw card data can never be submitted as part of
+             a normal form post and never reaches this server. Only the opaque
+             token Accept.dispatchData() returns gets sent to /api/checkout. -->
+        <div class="card-fields">
+          <div class="form-group">
+            <label for="cardNumber">Card Number</label>
+            <input type="text" id="cardNumber" inputmode="numeric" autocomplete="cc-number" placeholder="4111 1111 1111 1111" required />
+          </div>
+          <div class="card-fields-row">
+            <div class="form-group">
+              <label for="expMonth">Expiration (MM/YYYY)</label>
+              <div style="display:flex; gap:8px;">
+                <input type="text" id="expMonth" inputmode="numeric" autocomplete="cc-exp-month" placeholder="MM" maxlength="2" style="width:70px;" required />
+                <input type="text" id="expYear" inputmode="numeric" autocomplete="cc-exp-year" placeholder="YYYY" maxlength="4" required />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="cardCode">CVV</label>
+              <input type="text" id="cardCode" inputmode="numeric" autocomplete="cc-csc" maxlength="4" placeholder="123" required />
+            </div>
+          </div>
+        </div>
+
+        <div class="checkout-error" id="checkoutError"></div>
+
+        <button type="submit" class="btn-primary" style="margin-top: 20px; width: 100%; justify-content: center;" id="payBtn">
+          Place Order &#8594;
+        </button>
+      </form>
+
+      <div class="checkout-success" id="checkoutSuccess">
+        <h2>Order Placed</h2>
+        <p id="successMessage"></p>
+        <a href="shop.html" class="btn-secondary">Back to Shop</a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <img src="images/logo.png" class="footer-logo-img" alt="Golden Valley Guns LLC" />
+        <div class="wordmark">Golden Valley Guns LLC</div>
+        <div class="sub">Golden Valley, Arizona</div>
+        <p>FFL 07 Manufacturer. Custom builds, gunsmithing, parts work, and transfers out of Golden Valley, AZ.</p>
+      </div>
+      <div class="footer-col">
+        <h5>Pages</h5>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="services.html">Services</a></li>
+          <li><a href="inshop.html">In Shop</a></li>
+          <li><a href="gallery.html">Gallery</a></li>
+          <li><a href="shop.html">Shop</a></li>
+          <li><a href="updates.html">Updates</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>Contact</h5>
+        <ul>
+          <li><a href="tel:9287270893">(928) 727-0893</a></li>
+          <li><a href="mailto:goldenvalleyguns@gmail.com">goldenvalleyguns@gmail.com</a></li>
+          <li><a href="https://maps.google.com/?q=7088+W+Jupiter+Dr+Golden+Valley+AZ+86413" target="_blank">7088 W Jupiter Dr<br>Golden Valley, AZ 86413</a></li>
+          <li><a href="https://www.facebook.com/p/Golden-Valley-Guns-LLC-61565769817507/" target="_blank">Facebook</a></li>
+          <li><a href="https://www.youtube.com/channel/UCRIezIM_qIvuAnVeTpnjD0w" target="_blank">YouTube</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; <span id="copyYear">2025</span> Golden Valley Guns LLC. All rights reserved.</p>
+      <span class="ffl-badge">FFL 07 · Golden Valley, AZ</span>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script src="js/cart.js"></script>
+  <script src="js/checkout-config.js"></script>
+  <script>
+    const cart = getCart();
+    if (cart.length === 0) {
+      location.href = 'cart.html';
+    }
+
+    document.getElementById('summaryLines').innerHTML = cart.map(item => `
+      <div class="summary-line">
+        <span class="name">${escapeHtml(item.name)} &times; ${item.qty}</span>
+        <span>$${(item.price * item.qty).toFixed(2)}</span>
+      </div>
+    `).join('');
+    document.getElementById('summaryTotal').textContent = `$${cartTotal().toFixed(2)}`;
+
+    // Accept.js is loaded dynamically so the sandbox/production choice lives
+    // in one place (js/checkout-config.js) instead of duplicating the whole
+    // page behind an if/else. The Pay button stays disabled until it's ready.
+    const payBtn = document.getElementById('payBtn');
+    payBtn.disabled = true;
+    payBtn.textContent = 'Loading Payment Form…';
+    const acceptScript = document.createElement('script');
+    acceptScript.src = AUTHORIZENET_ENVIRONMENT === 'production'
+      ? 'https://js.authorize.net/v1/Accept.js'
+      : 'https://jstest.authorize.net/v1/Accept.js';
+    acceptScript.onload = () => {
+      payBtn.disabled = false;
+      payBtn.textContent = 'Place Order →';
+    };
+    acceptScript.onerror = () => {
+      showError('Payment form failed to load. Check your connection and refresh.');
+    };
+    document.head.appendChild(acceptScript);
+
+    function showError(message) {
+      const el = document.getElementById('checkoutError');
+      el.textContent = message;
+      el.style.display = 'block';
+    }
+    function hideError() {
+      document.getElementById('checkoutError').style.display = 'none';
+    }
+
+    function setSubmitting(isSubmitting) {
+      const form = document.getElementById('checkoutForm');
+      if (isSubmitting) form.setAttribute('data-submitting', ''); else form.removeAttribute('data-submitting');
+      payBtn.textContent = isSubmitting ? 'Processing…' : 'Place Order →';
+    }
+
+    async function submitOrder(opaqueData) {
+      const customer = {
+        firstName: document.getElementById('firstName').value.trim(),
+        lastName: document.getElementById('lastName').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        phone: document.getElementById('phone').value.trim()
+      };
+      const items = getCart().map(i => ({ id: i.id, qty: i.qty }));
+
+      try {
+        const res = await fetch('/api/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items, customer, opaqueData })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          showError(data.error || 'Payment failed. Please try again.');
+          setSubmitting(false);
+          return;
+        }
+        clearCart();
+        document.getElementById('checkoutForm').style.display = 'none';
+        document.getElementById('successMessage').textContent =
+          `Order ${data.orderNumber} confirmed. A receipt will be sent to ${customer.email}.`;
+        document.getElementById('checkoutSuccess').style.display = 'block';
+      } catch (err) {
+        showError('Could not reach the server. Please try again.');
+        setSubmitting(false);
+      }
+    }
+
+    function responseHandler(response) {
+      if (response.messages.resultCode === 'Error') {
+        const msg = response.messages.message.map(m => m.text).join(' ');
+        showError(msg || 'Card could not be processed.');
+        setSubmitting(false);
+        return;
+      }
+      submitOrder(response.opaqueData);
+    }
+
+    document.getElementById('checkoutForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      hideError();
+      if (!e.target.reportValidity()) return;
+      setSubmitting(true);
+
+      const secureData = {
+        authData: {
+          clientKey: AUTHORIZENET_CLIENT_KEY,
+          apiLoginID: AUTHORIZENET_API_LOGIN_ID
+        },
+        cardData: {
+          cardNumber: document.getElementById('cardNumber').value.replace(/\s+/g, ''),
+          month: document.getElementById('expMonth').value.trim(),
+          year: document.getElementById('expYear').value.trim(),
+          cardCode: document.getElementById('cardCode').value.trim()
+        }
+      };
+      Accept.dispatchData(secureData, responseHandler);
+    });
+  </script>
+</body>
+</html>

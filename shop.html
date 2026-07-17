@@ -385,6 +385,24 @@
     }
     .part-card .btn-buy { margin-top: 4px; text-align: center; }
 
+    /* ── CART NAV LINK ── */
+    .nav-cart-link {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .cart-badge {
+      background: var(--gold);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      line-height: 1;
+      padding: 3px 6px;
+      border-radius: 10px;
+      display: none;
+    }
+
     /* .page-header normally carries extra top padding to clear the fixed nav —
        when the admin bar is visible, it clears the nav itself, so this would
        otherwise be a large redundant gap (see inshop.html for the same pattern). */
@@ -447,6 +465,7 @@
       <li><a href="shop.html" class="active">Shop</a></li>
       <li><a href="updates.html">Updates</a></li>
       <li><a href="contact.html">Contact</a></li>
+      <li><a href="cart.html" class="nav-cart-link">Cart <span class="cart-badge" data-cart-count>0</span></a></li>
     </ul>
     <a href="contact.html" class="nav-cta">Get In Touch</a>
     <div class="hamburger" aria-label="Menu">
@@ -579,6 +598,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase.js"></script>
   <script src="js/main.js"></script>
+  <script src="js/cart.js"></script>
   <script>
     const STOCK_LABELS = {
       in_stock: 'In Stock',
@@ -649,7 +669,19 @@
       </div>`;
     }
 
+    // Firearms always require an in-person FFL transfer/NICS check, so they
+    // never get a cart button even among Shawn's own products - only
+    // non-firearm parts/ammo with real purchasable stock can go in the cart.
+    // See sql/orders.sql and src/api/checkout.js for the server-side twin of
+    // this same rule (this check is UX only, never trust the client).
+    function canAddToCart(p) {
+      return p.category !== 'firearms' && (p.stock === 'in_stock' || p.stock === 'limited');
+    }
+
     function productCardHtml(p) {
+      const cartBtn = canAddToCart(p)
+        ? `<button class="btn-buy" data-add-to-cart='${escapeHtml(JSON.stringify({ id: p.id, name: p.name, price: p.price, image_url: p.image_url || null }))}'>Add to Cart</button>`
+        : '';
       return `
         <div class="part-card">
           ${imageHtml(p.image_url, p.name)}
@@ -659,6 +691,7 @@
             <span class="part-price">$${parseFloat(p.price).toFixed(2)}</span>
             <span class="part-stock stock-${p.stock}">${STOCK_LABELS[p.stock] || p.stock}</span>
           </div>
+          ${cartBtn}
         </div>`;
     }
 
@@ -970,6 +1003,18 @@
     document.getElementById('catalogSearch').addEventListener('input', () => {
       currentPage = 1;
       renderShop();
+    });
+
+    // Delegated on the grid container rather than per-button, since
+    // productGrid.innerHTML gets replaced wholesale on every renderShop() call.
+    document.getElementById('productGrid').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-add-to-cart]');
+      if (!btn) return;
+      addToCart(JSON.parse(btn.dataset.addToCart));
+      const original = btn.textContent;
+      btn.textContent = 'Added';
+      btn.disabled = true;
+      setTimeout(() => { btn.textContent = original; btn.disabled = false; }, 1200);
     });
 
     // admin sign out

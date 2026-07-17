@@ -2,6 +2,7 @@ import { run as runLipseys } from './sync/lipseys.js';
 import { run as runRsr } from './sync/rsr.js';
 import { run as runDavidsons } from './sync/davidsons.js';
 import { run as runOrion } from './sync/orion.js';
+import { handleCheckout } from './api/checkout.js';
 
 const SYNC_JOBS = [
   ['lipseys', runLipseys],
@@ -12,6 +13,20 @@ const SYNC_JOBS = [
 
 export default {
   async fetch(request, env) {
+    const url = new URL(request.url);
+
+    if (url.pathname === '/api/checkout' && request.method === 'POST') {
+      try {
+        return await handleCheckout(request, env);
+      } catch (err) {
+        console.error('Checkout failed:', err);
+        return new Response(JSON.stringify({ error: 'Checkout failed. Please try again or contact us.' }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+    }
+
     return env.ASSETS.fetch(request);
   },
 
