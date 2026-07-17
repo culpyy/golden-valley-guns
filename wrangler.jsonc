@@ -16,7 +16,11 @@
     "run_worker_first": true
   },
   "triggers": {
-    "crons": ["0 8 * * *"]
+    // "0 8 * * *"    - daily full distributor catalog sync (all SYNC_JOBS)
+    // "*/10 * * * *" - Lipsey's image backfill only, see IMAGE_BACKFILL_CRON
+    //                  in src/worker.js for why this needs its own frequent
+    //                  schedule instead of waiting on the once-daily sync
+    "crons": ["0 8 * * *", "*/10 * * * *"]
   },
   "r2_buckets": [
     {

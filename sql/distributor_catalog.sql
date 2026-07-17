@@ -202,3 +202,18 @@ where dp.is_hidden = false;
 -- Request form is submitted (domain + real outbound IP) and image hosting
 -- is fixed to download to our own storage instead of hotlinking.
 revoke select on distributor_products_public from anon;
+
+-- 9) MIGRATION: image_source_name for bounded image backfill (2026-07-18)
+-- First live sync attempt after Lipsey's API approval hit Cloudflare's
+-- subrequest-per-invocation limit - the old approach checked every
+-- allow-listed item's cache status inline during the main sync, and with
+-- 15 manufacturers matching hundreds of items, even the download cap alone
+-- (200 fetches) blew past the limit before the catalog upsert could finish,
+-- meaning NO data saved at all, not even pricing.
+-- New approach: the main sync now upserts catalog data (price/stock/etc)
+-- immediately with image_url left null, stashing the distributor's own
+-- image filename here instead. A separate, tightly-bounded pass
+-- (backfillImages in src/lib/imageCache.js, ~20 images/run) finds rows
+-- still missing an image_url and catches them up over several days -
+-- pricing/stock data is never blocked waiting on images again.
+alter table distributor_products add column if not exists image_source_name text;

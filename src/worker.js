@@ -1,3 +1,4 @@
+import { run as runLipseys, backfillLipseysImages } from './sync/lipseys.js';
 import { run as runRsr } from './sync/rsr.js';
 import { run as runDavidsons } from './sync/davidsons.js';
 import { run as runOrion } from './sync/orion.js';
@@ -5,21 +6,26 @@ import { handleCheckout } from './api/checkout.js';
 import { checkRateLimit } from './lib/rateLimit.js';
 import { addSecurityHeaders } from './lib/securityHeaders.js';
 
-// Lipsey's sync is PAUSED as of 2026-07-17 - their API docs require Domains
-// And IP Addresses to be pre-approved before use (not done for this custom
-// integration, we're not going through one of their Preferred Partners).
-// Submitted the API Access Request form (NOT via a preferred partner) with
-// this domain + relay/'s static IP on 2026-07-18, waiting on approval.
-// Image hotlinking (their other explicit rule - do not hotlink lipseyscloud.com)
-// is already fixed: sync/lipseys.js now downloads to our own R2 bucket, see
-// src/lib/imageCache.js and the /distributor-images route below.
-// Re-add 'lipseys' to SYNC_JOBS once the access request is approved. See
-// sql/distributor_catalog.sql for the matching anon-access revoke to reverse too.
+// Lipsey's API access approved 2026-07-18 (email confirmed: domain
+// goldenvalleygunllc.com + relay/'s IP 137.131.2.233 both approved). Image
+// hotlinking was already fixed before this (sync/lipseys.js downloads to
+// our own R2 bucket, see src/lib/imageCache.js) - both compliance blockers
+// from the 2026-07-17 pause are now cleared, sync is back on.
 const SYNC_JOBS = [
+  ['lipseys', runLipseys],
   ['rsr', runRsr],
   ['davidsons', runDavidsons],
   ['orion', runOrion],
 ];
+
+// Must match one entry in wrangler.jsonc's triggers.crons exactly - image
+// backfilling doesn't need Lipsey's login/catalog fetch at all (just
+// image_source_name values already in the DB + a fetch to their public
+// image CDN), so it runs on its own much more frequent schedule instead of
+// waiting on the once-daily full catalog sync. At only ~20 images from the
+// daily sync alone, a several-thousand-image backlog would take the better
+// part of a year to clear.
+const IMAGE_BACKFILL_CRON = '*/10 * * * *';
 
 async function route(request, env) {
   const url = new URL(request.url);
@@ -73,6 +79,15 @@ export default {
   },
 
   async scheduled(event, env, ctx) {
+    if (event.cron === IMAGE_BACKFILL_CRON) {
+      ctx.waitUntil(
+        backfillLipseysImages(env)
+          .then(count => console.log(`lipseys image backfill: ${count} images cached.`))
+          .catch(err => console.error('lipseys image backfill failed:', err))
+      );
+      return;
+    }
+
     for (const [name, run] of SYNC_JOBS) {
       ctx.waitUntil(
         run(env)

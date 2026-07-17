@@ -15,6 +15,48 @@ export async function getAllowedManufacturers(supabase) {
   return raw.split(',').map(s => s.trim()).filter(Boolean);
 }
 
+async function getSiteContent(supabase, key, fallback) {
+  const { data, error } = await supabase.from('site_content').select('value').eq('key', key).maybeSingle();
+  if (error) throw error;
+  return data?.value ?? fallback;
+}
+
+async function setSiteContent(supabase, key, value) {
+  const { error } = await supabase.from('site_content').upsert({ key, value }, { onConflict: 'key' });
+  if (error) throw error;
+}
+
+// Cloudflare Workers Free plan has a low per-invocation CPU time budget -
+// normalizing/filtering a distributor's full raw catalog (Lipsey's alone is
+// ~19,000 items) in one request blows past it (confirmed 2026-07-18, error
+// 1102 "Worker exceeded resource limits"). This bounds how much of the raw
+// array actually gets processed per run to chunkSize, tracked by a cursor
+// persisted in site_content, cycling through the full catalog over several
+// runs instead of trying to do it all in one shot every time. The raw
+// fetch+JSON.parse cost is paid every run regardless (Lipsey's CatalogFeed
+// has no server-side pagination), only the JS-side processing is chunked.
+export async function getSyncCursor(supabase, distributor) {
+  const raw = await getSiteContent(supabase, `${distributor}_sync_cursor`, '0');
+  return parseInt(raw, 10) || 0;
+}
+
+export async function setSyncCursor(supabase, distributor, cursor) {
+  await setSiteContent(supabase, `${distributor}_sync_cursor`, String(cursor));
+}
+
+// Stamped once when a cursor cycle starts (cursor === 0) and read back when
+// it completes (cursor wraps back to 0) - upsertDistributorProducts uses
+// this instead of a per-run timestamp to detect genuinely stale/delisted
+// items, since with chunked processing most items in any given run simply
+// haven't been reached yet, not actually gone from the distributor's feed.
+export async function getCycleStart(supabase, distributor) {
+  return getSiteContent(supabase, `${distributor}_sync_cycle_start`, null);
+}
+
+export async function setCycleStart(supabase, distributor, isoTime) {
+  await setSiteContent(supabase, `${distributor}_sync_cycle_start`, isoTime);
+}
+
 // Empty allow-list = sync nothing. Prevents a misconfigured/empty list from
 // accidentally dumping a distributor's entire catalog onto the site.
 // A literal "*" is an explicit opt-in to sync every manufacturer, distinct
@@ -27,32 +69,37 @@ export function filterByAllowList(items, allowList) {
 }
 
 // syncTime is a single timestamp shared by every item in this run (set by the
-// caller, stamped onto each item's last_synced_at during normalize). Used
-// below to identify stale rows without listing every current SKU - a
-// distributor catalog easily runs to thousands of items, and inlining them
-// all into a `not in (...)` filter blows past Supabase's request-size limit.
-export async function upsertDistributorProducts(supabase, distributor, items, syncTime) {
+// caller, stamped onto each item's last_synced_at during normalize).
+//
+// staleCleanupThreshold controls the "zero out delisted items" pass - pass
+// null/undefined to skip it entirely (used for a chunked/partial run, where
+// most of the catalog simply hasn't been reached yet by this run's slice,
+// not actually gone from the distributor's feed - see getSyncCursor above).
+// Pass the cycle's start timestamp only once a full cursor cycle completes;
+// anything with last_synced_at older than that genuinely wasn't seen across
+// the *entire* cycle, which is what actually means delisted.
+export async function upsertDistributorProducts(supabase, distributor, items, syncTime, staleCleanupThreshold = null) {
   // "Sync nothing" (empty allow-list, or every item filtered out) must mean
   // exactly that - touch nothing. Without this guard, an empty `items` list
   // fell through to the stale-zero query below with no lower bound on
   // last_synced_at, which zeroed quantity_available for every existing row
   // from this distributor instead of leaving them alone.
-  if (items.length === 0) return;
+  if (items.length > 0) {
+    const { error: upsertError } = await supabase
+      .from('distributor_products')
+      .upsert(items, { onConflict: 'distributor,distributor_sku' });
+    if (upsertError) throw upsertError;
+  }
 
-  const { error: upsertError } = await supabase
-    .from('distributor_products')
-    .upsert(items, { onConflict: 'distributor,distributor_sku' });
-  if (upsertError) throw upsertError;
+  if (!staleCleanupThreshold) return;
 
-  // Zero out stock for anything previously synced from this distributor that
-  // didn't appear in this run (delisted SKU, allow-list narrowed, etc) so
-  // stale "in stock" items don't linger on the Shop page. Every item just
-  // upserted now has last_synced_at === syncTime, so anything still older
-  // than that is exactly what's missing from this run.
+  // Zero out stock for anything not seen across the whole cycle just
+  // completed (delisted SKU, allow-list narrowed, etc) so stale "in stock"
+  // items don't linger on the Shop page.
   const { error: staleError } = await supabase
     .from('distributor_products')
     .update({ quantity_available: 0, last_synced_at: syncTime })
     .eq('distributor', distributor)
-    .lt('last_synced_at', syncTime);
+    .lt('last_synced_at', staleCleanupThreshold);
   if (staleError) throw staleError;
 }

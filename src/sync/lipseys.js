@@ -22,16 +22,23 @@
 // Lipsey's dealer agreement requires adhering to every manufacturer's MAP
 // program; a flat percentage markup alone doesn't guarantee that on its own.
 //
-// 2026-07-18: PAUSED (see SYNC_JOBS in src/worker.js) pending Lipsey's
-// approval of the API Access Request (domain + relay/'s static IP submitted,
-// see relay/ for why Cloudflare Workers needed a dedicated relay for this).
-// Image hotlinking is now fixed below - images get downloaded to our own R2
-// bucket instead of linking lipseyscloud.com directly, per their explicit
-// "do not hotlink our images" rule.
+// 2026-07-18: API access approved by Lipsey's, requests route through
+// relay/ (see LIPSEYS_RELAY_URL/SECRET above) since Cloudflare Workers have
+// no stable IPv4 to whitelist directly.
+//
+// 2026-07-18: images are no longer fetched/cached inline during the main
+// sync - the first live run after approval blew Cloudflare's
+// subrequest-per-invocation limit doing exactly that (hundreds of items
+// matched across the allow-listed manufacturers, and even the download cap
+// alone was too many fetches for one invocation - upsertDistributorProducts
+// never even ran). normalize() now leaves image_url null and stashes the
+// filename in image_source_name; a separate tightly-bounded pass
+// (backfillImages, called at the end of run()) catches up ~20 images per
+// sync so pricing/stock data is never blocked waiting on images again.
 //
 import { getSupabaseAdmin } from '../lib/supabaseAdmin.js';
-import { getAllowedManufacturers, filterByAllowList, upsertDistributorProducts } from '../lib/catalogSync.js';
-import { cacheImage, imageKey } from '../lib/imageCache.js';
+import { getAllowedManufacturers, filterByAllowList, upsertDistributorProducts, getSyncCursor, setSyncCursor, getCycleStart, setCycleStart } from '../lib/catalogSync.js';
+import { backfillImages } from '../lib/imageCache.js';
 
 function relayBase(env) {
   if (!env.LIPSEYS_RELAY_URL || !env.LIPSEYS_RELAY_SECRET) {
@@ -133,63 +140,30 @@ function normalize(item, syncTime) {
     msrp,
     retail_map: retailMap,
     quantity_available: Number.isFinite(quantity) ? quantity : 0,
-    // Temporary - holds Lipsey's own CDN URL only long enough for
-    // cacheImagesForItems() below to download it. Never written to Supabase;
-    // stripped out and replaced with our own R2-backed URL before upsert.
-    image_url: item.imageName ? `${LIPSEYS_IMAGE_BASE}/${item.imageName}` : null,
-    _imageName: item.imageName || null,
+    // image_url is deliberately NOT a key here at all (not even null) -
+    // PostgREST's upsert only touches columns present in the payload, so
+    // omitting it means a fresh row gets the column default (NULL, ready
+    // for backfillImages to pick up) while an existing already-cached row
+    // keeps whatever image_url it already has instead of getting blanked
+    // back to null on every single sync. Learned this the hard way: the
+    // first version of this function set image_url: null explicitly, which
+    // silently undid backfillImages()'s progress every day and the image
+    // backlog could never actually shrink.
+    image_source_name: item.imageName || null,
     is_firearm: !!item.fflRequired,
     last_synced_at: syncTime
   };
 }
 
-// Only ever called on the allow-listed subset (post-filterByAllowList), not
-// the full ~19k raw catalog - no point downloading photos for items we're
-// not even going to display. Capped at MAX_NEW_IMAGES_PER_RUN new downloads
-// per sync so a large first-time allow-list doesn't blow past a single
-// Worker invocation's subrequest/CPU budget - already-cached images (the
-// common case after the first run) don't count against the cap, so this
-// only slows down the initial backfill, spreading it across a few daily
-// cron runs rather than doing it all at once.
-const IMAGE_CONCURRENCY = 8;
-const MAX_NEW_IMAGES_PER_RUN = 200;
-
-async function cacheImagesForItems(env, items) {
-  let newDownloads = 0;
-  let cursor = 0;
-
-  async function worker() {
-    while (cursor < items.length) {
-      const item = items[cursor++];
-      const { image_url: sourceUrl, _imageName: filename } = item;
-      delete item._imageName;
-      if (!sourceUrl || !filename) {
-        item.image_url = null;
-        continue;
-      }
-
-      const alreadyCached = await env.DISTRIBUTOR_IMAGES.head(imageKey('lipseys', filename));
-      if (!alreadyCached && newDownloads >= MAX_NEW_IMAGES_PER_RUN) {
-        // Never fall back to hotlinking - no image this run rather than a
-        // compliance violation. Still uncached, so next run's head() check
-        // will correctly treat it as new and cache it then.
-        item.image_url = null;
-        continue;
-      }
-
-      const cached = await cacheImage(env, { sourceUrl, prefix: 'lipseys', filename });
-      if (cached) {
-        if (!alreadyCached) newDownloads++;
-        item.image_url = cached;
-      } else {
-        item.image_url = null; // couldn't fetch/cache - never fall back to hotlinking
-      }
-    }
-  }
-
-  await Promise.all(Array.from({ length: IMAGE_CONCURRENCY }, worker));
-  return items;
-}
+// Workers Free plan has a low per-invocation CPU budget - normalizing +
+// filtering the full ~19,000-item raw catalog in one run blew past it
+// (error 1102 "Worker exceeded resource limits", confirmed 2026-07-18).
+// Only this many raw items get normalized/filtered per run; the cursor
+// picks up where the last run left off and wraps around, so a full pass
+// through the catalog takes several daily runs instead of one. The raw
+// fetch+JSON.parse cost is paid every run regardless (Lipsey's CatalogFeed
+// has no server-side pagination to fetch only part of it).
+const CHUNK_SIZE = 1500;
 
 export async function run(env) {
   const supabase = getSupabaseAdmin(env);
@@ -197,9 +171,52 @@ export async function run(env) {
   const rawItems = await fetchCatalog(env, token);
   const allowList = await getAllowedManufacturers(supabase);
   const syncTime = new Date().toISOString();
-  const normalized = rawItems.map(item => normalize(item, syncTime)).filter(Boolean);
+
+  let cursor = await getSyncCursor(supabase, 'lipseys');
+  if (cursor >= rawItems.length) cursor = 0;
+
+  // A cycle just starting gets its own start-of-cycle timestamp - reused on
+  // every chunked run within this same cycle so the eventual stale-cleanup
+  // pass (see below) has one consistent threshold for "wasn't seen this
+  // entire cycle" rather than drifting with each run's own syncTime.
+  let cycleStart = await getCycleStart(supabase, 'lipseys');
+  if (cursor === 0 || !cycleStart) {
+    cycleStart = syncTime;
+    await setCycleStart(supabase, 'lipseys', cycleStart);
+  }
+
+  const chunk = rawItems.slice(cursor, cursor + CHUNK_SIZE);
+  const normalized = chunk.map(item => normalize(item, syncTime)).filter(Boolean);
   const filtered = filterByAllowList(normalized, allowList);
-  const withCachedImages = await cacheImagesForItems(env, filtered);
-  await upsertDistributorProducts(supabase, 'lipseys', withCachedImages, syncTime);
-  return withCachedImages.length;
+
+  const nextCursor = cursor + CHUNK_SIZE;
+  const cycleComplete = nextCursor >= rawItems.length;
+
+  // staleCleanupThreshold only passed on the run that completes a full
+  // cycle - see upsertDistributorProducts for why a mid-cycle run can't
+  // safely zero out items it simply hasn't reached yet.
+  await upsertDistributorProducts(supabase, 'lipseys', filtered, syncTime, cycleComplete ? cycleStart : null);
+  await setSyncCursor(supabase, 'lipseys', cycleComplete ? 0 : nextCursor);
+
+  await backfillLipseysImages(env, supabase);
+
+  return filtered.length;
+}
+
+// Split out from run() so this can also be called on its own, much more
+// frequent cron schedule (see IMAGE_BACKFILL_CRON in src/worker.js) -
+// caching images doesn't need Lipsey's login/catalog fetch at all, it only
+// needs image_source_name values already sitting in distributor_products
+// from a previous catalog sync, plus a fetch to lipseyscloud.com's public
+// CDN. At only 20/day from the once-daily full sync alone, a backlog in
+// the thousands (the norm right after enabling several manufacturers)
+// would take the better part of a year to clear - running this on its own
+// 10-minute cron instead clears it in a couple of days.
+export async function backfillLipseysImages(env, supabase = getSupabaseAdmin(env)) {
+  return backfillImages(supabase, env, {
+    distributor: 'lipseys',
+    prefix: 'lipseys',
+    buildSourceUrl: (name) => `${LIPSEYS_IMAGE_BASE}/${name}`,
+    limit: 20
+  });
 }

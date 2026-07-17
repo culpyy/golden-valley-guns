@@ -34,3 +34,36 @@ export async function cacheImage(env, { sourceUrl, prefix, filename }) {
 
   return `https://${env.SITE_HOSTNAME}/distributor-images/${key}`;
 }
+
+// Deliberately separate from the main catalog sync (which just upserts
+// price/stock/etc and leaves image_url null for new rows, stashing the
+// distributor's own filename in image_source_name instead). Doing image
+// work inline during the main sync is what blew Cloudflare's
+// subrequest-per-invocation limit on the very first live Lipsey's run -
+// with several manufacturers allow-listed, hundreds of items matched, and
+// even a couple hundred image fetches in one invocation was too many.
+// This runs as its own tightly-bounded pass: pull a small batch of rows
+// still missing an image, catch them up, done. Called once per sync, so a
+// large backlog just takes several days of daily cron runs to fully catch
+// up - pricing/stock data is never blocked waiting on images.
+export async function backfillImages(supabase, env, { distributor, prefix, buildSourceUrl, limit = 20 }) {
+  const { data: rows, error } = await supabase
+    .from('distributor_products')
+    .select('id, image_source_name')
+    .eq('distributor', distributor)
+    .is('image_url', null)
+    .not('image_source_name', 'is', null)
+    .limit(limit);
+  if (error) throw error;
+  if (!rows.length) return 0;
+
+  let cached = 0;
+  for (const row of rows) {
+    const url = await cacheImage(env, { sourceUrl: buildSourceUrl(row.image_source_name), prefix, filename: row.image_source_name });
+    if (!url) continue;
+    const { error: updateError } = await supabase.from('distributor_products').update({ image_url: url }).eq('id', row.id);
+    if (updateError) throw updateError;
+    cached++;
+  }
+  return cached;
+}
