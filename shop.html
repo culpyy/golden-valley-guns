@@ -510,6 +510,10 @@
       <!-- MAIN -->
       <div class="shop-main">
         <div class="builds-header" id="categoryHeader"></div>
+        <div class="legal-notice" id="banStateNotice" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <p><strong>Firearm sales restriction:</strong> Golden Valley Guns LLC does not sell, ship, transfer, or source firearms for customers in California, New York, New Jersey, Massachusetts, Connecticut, Illinois, Maryland, Hawaii, Rhode Island, or Washington D.C. due to state and local law. All firearm transfers require a valid FFL and compliance with applicable federal, state, and local requirements.</p>
+        </div>
         <div class="active-filters" id="activeFilters"></div>
         <div class="results-bar" id="resultsBar"></div>
         <div class="parts-grid" id="productGrid"></div>
@@ -746,6 +750,8 @@
         </div>
         ${cta}
       `;
+      document.getElementById('banStateNotice').style.display =
+        (selectedCategory === 'all' || selectedCategory === 'firearms') ? '' : 'none';
     }
 
     function renderCategoryFilter() {

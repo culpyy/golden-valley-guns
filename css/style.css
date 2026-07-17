@@ -865,6 +865,31 @@ h2.section-title {
   margin-top: 2px;
 }
 
+/* ── LEGAL NOTICE ── */
+/* Shared across shop.html, contact.html, and intake.html so the ban-state
+   disclaimer reads identically everywhere a firearm order can start. */
+.legal-notice {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  background: var(--surface);
+  border-left: 3px solid #a33;
+  padding: 14px 20px;
+}
+.legal-notice svg {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  color: #c33;
+}
+.legal-notice p {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--muted);
+}
+.legal-notice strong { color: var(--text); }
+
 /* ── FOOTER ── */
 footer {
   border-top: 1px solid var(--border);
