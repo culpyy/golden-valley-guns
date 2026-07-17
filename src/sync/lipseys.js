@@ -22,16 +22,16 @@
 // Lipsey's dealer agreement requires adhering to every manufacturer's MAP
 // program; a flat percentage markup alone doesn't guarantee that on its own.
 //
-// 2026-07-18: PAUSED (see SYNC_JOBS in src/worker.js) pending two compliance
-// fixes: (1) requests now route through relay/ instead of api.lipseys.com
-// directly, since Cloudflare Workers have no stable IPv4 to give Lipsey's for
-// their required API IP whitelist - LIPSEYS_RELAY_URL must be set once that
-// box exists; (2) image_url below still hotlinks lipseyscloud.com directly,
-// against Lipsey's explicit "do not hotlink our images" rule - still needs
-// fixing to download to our own storage before this can go back in SYNC_JOBS.
+// 2026-07-18: PAUSED (see SYNC_JOBS in src/worker.js) pending Lipsey's
+// approval of the API Access Request (domain + relay/'s static IP submitted,
+// see relay/ for why Cloudflare Workers needed a dedicated relay for this).
+// Image hotlinking is now fixed below - images get downloaded to our own R2
+// bucket instead of linking lipseyscloud.com directly, per their explicit
+// "do not hotlink our images" rule.
 //
 import { getSupabaseAdmin } from '../lib/supabaseAdmin.js';
 import { getAllowedManufacturers, filterByAllowList, upsertDistributorProducts } from '../lib/catalogSync.js';
+import { cacheImage, imageKey } from '../lib/imageCache.js';
 
 function relayBase(env) {
   if (!env.LIPSEYS_RELAY_URL || !env.LIPSEYS_RELAY_SECRET) {
@@ -133,10 +133,62 @@ function normalize(item, syncTime) {
     msrp,
     retail_map: retailMap,
     quantity_available: Number.isFinite(quantity) ? quantity : 0,
+    // Temporary - holds Lipsey's own CDN URL only long enough for
+    // cacheImagesForItems() below to download it. Never written to Supabase;
+    // stripped out and replaced with our own R2-backed URL before upsert.
     image_url: item.imageName ? `${LIPSEYS_IMAGE_BASE}/${item.imageName}` : null,
+    _imageName: item.imageName || null,
     is_firearm: !!item.fflRequired,
     last_synced_at: syncTime
   };
+}
+
+// Only ever called on the allow-listed subset (post-filterByAllowList), not
+// the full ~19k raw catalog - no point downloading photos for items we're
+// not even going to display. Capped at MAX_NEW_IMAGES_PER_RUN new downloads
+// per sync so a large first-time allow-list doesn't blow past a single
+// Worker invocation's subrequest/CPU budget - already-cached images (the
+// common case after the first run) don't count against the cap, so this
+// only slows down the initial backfill, spreading it across a few daily
+// cron runs rather than doing it all at once.
+const IMAGE_CONCURRENCY = 8;
+const MAX_NEW_IMAGES_PER_RUN = 200;
+
+async function cacheImagesForItems(env, items) {
+  let newDownloads = 0;
+  let cursor = 0;
+
+  async function worker() {
+    while (cursor < items.length) {
+      const item = items[cursor++];
+      const { image_url: sourceUrl, _imageName: filename } = item;
+      delete item._imageName;
+      if (!sourceUrl || !filename) {
+        item.image_url = null;
+        continue;
+      }
+
+      const alreadyCached = await env.DISTRIBUTOR_IMAGES.head(imageKey('lipseys', filename));
+      if (!alreadyCached && newDownloads >= MAX_NEW_IMAGES_PER_RUN) {
+        // Never fall back to hotlinking - no image this run rather than a
+        // compliance violation. Still uncached, so next run's head() check
+        // will correctly treat it as new and cache it then.
+        item.image_url = null;
+        continue;
+      }
+
+      const cached = await cacheImage(env, { sourceUrl, prefix: 'lipseys', filename });
+      if (cached) {
+        if (!alreadyCached) newDownloads++;
+        item.image_url = cached;
+      } else {
+        item.image_url = null; // couldn't fetch/cache - never fall back to hotlinking
+      }
+    }
+  }
+
+  await Promise.all(Array.from({ length: IMAGE_CONCURRENCY }, worker));
+  return items;
 }
 
 export async function run(env) {
@@ -147,6 +199,7 @@ export async function run(env) {
   const syncTime = new Date().toISOString();
   const normalized = rawItems.map(item => normalize(item, syncTime)).filter(Boolean);
   const filtered = filterByAllowList(normalized, allowList);
-  await upsertDistributorProducts(supabase, 'lipseys', filtered, syncTime);
-  return filtered.length;
+  const withCachedImages = await cacheImagesForItems(env, filtered);
+  await upsertDistributorProducts(supabase, 'lipseys', withCachedImages, syncTime);
+  return withCachedImages.length;
 }

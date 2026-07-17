@@ -10,8 +10,15 @@
   "triggers": {
     "crons": ["0 8 * * *"]
   },
+  "r2_buckets": [
+    {
+      "bucket_name": "golden-valley-guns-images",
+      "binding": "DISTRIBUTOR_IMAGES"
+    }
+  ],
   "vars": {
     "SUPABASE_URL": "https://tyqgvpiunplgqzkygnii.supabase.co",
+    "SITE_HOSTNAME": "goldenvalleygunsllc.com",
     // "sandbox" or "production" - switches both the Authorize.net API endpoint
     // (src/lib/authorizeNet.js) and which Accept.js script checkout.html loads.
     // Flip to "production" only once real (non-sandbox) API credentials are set below.
