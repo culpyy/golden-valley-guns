@@ -3,4 +3,4 @@ Allow: /
 Disallow: /admin.html
 Disallow: /admin-dashboard.html
 
-Sitemap: https://goldenvalleyguns.netlify.app/sitemap.xml
+Sitemap: https://goldenvalleygunsllc.com/sitemap.xml
