@@ -3,6 +3,7 @@ import { run as runRsr } from './sync/rsr.js';
 import { run as runDavidsons } from './sync/davidsons.js';
 import { run as runOrion } from './sync/orion.js';
 import { handleCheckout } from './api/checkout.js';
+import { handleContact } from './api/contact.js';
 import { checkRateLimit } from './lib/rateLimit.js';
 import { addSecurityHeaders } from './lib/securityHeaders.js';
 
@@ -63,6 +64,18 @@ async function route(request, env) {
     } catch (err) {
       console.error('Checkout failed:', err);
       return new Response(JSON.stringify({ error: 'Checkout failed. Please try again or contact us.' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+  }
+
+  if (url.pathname === '/api/contact' && request.method === 'POST') {
+    try {
+      return await handleContact(request, env);
+    } catch (err) {
+      console.error('Contact form submission failed:', err);
+      return new Response(JSON.stringify({ error: 'Something went wrong. Please call us instead.' }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' }
       });

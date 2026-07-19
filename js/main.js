@@ -135,7 +135,10 @@ document.querySelectorAll('.fade-in').forEach(el => {
   observer.observe(el);
 });
 
-// Contact form (submits to Formspree via AJAX so the page doesn't reload)
+// Contact form - submits to our own /api/contact (Cloudflare Worker + Email
+// Routing), not a third-party form service. Replaced Formspree 2026-07-19 -
+// it was still pointed at a placeholder form ID that was never swapped for
+// a real one, so every submission through this form silently/visibly failed.
 const form = document.getElementById('contactForm');
 if (form) {
   form.addEventListener('submit', e => {
@@ -145,13 +148,11 @@ if (form) {
     btn.textContent = 'Sending...';
     btn.disabled = true;
 
-    fetch('https://formspree.io/f/YOUR_FORM_ID', {
+    const data = Object.fromEntries(new FormData(form));
+    fetch('/api/contact', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Accept': 'application/json',
-      },
-      body: new URLSearchParams(new FormData(form)).toString(),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
     })
       .then(res => {
         if (!res.ok) throw new Error('Submission failed');

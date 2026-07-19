@@ -34,6 +34,17 @@
       "id": "7dd7a106dd81433cbd73dcbebb3727e5"
     }
   ],
+  // Contact form submissions send here directly - no third-party form
+  // service (Formspree's placeholder ID was never replaced, meaning the
+  // entire site's lead-generation path silently/visibly failed until this).
+  // Cloudflare Email Routing enabled on the zone 2026-07-18, destination
+  // already verified since it's the same email used to log into Cloudflare.
+  "send_email": [
+    {
+      "name": "CONTACT_EMAIL",
+      "destination_address": "goldenvalleyguns@gmail.com"
+    }
+  ],
   "vars": {
     "SUPABASE_URL": "https://tyqgvpiunplgqzkygnii.supabase.co",
     "SITE_HOSTNAME": "goldenvalleygunsllc.com",
