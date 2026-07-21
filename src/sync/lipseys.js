@@ -212,11 +212,19 @@ export async function run(env) {
 // the thousands (the norm right after enabling several manufacturers)
 // would take the better part of a year to clear - running this on its own
 // 10-minute cron instead clears it in a couple of days.
+// 28 empirically confirmed safe, 35 reliably hits "Too many subrequests by
+// single Worker invocation" (2026-07-20 - the Free plan's 50-subrequest-per-
+// invocation ceiling; each row costs an R2 head + fetch + R2 put + Supabase
+// update). Was 20 - bumped once actual headroom was measured rather than
+// guessed, since the original inline-image-fetch incident that necessitated
+// this whole backfill design in the first place was this exact same limit.
+const BACKFILL_LIMIT = 28;
+
 export async function backfillLipseysImages(env, supabase = getSupabaseAdmin(env)) {
   return backfillImages(supabase, env, {
     distributor: 'lipseys',
     prefix: 'lipseys',
     buildSourceUrl: (name) => `${LIPSEYS_IMAGE_BASE}/${name}`,
-    limit: 20
+    limit: BACKFILL_LIMIT
   });
 }

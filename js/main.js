@@ -22,11 +22,12 @@ function escapeHtml(str) {
 // Build pipeline stages - single source of truth, shared by index.html
 // (homepage build preview), admin-dashboard.html, and track.html so the
 // stage list and progress math can't drift between them.
-const BUILD_STAGES_NFA = ['intake', 'parts-ordered', 'in-progress', 'testing', 'atf-filed', 'atf-approved', 'ready'];
-const BUILD_STAGES_STD = ['intake', 'parts-ordered', 'in-progress', 'testing', 'ready'];
+const BUILD_STAGES_NFA = ['intake', 'parts-ordered', 'in-progress', 'weld', 'machining', 'blasting', 'refinishing', 'testing', 'atf-filed', 'atf-approved', 'ready'];
+const BUILD_STAGES_STD = ['intake', 'parts-ordered', 'in-progress', 'weld', 'machining', 'blasting', 'refinishing', 'testing', 'ready'];
 
 const STATUS_LABELS = {
   'intake': 'Intake', 'parts-ordered': 'Parts Ordered', 'in-progress': 'In Progress',
+  'weld': 'Weld', 'machining': 'Machining', 'blasting': 'Blasting', 'refinishing': 'Refinishing',
   'testing': 'Testing', 'atf-filed': 'ATF Filed', 'atf-approved': 'ATF Approved', 'ready': 'Ready'
 };
 
@@ -34,6 +35,10 @@ const STATUS_DESCRIPTIONS = {
   'intake':        'Checked in — being assessed',
   'parts-ordered': 'Waiting on parts',
   'in-progress':   'On the bench',
+  'weld':          'Welding',
+  'machining':     'On the mill/lathe',
+  'blasting':      'Media blasting',
+  'refinishing':   'Coating/refinishing',
   'testing':       'Function check',
   'atf-filed':     'ATF pending approval',
   'atf-approved':  'ATF approved — ready to transfer',

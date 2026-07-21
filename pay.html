@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
-  <title>Checkout | Golden Valley Guns LLC | Golden Valley, AZ</title>
+  <title>Pay Your Order | Golden Valley Guns LLC | Golden Valley, AZ</title>
   <meta name="robots" content="noindex, nofollow" />
   <link rel="stylesheet" href="css/style.css" />
   <style>
@@ -64,25 +64,25 @@
       font-size: 13px;
       margin-top: 16px;
     }
-    .checkout-success {
+    .checkout-success, .checkout-state {
       display: none;
       text-align: center;
       padding: 40px 20px;
     }
-    .checkout-success h2 {
+    .checkout-success h2, .checkout-state h2 {
       font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
       color: var(--gold-light);
       margin-bottom: 12px;
     }
-    .checkout-success p { color: var(--muted); margin-bottom: 20px; }
-    #checkoutForm[data-submitting] button[type="submit"] { opacity: 0.6; pointer-events: none; }
+    .checkout-success p, .checkout-state p { color: var(--muted); margin-bottom: 20px; }
+    #payForm[data-submitting] button[type="submit"] { opacity: 0.6; pointer-events: none; }
     .firearm-notice {
-      background: rgba(212, 175, 55, 0.08);
-      border: 1px solid var(--gold-light);
-      color: var(--text);
+      background: rgba(224, 176, 30, 0.1);
+      border: 1px solid var(--gold);
+      color: var(--silver);
       padding: 14px 16px;
       font-size: 13px;
-      line-height: 1.5;
+      line-height: 1.6;
       margin-bottom: 20px;
     }
     .firearm-notice strong { color: var(--gold-light); }
@@ -131,10 +131,6 @@
       <li><a href="shop.html">Shop</a></li>
       <li><a href="contact.html">Contact</a></li>
     </ul>
-    <a href="cart.html" class="nav-cart-icon" aria-label="Cart">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-      <span class="cart-badge" data-cart-count>0</span>
-    </a>
     <a href="contact.html" class="nav-cta">Get In Touch</a>
     <div class="hamburger" aria-label="Menu">
       <span></span><span></span><span></span>
@@ -144,26 +140,41 @@
   <!-- PAGE HEADER -->
   <div class="page-header">
     <div class="section-label">Golden Valley Guns</div>
-    <h1>Checkout</h1>
+    <h1>Pay Your Order</h1>
     <p>Secure card payment processed through Authorize.net. We never see or store your card number.</p>
   </div>
 
+  <!-- LOADING -->
+  <div class="checkout-state" id="loadingState" style="display:block;">
+    <p>Loading your order&hellip;</p>
+  </div>
+
+  <!-- NOT FOUND / UNAVAILABLE -->
+  <div class="checkout-state" id="unavailableState">
+    <h2 id="unavailableTitle">Link Not Available</h2>
+    <p id="unavailableMessage">This payment link isn't valid. Double check the link, or contact us and we'll help sort it out.</p>
+    <a href="contact.html" class="btn-secondary">Contact Us</a>
+  </div>
+
   <!-- CHECKOUT -->
-  <div class="checkout-wrap">
+  <div class="checkout-wrap" id="checkoutWrap" style="display:none;">
 
     <!-- ORDER SUMMARY -->
     <div class="checkout-summary">
       <div class="checkout-section-title">Order Summary</div>
       <div id="summaryLines"></div>
       <div class="summary-total">Total <span id="summaryTotal">$0.00</span></div>
+      <div id="orderNumberLine" style="margin-top:16px;font-size:12px;color:var(--muted);"></div>
     </div>
 
     <!-- FORM -->
     <div class="checkout-form-panel">
+
       <div class="firearm-notice" id="firearmNotice" style="display:none;">
-        <strong>Your cart includes a firearm.</strong> Paying now reserves it for you, but by federal law you'll still need to complete a NICS background check and ATF Form 4473 in person at our shop before it transfers to you. Nothing ships - pickup is in person only. If your background check is denied, this order is refunded in full.
+        <strong>This order includes a firearm.</strong> Paying now reserves it for you, but by federal law you'll still need to complete a NICS background check and ATF Form 4473 in person at our shop before it transfers to you. Nothing ships - pickup is in person only. If your background check is denied, this order is refunded in full.
       </div>
-      <form id="checkoutForm" novalidate>
+
+      <form id="payForm" novalidate>
 
         <div class="checkout-section-title">Contact Info</div>
         <div class="form-row">
@@ -186,10 +197,9 @@
         </div>
 
         <div class="checkout-section-title" style="margin-top: 24px;">Payment</div>
-        <!-- Card fields intentionally have no "name" attribute - Accept.js
-             requires this so raw card data can never be submitted as part of
-             a normal form post and never reaches this server. Only the opaque
-             token Accept.dispatchData() returns gets sent to /api/checkout. -->
+        <!-- Card fields intentionally have no "name" attribute - see
+             checkout.html for why (Accept.js requirement, keeps raw card
+             data from ever being part of a normal form post). -->
         <div class="card-fields">
           <div class="form-group">
             <label for="cardNumber">Card Number</label>
@@ -210,22 +220,28 @@
           </div>
         </div>
 
-        <div class="form-group" id="firearmTermsGroup" style="display:none;align-items:flex-start;gap:10px;margin-top:14px;">
-          <input type="checkbox" id="agreeTerms" style="width:16px;height:16px;margin-top:2px;accent-color:var(--gold-light);cursor:pointer;flex-shrink:0;" />
-          <label for="agreeTerms" style="cursor:pointer;font-size:13px;font-weight:400;">I've read and agree to the firearm pickup terms above.</label>
+        <div class="legal-notice" style="margin-top: 20px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <p id="termsText">
+            This is a special order - once placed, it's final sale. If it includes a firearm and you're denied by the NICS background check at pickup, you'll receive a full refund; otherwise no refunds once payment is made. Questions before you pay? <a href="tel:9287270893" class="tel-link">Call or text us</a> first.
+          </p>
+        </div>
+        <div class="form-group" style="display:flex;align-items:flex-start;gap:10px;margin-top:14px;">
+          <input type="checkbox" id="agreeTerms" required style="width:16px;height:16px;margin-top:2px;accent-color:var(--gold-light);cursor:pointer;flex-shrink:0;" />
+          <label for="agreeTerms" style="cursor:pointer;font-size:13px;font-weight:400;">I've read and agree to the terms above.</label>
         </div>
 
         <div class="checkout-error" id="checkoutError"></div>
 
         <button type="submit" class="btn-primary" style="margin-top: 20px; width: 100%; justify-content: center;" id="payBtn">
-          Place Order &#8594;
+          Pay Now &#8594;
         </button>
       </form>
 
       <div class="checkout-success" id="checkoutSuccess">
-        <h2>Order Placed</h2>
+        <h2>Payment Received</h2>
         <p id="successMessage"></p>
-        <a href="shop.html" class="btn-secondary">Back to Shop</a>
+        <a href="index.html" class="btn-secondary">Back to Home</a>
       </div>
     </div>
 
@@ -270,51 +286,8 @@
   </footer>
 
   <script src="js/main.js"></script>
-  <script src="js/cart.js"></script>
   <script src="js/checkout-config.js"></script>
   <script>
-    const cart = getCart();
-    if (cart.length === 0) {
-      location.href = 'cart.html';
-    }
-
-    document.getElementById('summaryLines').innerHTML = cart.map(item => `
-      <div class="summary-line">
-        <span class="name">${escapeHtml(item.name)} &times; ${item.qty}</span>
-        <span>$${(item.price * item.qty).toFixed(2)}</span>
-      </div>
-    `).join('');
-    document.getElementById('summaryTotal').textContent = `$${cartTotal().toFixed(2)}`;
-
-    // Client-side only, for UX (showing the notice/checkbox before submit) -
-    // checkout.js re-derives this itself from Supabase and is what actually
-    // decides whether the order is treated as a firearm sale.
-    const cartHasFirearm = cart.some(item => item.category === 'firearms');
-    if (cartHasFirearm) {
-      document.getElementById('firearmNotice').style.display = 'block';
-      document.getElementById('firearmTermsGroup').style.display = 'flex';
-      document.getElementById('agreeTerms').setAttribute('required', '');
-    }
-
-    // Accept.js is loaded dynamically so the sandbox/production choice lives
-    // in one place (js/checkout-config.js) instead of duplicating the whole
-    // page behind an if/else. The Pay button stays disabled until it's ready.
-    const payBtn = document.getElementById('payBtn');
-    payBtn.disabled = true;
-    payBtn.textContent = 'Loading Payment Form…';
-    const acceptScript = document.createElement('script');
-    acceptScript.src = AUTHORIZENET_ENVIRONMENT === 'production'
-      ? 'https://js.authorize.net/v1/Accept.js'
-      : 'https://jstest.authorize.net/v1/Accept.js';
-    acceptScript.onload = () => {
-      payBtn.disabled = false;
-      payBtn.textContent = 'Place Order →';
-    };
-    acceptScript.onerror = () => {
-      showError('Payment form failed to load. Check your connection and refresh.');
-    };
-    document.head.appendChild(acceptScript);
-
     function showError(message) {
       const el = document.getElementById('checkoutError');
       el.textContent = message;
@@ -323,83 +296,145 @@
     function hideError() {
       document.getElementById('checkoutError').style.display = 'none';
     }
-
-    function setSubmitting(isSubmitting) {
-      const form = document.getElementById('checkoutForm');
-      if (isSubmitting) form.setAttribute('data-submitting', ''); else form.removeAttribute('data-submitting');
-      payBtn.textContent = isSubmitting ? 'Processing…' : 'Place Order →';
+    function showUnavailable(title, message) {
+      document.getElementById('loadingState').style.display = 'none';
+      document.getElementById('checkoutWrap').style.display = 'none';
+      document.getElementById('unavailableTitle').textContent = title;
+      document.getElementById('unavailableMessage').textContent = message;
+      document.getElementById('unavailableState').style.display = 'block';
     }
 
-    async function submitOrder(opaqueData) {
-      const customer = {
-        firstName: document.getElementById('firstName').value.trim(),
-        lastName: document.getElementById('lastName').value.trim(),
-        email: document.getElementById('email').value.trim(),
-        phone: document.getElementById('phone').value.trim()
-      };
-      const items = getCart().map(i => ({ id: i.id, qty: i.qty }));
+    const params = new URLSearchParams(location.search);
+    const payToken = params.get('token');
 
-      try {
-        const res = await fetch('/api/checkout', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ items, customer, opaqueData })
+    if (!payToken) {
+      showUnavailable('Link Not Available', 'This link is missing some information. Double check the link, or contact us and we\'ll help sort it out.');
+    } else {
+      fetch(`/api/pay?token=${encodeURIComponent(payToken)}`)
+        .then(res => res.json().then(data => ({ ok: res.ok, data })))
+        .then(({ ok, data }) => {
+          document.getElementById('loadingState').style.display = 'none';
+
+          if (!ok) {
+            showUnavailable('Link Not Available', data.error || 'This payment link isn\'t valid.');
+            return;
+          }
+          if (data.status === 'paid') {
+            showUnavailable('Already Paid', `Order #${data.orderNumber} has already been paid. Thank you! If you think this is a mistake, contact us.`);
+            return;
+          }
+          if (data.status !== 'pending') {
+            showUnavailable('Link Not Active', 'This payment link is no longer active. Contact us if you think that\'s wrong.');
+            return;
+          }
+
+          document.getElementById('checkoutWrap').style.display = 'grid';
+          document.getElementById('summaryLines').innerHTML = `
+            <div class="summary-line">
+              <span class="name">${escapeHtml(data.itemName)}</span>
+              <span>$${data.total.toFixed(2)}</span>
+            </div>`;
+          document.getElementById('summaryTotal').textContent = `$${data.total.toFixed(2)}`;
+          document.getElementById('orderNumberLine').textContent = `Order #${data.orderNumber}`;
+          if (data.isFirearm) {
+            document.getElementById('firearmNotice').style.display = 'block';
+          } else {
+            document.getElementById('termsText').textContent =
+              'This is a special order - once placed, it\'s final sale, since we\'re ordering it in specifically for you. Questions before you pay? Call or text us first.';
+          }
+          initPaymentForm();
+        })
+        .catch(() => {
+          document.getElementById('loadingState').style.display = 'none';
+          showUnavailable('Something Went Wrong', 'Could not load your order. Please refresh, or contact us.');
         });
-        const data = await res.json();
-        if (!res.ok) {
-          showError(data.error || 'Payment failed. Please try again.');
+    }
+
+    function initPaymentForm() {
+      const payBtn = document.getElementById('payBtn');
+      payBtn.disabled = true;
+      payBtn.textContent = 'Loading Payment Form…';
+      const acceptScript = document.createElement('script');
+      acceptScript.src = AUTHORIZENET_ENVIRONMENT === 'production'
+        ? 'https://js.authorize.net/v1/Accept.js'
+        : 'https://jstest.authorize.net/v1/Accept.js';
+      acceptScript.onload = () => {
+        payBtn.disabled = false;
+        payBtn.textContent = 'Pay Now →';
+      };
+      acceptScript.onerror = () => {
+        showError('Payment form failed to load. Check your connection and refresh.');
+      };
+      document.head.appendChild(acceptScript);
+
+      function setSubmitting(isSubmitting) {
+        const form = document.getElementById('payForm');
+        if (isSubmitting) form.setAttribute('data-submitting', ''); else form.removeAttribute('data-submitting');
+        payBtn.textContent = isSubmitting ? 'Processing…' : 'Pay Now →';
+      }
+
+      async function submitPayment(opaqueData) {
+        const customer = {
+          firstName: document.getElementById('firstName').value.trim(),
+          lastName: document.getElementById('lastName').value.trim(),
+          email: document.getElementById('email').value.trim(),
+          phone: document.getElementById('phone').value.trim()
+        };
+
+        try {
+          const res = await fetch('/api/pay', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: payToken, customer, opaqueData })
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            showError(data.error || 'Payment failed. Please try again.');
+            setSubmitting(false);
+            return;
+          }
+          document.getElementById('payForm').style.display = 'none';
+          document.getElementById('successMessage').textContent =
+            `Order #${data.orderNumber} confirmed. A receipt will be sent to ${customer.email}.`;
+          document.getElementById('checkoutSuccess').style.display = 'block';
+        } catch (err) {
+          showError('Could not reach the server. Please try again.');
+          setSubmitting(false);
+        }
+      }
+
+      function responseHandler(response) {
+        if (response.messages.resultCode === 'Error') {
+          const msg = response.messages.message.map(m => m.text).join(' ');
+          showError(msg || 'Card could not be processed.');
           setSubmitting(false);
           return;
         }
-        clearCart();
-        document.getElementById('checkoutForm').style.display = 'none';
-        document.getElementById('successMessage').textContent = data.isFirearm
-          ? `Order #${data.orderNumber} confirmed. A receipt will be sent to ${customer.email}. This includes a firearm - stop by the shop to complete your NICS check and Form 4473; nothing ships.`
-          : `Order #${data.orderNumber} confirmed. A receipt will be sent to ${customer.email}.`;
-        document.getElementById('checkoutSuccess').style.display = 'block';
-      } catch (err) {
-        showError('Could not reach the server. Please try again.');
-        setSubmitting(false);
+        submitPayment(response.opaqueData);
       }
+
+      document.getElementById('payForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (e.target.hasAttribute('data-submitting')) return;
+        hideError();
+        if (!e.target.reportValidity()) return;
+        setSubmitting(true);
+
+        const secureData = {
+          authData: {
+            clientKey: AUTHORIZENET_CLIENT_KEY,
+            apiLoginID: AUTHORIZENET_API_LOGIN_ID
+          },
+          cardData: {
+            cardNumber: document.getElementById('cardNumber').value.replace(/\s+/g, ''),
+            month: document.getElementById('expMonth').value.trim(),
+            year: document.getElementById('expYear').value.trim(),
+            cardCode: document.getElementById('cardCode').value.trim()
+          }
+        };
+        Accept.dispatchData(secureData, responseHandler);
+      });
     }
-
-    function responseHandler(response) {
-      if (response.messages.resultCode === 'Error') {
-        const msg = response.messages.message.map(m => m.text).join(' ');
-        showError(msg || 'Card could not be processed.');
-        setSubmitting(false);
-        return;
-      }
-      submitOrder(response.opaqueData);
-    }
-
-    document.getElementById('checkoutForm').addEventListener('submit', (e) => {
-      e.preventDefault();
-      // Re-entrancy guard - the button's pointer-events:none (CSS, tied to
-      // data-submitting) only blocks a second click, not a second submit
-      // event. A customer pressing Enter again in a card field while
-      // "Processing…" is showing (easy to do, waiting on a payment form is
-      // exactly when people get impatient) would otherwise fire a second
-      // concurrent Accept.dispatchData + POST /api/checkout.
-      if (e.target.hasAttribute('data-submitting')) return;
-      hideError();
-      if (!e.target.reportValidity()) return;
-      setSubmitting(true);
-
-      const secureData = {
-        authData: {
-          clientKey: AUTHORIZENET_CLIENT_KEY,
-          apiLoginID: AUTHORIZENET_API_LOGIN_ID
-        },
-        cardData: {
-          cardNumber: document.getElementById('cardNumber').value.replace(/\s+/g, ''),
-          month: document.getElementById('expMonth').value.trim(),
-          year: document.getElementById('expYear').value.trim(),
-          cardCode: document.getElementById('cardCode').value.trim()
-        }
-      };
-      Accept.dispatchData(secureData, responseHandler);
-    });
   </script>
 </body>
 </html>

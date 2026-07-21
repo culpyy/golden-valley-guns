@@ -7,7 +7,10 @@
 // too large a change to make safely in one pass. What this still buys:
 // no arbitrary external script/connect/frame origin can be loaded even if
 // something were injected, only the specific domains the site actually
-// uses (Supabase, Authorize.net's Accept.js, Formspree, Google Fonts).
+// uses (Supabase, Authorize.net's Accept.js, Google Fonts). Formspree was
+// removed here 2026-07-20 (full-site audit) - the contact form dropped it
+// for POST /api/contact back on 2026-07-19, but this allowlist never got
+// cleaned up to match.
 const CSP = [
   "default-src 'self'",
   // *.authorize.net (not just js./jstest.) on purpose - Accept.js's own
@@ -22,12 +25,12 @@ const CSP = [
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com",
   "img-src 'self' data: https:",
-  "connect-src 'self' https://tyqgvpiunplgqzkygnii.supabase.co https://formspree.io https://*.authorize.net",
+  "connect-src 'self' https://tyqgvpiunplgqzkygnii.supabase.co https://*.authorize.net",
   "frame-src https://*.authorize.net",
   "object-src 'none'",
   "frame-ancestors 'none'",
   "base-uri 'self'",
-  "form-action 'self' https://formspree.io"
+  "form-action 'self'"
 ].join('; ');
 
 export function addSecurityHeaders(response) {

@@ -3,9 +3,12 @@
 // shown here are for display only, the Worker re-prices everything against
 // Supabase before charging the card (see src/api/checkout.js).
 //
-// Only Shawn's own hand-curated parts (products table, category != 'firearms')
-// ever get an Add to Cart button (see shop.html's productCardHtml) - this
-// module itself doesn't enforce that, it just stores whatever it's given.
+// Only Shawn's own hand-curated products (products table) ever get an Add
+// to Cart button (see shop.html's productCardHtml) - this module itself
+// doesn't enforce that, it just stores whatever it's given. category is
+// carried along purely so checkout.html can show the firearm pickup/NICS
+// notice before submitting - the server never trusts it, checkout.js looks
+// category up fresh from Supabase for the actual purchase decision.
 
 const CART_KEY = 'gvg_cart';
 
@@ -23,14 +26,14 @@ function saveCart(cart) {
   document.dispatchEvent(new CustomEvent('cart:updated', { detail: { cart } }));
 }
 
-// item: { id, name, price, image_url }
+// item: { id, name, price, image_url, category }
 function addToCart(item, qty = 1) {
   const cart = getCart();
   const existing = cart.find(i => i.id === item.id);
   if (existing) {
     existing.qty += qty;
   } else {
-    cart.push({ id: item.id, name: item.name, price: parseFloat(item.price), image_url: item.image_url || null, qty });
+    cart.push({ id: item.id, name: item.name, price: parseFloat(item.price), image_url: item.image_url || null, category: item.category || null, qty });
   }
   saveCart(cart);
 }

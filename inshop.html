@@ -168,6 +168,10 @@
     .build-card.status-intake        { border-left-color: var(--s-intake); }
     .build-card.status-parts-ordered { border-left-color: var(--s-parts-ordered); }
     .build-card.status-in-progress   { border-left-color: var(--s-in-progress); }
+    .build-card.status-weld          { border-left-color: var(--s-weld); }
+    .build-card.status-machining     { border-left-color: var(--s-machining); }
+    .build-card.status-blasting      { border-left-color: var(--s-blasting); }
+    .build-card.status-refinishing   { border-left-color: var(--s-refinishing); }
     .build-card.status-testing       { border-left-color: var(--s-testing); }
     .build-card.status-atf-filed     { border-left-color: var(--s-atf-filed); }
     .build-card.status-atf-approved  { border-left-color: var(--s-atf-approved); }
@@ -218,6 +222,10 @@
     .status-intake        .status-badge { background: var(--s-intake); }
     .status-parts-ordered .status-badge { background: var(--s-parts-ordered); }
     .status-in-progress   .status-badge { background: var(--s-in-progress); }
+    .status-weld          .status-badge { background: var(--s-weld); }
+    .status-machining     .status-badge { background: var(--s-machining); }
+    .status-blasting      .status-badge { background: var(--s-blasting); }
+    .status-refinishing   .status-badge { background: var(--s-refinishing); }
     .status-testing       .status-badge { background: var(--s-testing); }
     .status-atf-filed     .status-badge { background: var(--s-atf-filed); }
     .status-atf-approved  .status-badge { background: var(--s-atf-approved); }
@@ -303,6 +311,10 @@
     .status-ready .progress-fill         { background: var(--s-ready); }
     .status-atf-approved .progress-fill  { background: var(--s-atf-approved); }
     .status-in-progress .progress-fill   { background: var(--s-in-progress); }
+    .status-weld .progress-fill          { background: var(--s-weld); }
+    .status-machining .progress-fill     { background: var(--s-machining); }
+    .status-blasting .progress-fill      { background: var(--s-blasting); }
+    .status-refinishing .progress-fill   { background: var(--s-refinishing); }
     .status-testing .progress-fill       { background: var(--s-testing); }
     .progress-pct {
       font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
@@ -585,14 +597,14 @@
         <div class="live-dot"></div>
         <span id="boardUpdated">Loading board...</span>
       </div>
-      <a href="tel:9287270893" class="board-tel">Questions? (928) 727-0893</a>
+      <a href="tel:9287270893" class="board-tel">Questions? Call or text (928) 727-0893</a>
     </div>
 
     <div class="summary-bar" id="summaryBar"></div>
     <div class="builds-list" id="buildsList"></div>
 
     <div class="disclaimer">
-      <strong>Note:</strong> ETAs are best estimates based on current workload and parts availability. We'll reach out directly if something changes on your build. Questions? <a href="tel:9287270893" class="tel-link">(928) 727-0893</a>
+      <strong>Note:</strong> ETAs are best estimates based on current workload and parts availability. We'll reach out directly if something changes on your build. Questions? Call or text <a href="tel:9287270893" class="tel-link">(928) 727-0893</a>
     </div>
   </section>
 
@@ -620,6 +632,7 @@
         <h5>Contact</h5>
         <ul>
           <li><a href="tel:9287270893">(928) 727-0893</a></li>
+          <li><a href="sms:9287270893">Text: (928) 727-0893</a></li>
           <li><a href="mailto:goldenvalleyguns@gmail.com">goldenvalleyguns@gmail.com</a></li>
           <li><a href="https://maps.google.com/?q=7088+W+Jupiter+Dr+Golden+Valley+AZ+86413" target="_blank">7088 W Jupiter Dr<br>Golden Valley, AZ 86413</a></li>
           <li><a href="https://www.facebook.com/p/Golden-Valley-Guns-LLC-61565769817507/" target="_blank">Facebook</a></li>
@@ -639,8 +652,8 @@
   <script src="js/cart.js"></script>
   <script>
     // BUILD_STAGES_NFA / BUILD_STAGES_STD / calcProgress come from js/main.js
-    const stageNamesNFA = ['Intake','Parts','In Progress','Testing','ATF Filed','ATF Approved','Ready'];
-    const stageNamesSTD = ['Intake','Parts Ordered','In Progress','Testing','Ready'];
+    const stageNamesNFA = ['Intake','Parts','In Progress','Weld','Machining','Blasting','Refinishing','Testing','ATF Filed','ATF Approved','Ready'];
+    const stageNamesSTD = ['Intake','Parts Ordered','In Progress','Weld','Machining','Blasting','Refinishing','Testing','Ready'];
     // STATUS_LABELS / STATUS_DESCRIPTIONS come from js/main.js
 
     let builds = [];
@@ -679,7 +692,7 @@
     }
 
     function renderBuilds() {
-      const order = ['ready','atf-approved','atf-filed','testing','in-progress','parts-ordered','intake'];
+      const order = ['ready','atf-approved','atf-filed','testing','refinishing','blasting','machining','weld','in-progress','parts-ordered','intake'];
       const sorted = [...builds].sort((a, b) => order.indexOf(a.status) - order.indexOf(b.status));
       const list = document.getElementById('buildsList');
 
@@ -687,7 +700,7 @@
         list.innerHTML = `
           <div class="builds-empty">
             <h3>Nothing on the board right now.</h3>
-            <p>Call us at <a href="tel:9287270893" class="tel-link">(928) 727-0893</a> to get your build started.</p>
+            <p>Call or text us at <a href="tel:9287270893" class="tel-link">(928) 727-0893</a> to get your build started.</p>
           </div>`;
         return;
       }
@@ -793,7 +806,7 @@
         document.getElementById('buildsList').innerHTML = `
           <div class="builds-empty">
             <h3>Couldn't load the build board.</h3>
-            <p>Give the page a refresh, or call us at <a href="tel:9287270893" class="tel-link">(928) 727-0893</a>.</p>
+            <p>Give the page a refresh, or call/text us at <a href="tel:9287270893" class="tel-link">(928) 727-0893</a>.</p>
           </div>`;
         return;
       }

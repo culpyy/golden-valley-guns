@@ -166,6 +166,9 @@
       <!-- FORM -->
       <div class="fade-in">
         <form id="intakeForm" class="contact-form" novalidate>
+          <p style="position:absolute;left:-9999px;">
+            <label>Leave this field blank: <input name="_gotcha" id="i-gotcha" /></label>
+          </p>
           <div class="form-row">
             <div class="form-group">
               <label for="i-name">Full Name</label>
@@ -272,6 +275,7 @@
         <h5>Contact</h5>
         <ul>
           <li><a href="tel:9287270893">(928) 727-0893</a></li>
+          <li><a href="sms:9287270893">Text: (928) 727-0893</a></li>
           <li><a href="mailto:goldenvalleyguns@gmail.com">goldenvalleyguns@gmail.com</a></li>
           <li><a href="https://maps.google.com/?q=7088+W+Jupiter+Dr+Golden+Valley+AZ+86413" target="_blank">7088 W Jupiter Dr<br>Golden Valley, AZ 86413</a></li>
           <li><a href="https://www.facebook.com/p/Golden-Valley-Guns-LLC-61565769817507/" target="_blank">Facebook</a></li>
@@ -299,10 +303,14 @@
     const intakeForm = document.getElementById('intakeForm');
     const errorEl = document.getElementById('intakeError');
 
-    // Pure client-side - this just fills out and prints a form for the
-    // customer to put in their box. It doesn't create a build, assign a
-    // tracking code, or write anything anywhere; Shawn does that himself
-    // once the package is actually in front of him.
+    // Generates a printable slip for the box either way (that's what
+    // actually matters for shipping), and also saves the same info to
+    // intake_submissions via /api/intake so Shawn sees it coming in the
+    // admin dashboard before the package physically arrives, instead of
+    // only finding out when he opens the box and re-typing everything off
+    // the printed slip by hand. The save is best-effort/fire-and-forget -
+    // a network hiccup there shouldn't block the customer from getting
+    // their printable form.
     intakeForm.addEventListener('submit', e => {
       e.preventDefault();
       errorEl.style.display = 'none';
@@ -315,12 +323,19 @@
       const caliber = document.getElementById('i-caliber').value.trim();
       const isNfa   = document.getElementById('i-nfa').checked;
       const notes   = document.getElementById('i-notes').value.trim();
+      const gotcha  = document.getElementById('i-gotcha').value;
 
       if (!name || !service || (!email && !phone)) {
         errorEl.textContent = 'Please add your name, a service type, and at least an email or phone number.';
         errorEl.style.display = 'block';
         return;
       }
+
+      fetch('/api/intake', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ _gotcha: gotcha, name, email, phone, service, firearmType: type, caliber, isNfa, notes })
+      }).catch(err => console.error('Intake save failed (slip still generated):', err));
 
       document.getElementById('slipDate').textContent = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
       document.getElementById('slipName').textContent = name;

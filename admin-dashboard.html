@@ -214,6 +214,10 @@
     .status-pill.intake        { color: #888; border: 1px solid #555; }
     .status-pill.parts-ordered { color: #a0a0f0; border: 1px solid #5555aa; }
     .status-pill.in-progress   { color: #7ec8e3; border: 1px solid #336688; }
+    .status-pill.weld          { color: #ff9d5c; border: 1px solid #b35900; }
+    .status-pill.machining     { color: #9fb8d9; border: 1px solid #4a6a8a; }
+    .status-pill.blasting      { color: #d9c08a; border: 1px solid #8a6d3b; }
+    .status-pill.refinishing   { color: #c99ee6; border: 1px solid #7a3d82; }
     .status-pill.testing       { color: #f0d060; border: 1px solid #887700; }
     .status-pill.atf-filed     { color: #e07b39; border: 1px solid #7a3d00; }
     .status-pill.atf-approved  { color: #4caf50; border: 1px solid #2d7a3a; }
@@ -358,6 +362,52 @@
       padding: 10px 14px;
     }
 
+    /* ── ORDERS / MESSAGES ── */
+    .status-pill.pending  { color: #f0d060; border: 1px solid #887700; }
+    .status-pill.paid     { color: #4caf50; border: 1px solid #2d7a3a; }
+    .status-pill.failed   { color: #e05a5a; border: 1px solid #7a2d2d; }
+    .status-pill.refunded { color: #888; border: 1px solid #555; }
+    .status-select {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      padding: 5px 8px;
+      cursor: pointer;
+    }
+    .items-detail-row td {
+      background: var(--surface2);
+      padding: 16px 24px;
+    }
+    .items-detail-row ul { list-style: none; font-size: 12px; color: var(--silver); }
+    .items-detail-row li { padding: 3px 0; }
+    .unread-dot {
+      display: inline-block;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--gold-light);
+      margin-right: 8px;
+    }
+    .msg-row-unread td { color: var(--text); }
+    .msg-full-row td {
+      background: var(--surface2);
+      padding: 16px 24px;
+      font-size: 13px;
+      color: var(--silver);
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+    .tab-btn .count-badge {
+      display: inline-block;
+      background: var(--gold);
+      color: #fff;
+      border-radius: 10px;
+      font-size: 10px;
+      padding: 1px 7px;
+      margin-left: 6px;
+    }
+
     @media (max-width: 700px) {
       .admin-main { padding: 20px 16px; }
       .form-grid, .form-grid.cols-3 { grid-template-columns: 1fr; }
@@ -378,9 +428,12 @@
   <!-- TABS -->
   <div class="tab-nav">
     <button class="tab-btn active" data-tab="builds">Builds</button>
+    <button class="tab-btn" data-tab="orders">Orders</button>
+    <button class="tab-btn" data-tab="messages" id="messagesTabBtn">Messages</button>
+    <button class="tab-btn" data-tab="intake" id="intakeTabBtn">Intake</button>
     <button class="tab-btn" data-tab="products">Products</button>
     <button class="tab-btn" data-tab="catalog">Distributor Catalog</button>
-    <button class="tab-btn" data-tab="content">Site Content</button>
+    <button class="tab-btn" data-tab="content">Catalog Settings</button>
   </div>
 
   <div class="admin-main">
@@ -422,6 +475,10 @@
               <option value="intake">Intake</option>
               <option value="parts-ordered">Parts Ordered</option>
               <option value="in-progress">In Progress</option>
+              <option value="weld">Weld</option>
+              <option value="machining">Machining</option>
+              <option value="blasting">Blasting</option>
+              <option value="refinishing">Refinishing</option>
               <option value="testing">Testing</option>
               <option value="atf-filed">ATF Filed</option>
               <option value="atf-approved">ATF Approved</option>
@@ -490,6 +547,72 @@
       </div>
     </div>
 
+    <!-- ── ORDERS TAB ── -->
+    <div class="tab-panel" id="tab-orders">
+      <div class="section-hd">
+        <h2>Orders</h2>
+        <button class="btn-add" id="addSpecialOrderBtn">+ New Special Order</button>
+      </div>
+
+      <div class="form-card" id="specialOrderForm">
+        <h3>New Special Order</h3>
+        <div style="font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:20px;max-width:640px;">
+          For a "Request This Item" lead or anything you've confirmed availability/price on with a distributor. This sends the customer a secure link to pay online - it does not touch your own product inventory or stock counts.
+        </div>
+        <div class="form-grid">
+          <div class="form-field">
+            <label>Customer Name</label>
+            <input type="text" id="so-customer-name" placeholder="John Smith" required />
+          </div>
+          <div class="form-field">
+            <label>Customer Email</label>
+            <input type="email" id="so-customer-email" placeholder="customer@email.com" required />
+          </div>
+          <div class="form-field">
+            <label>Customer Phone (optional)</label>
+            <input type="tel" id="so-customer-phone" placeholder="(928) 555-0100" />
+          </div>
+          <div class="form-field">
+            <label>Price ($)</label>
+            <input type="number" id="so-price" min="0" step="0.01" placeholder="0.00" required />
+          </div>
+          <div class="form-field full">
+            <label>Item Description</label>
+            <input type="text" id="so-item-name" placeholder="Ruger 10/22 Takedown, .22LR" required />
+          </div>
+          <div class="form-field full" style="display:flex;align-items:center;gap:10px;">
+            <input type="checkbox" id="so-is-firearm" style="width:16px;height:16px;accent-color:var(--gold-light);cursor:pointer;" />
+            <label for="so-is-firearm" style="cursor:pointer;font-size:12px;">This is a firearm (customer will see a notice about the in-person NICS/4473 requirement before paying)</label>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn-save" id="saveSpecialOrderBtn">Create &amp; Send Link</button>
+          <button class="btn-cancel" id="cancelSpecialOrderBtn">Cancel</button>
+        </div>
+      </div>
+
+      <div id="ordersTable"></div>
+    </div>
+
+    <!-- ── MESSAGES TAB ── -->
+    <div class="tab-panel" id="tab-messages">
+      <div class="section-hd">
+        <h2>Contact Messages</h2>
+      </div>
+      <div id="messagesTable"></div>
+    </div>
+
+    <!-- ── INTAKE TAB ── -->
+    <div class="tab-panel" id="tab-intake">
+      <div class="section-hd">
+        <h2>Incoming Shipments</h2>
+      </div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:20px;max-width:640px;">
+        Submitted from the "Ship Something to Us" page before a customer mails in a kit or firearm. The printable slip they include in the box has the same info - this just lets you see it coming.
+      </div>
+      <div id="intakeTable"></div>
+    </div>
+
     <!-- ── PRODUCTS TAB ── -->
     <div class="tab-panel" id="tab-products">
       <div class="section-hd">
@@ -532,8 +655,26 @@
             </select>
           </div>
           <div class="form-field">
+            <label>Quantity in Stock</label>
+            <input type="number" id="p-quantity" min="0" step="1" placeholder="0" />
+            <div style="font-size:11px;color:var(--muted);margin-top:4px;">Goes down automatically as orders come in. Firearms aren't sold online, so this doesn't matter for those.</div>
+          </div>
+          <div class="form-field">
             <label>Badge (optional)</label>
             <input type="text" id="p-badge" placeholder="New, Sale..." />
+          </div>
+          <div class="form-field full">
+            <label>Photo</label>
+            <div style="display:flex;align-items:center;gap:16px;">
+              <img id="p-image-preview" style="display:none;width:80px;height:80px;object-fit:cover;background:var(--bg);border:1px solid var(--border);" />
+              <div style="flex:1;">
+                <input type="file" id="p-image-file" accept="image/jpeg,image/png,image/webp,image/gif" />
+                <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+                  <input type="checkbox" id="p-image-remove" style="width:14px;height:14px;accent-color:var(--gold-light);cursor:pointer;" />
+                  <label for="p-image-remove" style="cursor:pointer;font-size:11px;letter-spacing:1px;color:var(--muted);">Remove current photo</label>
+                </div>
+              </div>
+            </div>
           </div>
           <div class="form-field full">
             <label>Description</label>
@@ -573,10 +714,10 @@
     <!-- ── SITE CONTENT TAB ── -->
     <div class="tab-panel" id="tab-content">
       <div class="section-hd">
-        <h2>Site Content</h2>
+        <h2>Catalog Settings</h2>
       </div>
       <div class="form-card open" id="contentForm" style="border-left-color: var(--gold-light);">
-        <h3>Homepage Text</h3>
+        <h3>Distributor Catalog</h3>
         <div id="contentFields" class="form-grid"></div>
         <div class="form-actions">
           <button class="btn-save" id="saveContentBtn">Save Changes</button>
@@ -601,36 +742,43 @@
     </div>
   </div>
 
+  <div class="code-modal-overlay" id="payLinkModalOverlay">
+    <div class="code-modal">
+      <div class="code-modal-eyebrow">Special Order Created</div>
+      <div class="code-modal-title">Payment Link</div>
+      <div class="tracking-code-display" id="payLinkDisplay" style="font-size:13px;word-break:break-all;"></div>
+      <p class="code-modal-sub">We tried emailing this to the customer automatically, but email it or text it yourself too in case that didn't land - <strong>send it to them however works</strong>, the link itself is what matters.</p>
+      <div class="code-modal-actions">
+        <button class="btn-save" id="copyPayLinkBtn">Copy Link</button>
+        <button class="btn-cancel" id="closePayLinkModalBtn">Done</button>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase.js"></script>
   <script src="js/main.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <script>
     // ── EMAIL NOTIFICATIONS ──
-    // Fill these in once an EmailJS account exists (emailjs.com, free tier):
-    // add an Email Service (e.g. connect Gmail), build a Template using the
-    // variables sent below (to_email, to_name, tracking_code, status_label,
-    // status_desc), then paste the three IDs from the EmailJS dashboard here.
-    // The public key is meant to be used client-side - it's not a secret the
-    // way the Supabase service-role key is - but EmailJS's dashboard has an
-    // "Allowed origins" setting worth restricting to this site's domain.
-    const EMAILJS_PUBLIC_KEY  = 'YOUR_EMAILJS_PUBLIC_KEY';
-    const EMAILJS_SERVICE_ID  = 'YOUR_EMAILJS_SERVICE_ID';
-    const EMAILJS_TEMPLATE_ID = 'YOUR_EMAILJS_TEMPLATE_ID';
-    const EMAILJS_CONFIGURED  = !EMAILJS_PUBLIC_KEY.startsWith('YOUR_');
-
-    if (EMAILJS_CONFIGURED) emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
-
+    // Replaced the old EmailJS integration 2026-07-20 - it pointed at
+    // placeholder account IDs that were never actually filled in, so it
+    // silently sent nothing on every status change. Now goes through
+    // POST /api/notify-build-status (src/api/notifyBuildStatus.js), which
+    // sends via the same Cloudflare Email Routing path as the contact form
+    // and order confirmations - no separate third-party account needed.
     async function sendStatusChangeEmail(build) {
-      if (!EMAILJS_CONFIGURED || !build.customer_email) return;
+      if (!build.customer_email) return;
       try {
-        await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-          to_email:      build.customer_email,
-          to_name:       build.customer_name || 'there',
-          tracking_code: build.tracking_code || '',
-          status_label:  STATUS_LABELS[build.status] || build.status,
-          status_desc:   STATUS_DESCRIPTIONS[build.status] || ''
+        const { data: { session } } = await supabase.auth.getSession();
+        const res = await fetch('/api/notify-build-status', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session?.access_token || ''}`
+          },
+          body: JSON.stringify({ buildId: build.id })
         });
+        if (!res.ok) throw new Error(`Status ${res.status}`);
       } catch (err) {
         // The build itself already saved successfully by the time this
         // runs - don't let an email hiccup look like a failed save.
@@ -813,7 +961,7 @@
       if (error) { showToast('Error: ' + error.message); return; }
 
       const statusChanged = !isNew && editingBuildOriginalStatus !== null && editingBuildOriginalStatus !== payload.status;
-      const willEmail = statusChanged && EMAILJS_CONFIGURED && !!payload.customer_email;
+      const willEmail = statusChanged && !!payload.customer_email;
       if (statusChanged) sendStatusChangeEmail(payload);
 
       closeBuildForm();
@@ -878,11 +1026,443 @@
       loadBuilds();
     }
 
+    // ── ORDERS ──
+    let ordersAllRows = [];
+
+    async function loadOrders() {
+      const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+      ordersAllRows = error ? [] : (data || []);
+      renderOrdersTable();
+    }
+
+    function renderOrdersTable() {
+      const container = document.getElementById('ordersTable');
+      if (ordersAllRows.length === 0) {
+        container.innerHTML = '<div class="empty-state">No orders yet.</div>';
+        return;
+      }
+      container.innerHTML = `
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Order #</th>
+              <th>Customer</th>
+              <th>Total</th>
+              <th>Status</th>
+              <th>Date</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${ordersAllRows.map(o => `
+              <tr>
+                <td class="title">${escapeHtml(o.order_number)}${o.source === 'special_order' ? ' <span class="part-badge-pill" style="position:static;display:inline-block;">Special Order</span>' : ''}${o.is_firearm ? ' <span class="part-badge-pill" style="position:static;display:inline-block;background:var(--surface2);">Firearm</span>' : ''}</td>
+                <td style="font-size:12px;">${escapeHtml(o.customer_name)}<br><span style="color:var(--muted);">${escapeHtml(o.customer_email)}</span></td>
+                <td>$${parseFloat(o.total).toFixed(2)}</td>
+                <td>
+                  <select class="status-select" onchange="updateOrderStatus('${o.id}', this.value)">
+                    ${['pending', 'paid', 'failed', 'refunded', 'cancelled'].map(s => `<option value="${s}" ${o.status === s ? 'selected' : ''}>${s.charAt(0).toUpperCase() + s.slice(1)}</option>`).join('')}
+                  </select>
+                </td>
+                <td style="font-size:12px;">${new Date(o.created_at).toLocaleString()}</td>
+                <td>
+                  <div class="row-actions">
+                    <button class="btn-edit" onclick="toggleOrderItems('${o.id}')">Items</button>
+                    ${o.source === 'special_order' && o.pay_token ? `<button class="btn-edit" onclick="copyPayLink('${o.pay_token}')">Copy Link</button>` : ''}
+                    ${o.status === 'paid' && o.authorize_net_transaction_id ? `<button class="btn-delete" onclick="refundOrder('${o.id}', '${escapeHtml(o.order_number)}')">Refund</button>` : ''}
+                  </div>
+                </td>
+              </tr>
+              <tr class="items-detail-row" id="items-${o.id}" style="display:none;">
+                <td colspan="6">
+                  <ul>
+                    ${(o.items || []).map(it => `<li>${it.qty} &times; ${escapeHtml(it.name)} &mdash; $${parseFloat(it.price).toFixed(2)} each</li>`).join('')}
+                  </ul>
+                  ${o.authorize_net_transaction_id ? `<div style="margin-top:8px;font-size:11px;color:var(--muted);">Authorize.net txn: ${escapeHtml(o.authorize_net_transaction_id)}</div>` : ''}
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>`;
+    }
+
+    function copyPayLink(payToken) {
+      const url = `${location.origin}/pay.html?token=${payToken}`;
+      navigator.clipboard.writeText(url).then(() => showToast('Payment link copied.'));
+    }
+
+    // Issues a real refund through Authorize.net (src/api/refundOrder.js) -
+    // full amount only, no partial refunds. This actually moves money back,
+    // unlike just picking "Refunded" in the status dropdown above (which is
+    // only there for manually correcting the record, e.g. if a refund was
+    // already issued some other way).
+    async function refundOrder(id, orderNumber) {
+      if (!confirm(`Refund order ${orderNumber} in full? This charges nothing further and returns the full amount to the customer's card through Authorize.net.`)) return;
+
+      const { data: { session } } = await supabase.auth.getSession();
+      try {
+        const res = await fetch('/api/admin/refund-order', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session?.access_token || ''}`
+          },
+          body: JSON.stringify({ orderId: id })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          showToast('Refund failed: ' + (data.error || 'Unknown error.'));
+          return;
+        }
+        showToast(`Order ${orderNumber} refunded.`);
+        loadOrders();
+      } catch (err) {
+        showToast('Refund failed: could not reach the server.');
+      }
+    }
+
+    // ── SPECIAL ORDERS ──
+    document.getElementById('addSpecialOrderBtn').addEventListener('click', () => {
+      document.getElementById('specialOrderForm').classList.add('open');
+      document.getElementById('specialOrderForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    document.getElementById('cancelSpecialOrderBtn').addEventListener('click', () => {
+      document.getElementById('specialOrderForm').classList.remove('open');
+    });
+
+    document.getElementById('saveSpecialOrderBtn').addEventListener('click', async () => {
+      const customerName = document.getElementById('so-customer-name').value.trim();
+      const customerEmail = document.getElementById('so-customer-email').value.trim();
+      const customerPhone = document.getElementById('so-customer-phone').value.trim();
+      const itemName = document.getElementById('so-item-name').value.trim();
+      const price = document.getElementById('so-price').value;
+      const isFirearm = document.getElementById('so-is-firearm').checked;
+
+      if (!customerName || !customerEmail || !itemName || !price) {
+        showToast('Customer name, email, item description, and price are all required.');
+        return;
+      }
+
+      const saveBtn = document.getElementById('saveSpecialOrderBtn');
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Creating…';
+
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const res = await fetch('/api/admin/create-special-order', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session?.access_token || ''}`
+          },
+          body: JSON.stringify({ customerName, customerEmail, customerPhone, itemName, price, isFirearm })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          showToast('Error: ' + (data.error || 'Failed to create special order.'));
+          return;
+        }
+
+        document.getElementById('specialOrderForm').classList.remove('open');
+        document.getElementById('so-customer-name').value = '';
+        document.getElementById('so-customer-email').value = '';
+        document.getElementById('so-customer-phone').value = '';
+        document.getElementById('so-item-name').value = '';
+        document.getElementById('so-price').value = '';
+        document.getElementById('so-is-firearm').checked = false;
+
+        document.getElementById('payLinkDisplay').textContent = data.payUrl;
+        document.getElementById('payLinkModalOverlay').classList.add('open');
+        loadOrders();
+      } catch (err) {
+        showToast('Error: could not reach the server.');
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Create & Send Link';
+      }
+    });
+
+    document.getElementById('copyPayLinkBtn').addEventListener('click', () => {
+      const url = document.getElementById('payLinkDisplay').textContent;
+      navigator.clipboard.writeText(url).then(() => showToast('Link copied.'));
+    });
+    document.getElementById('closePayLinkModalBtn').addEventListener('click', () => {
+      document.getElementById('payLinkModalOverlay').classList.remove('open');
+    });
+
+    async function updateOrderStatus(id, status) {
+      const { error } = await supabase.from('orders').update({ status }).eq('id', id);
+      if (error) { showToast('Error: ' + error.message); return; }
+      const row = ordersAllRows.find(o => o.id === id);
+      if (row) row.status = status;
+      showToast('Order updated.');
+    }
+
+    function toggleOrderItems(id) {
+      const row = document.getElementById('items-' + id);
+      row.style.display = row.style.display === 'none' ? '' : 'none';
+    }
+
+    // ── MESSAGES ──
+    let messagesAllRows = [];
+    // Tracks which message detail rows are expanded so renderMessagesTable
+    // (called again after marking read/unread or deleting) doesn't collapse
+    // a row the admin currently has open - re-render regenerates fresh DOM
+    // with every detail row defaulted back to display:none otherwise.
+    let openMessageIds = new Set();
+    const SUBJECT_LABELS_ADMIN = {
+      build: 'Custom Build Inquiry', gunsmithing: 'Gunsmithing / Repair', parts: 'Parts Work',
+      transfer: 'FFL Transfer', buysell: 'Buy / Sell / Trade', order: 'Shop / Parts Order', other: 'Other'
+    };
+
+    async function loadMessages() {
+      const { data, error } = await supabase.from('contact_submissions').select('*').order('created_at', { ascending: false });
+      messagesAllRows = error ? [] : (data || []);
+      renderMessagesTable();
+      updateMessagesBadge();
+    }
+
+    function updateMessagesBadge() {
+      const unread = messagesAllRows.filter(m => !m.is_read).length;
+      document.getElementById('messagesTabBtn').innerHTML = 'Messages' + (unread > 0 ? `<span class="count-badge">${unread}</span>` : '');
+    }
+
+    function renderMessagesTable() {
+      const container = document.getElementById('messagesTable');
+      if (messagesAllRows.length === 0) {
+        container.innerHTML = '<div class="empty-state">No messages yet.</div>';
+        return;
+      }
+      container.innerHTML = `
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Name</th>
+              <th>Subject</th>
+              <th>Contact</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${messagesAllRows.map(m => `
+              <tr class="${m.is_read ? '' : 'msg-row-unread'}">
+                <td style="font-size:12px;">${new Date(m.created_at).toLocaleString()}</td>
+                <td class="title">${m.is_read ? '' : '<span class="unread-dot"></span>'}${escapeHtml(m.first_name)} ${escapeHtml(m.last_name)}</td>
+                <td>${escapeHtml(SUBJECT_LABELS_ADMIN[m.subject] || m.subject)}</td>
+                <td style="font-size:12px;">${escapeHtml(m.email)}${m.phone ? '<br>' + escapeHtml(m.phone) : ''}</td>
+                <td>
+                  <div class="row-actions">
+                    <button class="btn-edit" onclick="toggleMessageBody('${m.id}')">View</button>
+                    <button class="btn-edit" onclick="createOrderFromMessage('${m.id}')">Create Order</button>
+                    <button class="btn-edit" onclick="toggleMessageRead('${m.id}', ${!m.is_read})">${m.is_read ? 'Mark Unread' : 'Mark Read'}</button>
+                    <button class="btn-delete" onclick="deleteMessage('${m.id}')">Delete</button>
+                  </div>
+                </td>
+              </tr>
+              <tr class="msg-full-row" id="msg-${m.id}" style="display:none;">
+                <td colspan="5">${escapeHtml(m.message)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>`;
+      openMessageIds.forEach(id => {
+        const row = document.getElementById('msg-' + id);
+        if (row) row.style.display = '';
+      });
+    }
+
+    async function toggleMessageRead(id, isRead) {
+      const { error } = await supabase.from('contact_submissions').update({ is_read: isRead }).eq('id', id);
+      if (error) { showToast('Error: ' + error.message); return; }
+      const row = messagesAllRows.find(m => m.id === id);
+      if (row) row.is_read = isRead;
+      updateMessagesBadge();
+      renderMessagesTable();
+    }
+
+    function toggleMessageBody(id) {
+      const opening = !openMessageIds.has(id);
+      if (opening) openMessageIds.add(id); else openMessageIds.delete(id);
+      document.getElementById('msg-' + id).style.display = opening ? '' : 'none';
+      const msg = messagesAllRows.find(m => m.id === id);
+      if (opening && msg && !msg.is_read) toggleMessageRead(id, true);
+    }
+
+    async function deleteMessage(id) {
+      if (!confirm('Delete this message? This cannot be undone.')) return;
+      const { error } = await supabase.from('contact_submissions').delete().eq('id', id);
+      if (error) { showToast('Error: ' + error.message); return; }
+      messagesAllRows = messagesAllRows.filter(m => m.id !== id);
+      openMessageIds.delete(id);
+      renderMessagesTable();
+      updateMessagesBadge();
+      showToast('Message deleted.');
+    }
+
+    // Jumps to the Orders tab and pre-fills the special order form with
+    // this message's contact info - the actual item/price still has to be
+    // typed in by hand, since that's Shawn confirming real availability and
+    // cost with the distributor, not something this message can supply.
+    function createOrderFromMessage(id) {
+      const msg = messagesAllRows.find(m => m.id === id);
+      if (!msg) return;
+
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.querySelector('.tab-btn[data-tab="orders"]').classList.add('active');
+      document.getElementById('tab-orders').classList.add('active');
+
+      document.getElementById('so-customer-name').value = `${msg.first_name} ${msg.last_name}`;
+      document.getElementById('so-customer-email').value = msg.email;
+      document.getElementById('so-customer-phone').value = msg.phone || '';
+      document.getElementById('so-item-name').value = '';
+      document.getElementById('so-price').value = '';
+      document.getElementById('so-is-firearm').checked = false;
+
+      const form = document.getElementById('specialOrderForm');
+      form.classList.add('open');
+      form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // ── INTAKE ──
+    let intakeAllRows = [];
+    let openIntakeIds = new Set();
+    const INTAKE_SERVICE_LABELS = {
+      custom_build: 'Custom Build',
+      parts_kit: 'Parts Kit Build',
+      gunsmithing: 'Gunsmithing / Repair',
+      transfer: 'FFL Transfer',
+      other: 'Other'
+    };
+    const BUILD_TYPE_OPTIONS = ['Rifle', 'Pistol', 'Shotgun', 'Short-Barreled Rifle', 'Short-Barreled Shotgun', 'Suppressor', 'Other'];
+
+    async function loadIntake() {
+      const { data, error } = await supabase.from('intake_submissions').select('*').order('created_at', { ascending: false });
+      intakeAllRows = error ? [] : (data || []);
+      renderIntakeTable();
+      updateIntakeBadge();
+    }
+
+    function updateIntakeBadge() {
+      const unread = intakeAllRows.filter(i => !i.is_read).length;
+      document.getElementById('intakeTabBtn').innerHTML = 'Intake' + (unread > 0 ? `<span class="count-badge">${unread}</span>` : '');
+    }
+
+    function renderIntakeTable() {
+      const container = document.getElementById('intakeTable');
+      if (intakeAllRows.length === 0) {
+        container.innerHTML = '<div class="empty-state">No intake submissions yet.</div>';
+        return;
+      }
+      container.innerHTML = `
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Name</th>
+              <th>Service</th>
+              <th>Type / Caliber</th>
+              <th>Contact</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${intakeAllRows.map(i => `
+              <tr class="${i.is_read ? '' : 'msg-row-unread'}">
+                <td style="font-size:12px;">${new Date(i.created_at).toLocaleString()}</td>
+                <td class="title">${i.is_read ? '' : '<span class="unread-dot"></span>'}${escapeHtml(i.name)}${i.is_nfa ? ' <span class="part-badge-pill" style="position:static;display:inline-block;">NFA</span>' : ''}</td>
+                <td>${escapeHtml(INTAKE_SERVICE_LABELS[i.service] || i.service)}</td>
+                <td style="font-size:12px;">${escapeHtml(i.firearm_type || '—')}${i.caliber ? ' · ' + escapeHtml(i.caliber) : ''}</td>
+                <td style="font-size:12px;">${i.email ? escapeHtml(i.email) : ''}${i.phone ? (i.email ? '<br>' : '') + escapeHtml(i.phone) : ''}</td>
+                <td>
+                  <div class="row-actions">
+                    <button class="btn-edit" onclick="toggleIntakeBody('${i.id}')">View</button>
+                    <button class="btn-edit" onclick="createBuildFromIntake('${i.id}')">Create Build</button>
+                    <button class="btn-edit" onclick="toggleIntakeRead('${i.id}', ${!i.is_read})">${i.is_read ? 'Mark Unread' : 'Mark Read'}</button>
+                    <button class="btn-delete" onclick="deleteIntake('${i.id}')">Delete</button>
+                  </div>
+                </td>
+              </tr>
+              <tr class="msg-full-row" id="intake-${i.id}" style="display:none;">
+                <td colspan="6">${i.notes ? escapeHtml(i.notes) : '(No notes provided.)'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>`;
+      openIntakeIds.forEach(id => {
+        const row = document.getElementById('intake-' + id);
+        if (row) row.style.display = '';
+      });
+    }
+
+    async function toggleIntakeRead(id, isRead) {
+      const { error } = await supabase.from('intake_submissions').update({ is_read: isRead }).eq('id', id);
+      if (error) { showToast('Error: ' + error.message); return; }
+      const row = intakeAllRows.find(i => i.id === id);
+      if (row) row.is_read = isRead;
+      updateIntakeBadge();
+      renderIntakeTable();
+    }
+
+    function toggleIntakeBody(id) {
+      const opening = !openIntakeIds.has(id);
+      if (opening) openIntakeIds.add(id); else openIntakeIds.delete(id);
+      document.getElementById('intake-' + id).style.display = opening ? '' : 'none';
+      const row = intakeAllRows.find(i => i.id === id);
+      if (opening && row && !row.is_read) toggleIntakeRead(id, true);
+    }
+
+    async function deleteIntake(id) {
+      if (!confirm('Delete this intake submission? This cannot be undone.')) return;
+      const { error } = await supabase.from('intake_submissions').delete().eq('id', id);
+      if (error) { showToast('Error: ' + error.message); return; }
+      intakeAllRows = intakeAllRows.filter(i => i.id !== id);
+      openIntakeIds.delete(id);
+      renderIntakeTable();
+      updateIntakeBadge();
+      showToast('Intake submission deleted.');
+    }
+
+    // Pre-fills the Add Build form with everything structured the intake
+    // submission actually gives us (contact info, type, caliber, NFA flag) -
+    // deliberately does NOT touch the build's title or public-facing notes,
+    // since those need Shawn's own judgment about what the customer
+    // actually sent, not a guess assembled from form fields.
+    function createBuildFromIntake(id) {
+      const intake = intakeAllRows.find(i => i.id === id);
+      if (!intake) return;
+
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.querySelector('.tab-btn[data-tab="builds"]').classList.add('active');
+      document.getElementById('tab-builds').classList.add('active');
+
+      const type = BUILD_TYPE_OPTIONS.includes(intake.firearm_type) ? intake.firearm_type : 'Rifle';
+      const titleParts = [intake.caliber, intake.firearm_type, INTAKE_SERVICE_LABELS[intake.service] || intake.service].filter(Boolean);
+
+      openBuildForm({
+        id: '',
+        title: titleParts.join(' - '),
+        type,
+        caliber: intake.caliber || '',
+        status: 'intake',
+        is_nfa: intake.is_nfa,
+        customer_name: intake.name,
+        customer_email: intake.email || '',
+        customer_phone: intake.phone || ''
+      });
+
+      if (intake.notes) showToast('Pre-filled from intake - check the notes below for what they sent before saving.');
+    }
+
     // ── PRODUCTS ──
     document.getElementById('addProductBtn').addEventListener('click', () => openProductForm(null));
     document.getElementById('cancelProductBtn').addEventListener('click', () => {
       document.getElementById('productForm').classList.remove('open');
     });
+
+    let editingProductImageUrl = null;
 
     function openProductForm(product) {
       const form = document.getElementById('productForm');
@@ -893,22 +1473,70 @@
       document.getElementById('p-category').value = product ? product.category : 'parts';
       document.getElementById('p-price').value = product ? product.price : '';
       document.getElementById('p-stock').value = product ? product.stock : 'in_stock';
+      document.getElementById('p-quantity').value = product ? (product.quantity || 0) : 0;
       document.getElementById('p-badge').value = product ? (product.badge || '') : '';
       document.getElementById('p-desc').value = product ? product.description : '';
       const idField = document.getElementById('p-id');
       idField.readOnly = !!product;
       idField.style.opacity = product ? '0.5' : '1';
+
+      editingProductImageUrl = product ? (product.image_url || null) : null;
+      document.getElementById('p-image-file').value = '';
+      document.getElementById('p-image-remove').checked = false;
+      const preview = document.getElementById('p-image-preview');
+      if (editingProductImageUrl) {
+        preview.src = editingProductImageUrl;
+        preview.style.display = '';
+      } else {
+        preview.style.display = 'none';
+      }
+
       form.classList.add('open');
       form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // Live preview of a newly-picked file, before it's actually uploaded.
+    document.getElementById('p-image-file').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      const preview = document.getElementById('p-image-preview');
+      if (!file) return;
+      preview.src = URL.createObjectURL(file);
+      preview.style.display = '';
+      document.getElementById('p-image-remove').checked = false;
+    });
+
+    async function uploadProductImage(file, slug) {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`/api/admin/upload-product-image?slug=${encodeURIComponent(slug)}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': file.type,
+          Authorization: `Bearer ${session?.access_token || ''}`
+        },
+        body: file
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || `Upload failed (${res.status})`);
+      }
+      const { url } = await res.json();
+      return url;
     }
 
     document.getElementById('saveProductBtn').addEventListener('click', async () => {
       const existingId = document.getElementById('productId').value;
       const name = document.getElementById('p-name').value.trim();
-      const newId = document.getElementById('p-id').value.trim().toLowerCase().replace(/\s+/g, '-');
+      // Strip to a safe URL/onclick-friendly slug (not just whitespace->hyphen) -
+      // this id gets rendered unescaped into onclick="editProduct('${p.id}')"
+      // below, so a stray quote or angle bracket here would break that
+      // button for this product going forward.
+      const newId = document.getElementById('p-id').value.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 
       if (!name) { showToast('Name is required.'); return; }
       if (!existingId && !newId) { showToast('ID / Slug is required.'); return; }
+
+      const saveBtn = document.getElementById('saveProductBtn');
+      saveBtn.disabled = true;
 
       const payload = {
         name,
@@ -916,11 +1544,29 @@
         description: document.getElementById('p-desc').value,
         price:       parseFloat(document.getElementById('p-price').value) || 0,
         stock:       document.getElementById('p-stock').value,
+        quantity:    parseInt(document.getElementById('p-quantity').value, 10) || 0,
         badge:       document.getElementById('p-badge').value || null
       };
 
-      const saveBtn = document.getElementById('saveProductBtn');
-      saveBtn.disabled = true;
+      // Only touch image_url when something actually changed (new file, or
+      // explicit removal) - same reasoning as distributor sync's image
+      // handling: omitting the key entirely on an unrelated edit leaves
+      // whatever's already there untouched instead of blanking it.
+      const imageFile = document.getElementById('p-image-file').files[0];
+      const removeImage = document.getElementById('p-image-remove').checked;
+      if (imageFile) {
+        try {
+          payload.image_url = await uploadProductImage(imageFile, existingId || newId);
+        } catch (err) {
+          saveBtn.disabled = false;
+          showToast('Image upload failed: ' + err.message);
+          return;
+        }
+      } else if (removeImage) {
+        payload.image_url = null;
+      } else if (!existingId) {
+        payload.image_url = null;
+      }
 
       let error;
       if (existingId) {
@@ -950,6 +1596,7 @@
               <th>Name</th>
               <th>Category</th>
               <th>Price</th>
+              <th>Qty</th>
               <th>Stock</th>
               <th></th>
             </tr>
@@ -960,6 +1607,7 @@
                 <td class="title">${escapeHtml(p.name)}</td>
                 <td>${escapeHtml(p.category)}</td>
                 <td>$${parseFloat(p.price).toFixed(2)}</td>
+                <td>${p.quantity ?? 0}</td>
                 <td><span class="status-pill">${escapeHtml(p.stock)}</span></td>
                 <td>
                   <div class="row-actions">
@@ -1132,21 +1780,27 @@
     }
 
     // ── SITE CONTENT ──
+    // Only catalog_markup_pct/catalog_manufacturers are shown here -
+    // site_content originally also had hero_title/hero_subtitle/
+    // hero_cta_primary/hero_cta_secondary/about_text, but index.html and
+    // services.html never actually read those values (hardcoded static
+    // HTML instead) - editing them here saved fine but changed nothing on
+    // the live site. Found in the 2026-07-20 full-site audit; Braeden
+    // confirmed hero/about text changes go through him directly (a code
+    // push) rather than needing to be Shawn-editable, so removed from this
+    // tab instead of wiring them up. The site_content rows for those keys
+    // still exist in the DB, just aren't editable from here anymore.
     const CONTENT_LABELS = {
-      hero_title:            'Hero Title',
-      hero_subtitle:         'Hero Subtitle',
-      hero_cta_primary:      'Primary CTA Button',
-      hero_cta_secondary:    'Secondary CTA Button',
-      about_text:            'About Text',
       catalog_markup_pct:    'Distributor Catalog Markup (%)',
       catalog_manufacturers: 'Distributor Catalog Manufacturers (comma-separated allow-list, or * for all)'
     };
+    const CONTENT_KEYS = Object.keys(CONTENT_LABELS);
 
     async function loadContent() {
-      const { data } = await supabase.from('site_content').select('*');
+      const { data } = await supabase.from('site_content').select('*').in('key', CONTENT_KEYS);
       const container = document.getElementById('contentFields');
       if (!data) return;
-      const fullWidthKeys = ['hero_subtitle', 'about_text', 'catalog_manufacturers'];
+      const fullWidthKeys = ['catalog_manufacturers'];
       container.innerHTML = data.map(row => `
         <div class="form-field ${fullWidthKeys.includes(row.key) ? 'full' : ''}">
           <label>${escapeHtml(CONTENT_LABELS[row.key] || row.key)}</label>
@@ -1158,7 +1812,7 @@
     }
 
     document.getElementById('saveContentBtn').addEventListener('click', async () => {
-      const keys = ['hero_title', 'hero_subtitle', 'hero_cta_primary', 'hero_cta_secondary', 'about_text', 'catalog_markup_pct', 'catalog_manufacturers'];
+      const keys = CONTENT_KEYS;
 
       // catalog_markup_pct feeds a `::numeric` cast in the distributor_products_public
       // view - a non-numeric value here breaks the entire distributor catalog
@@ -1225,6 +1879,9 @@
 
     // ── INIT ──
     loadBuilds();
+    loadOrders();
+    loadMessages();
+    loadIntake();
     loadProducts();
     loadCatalog();
     loadContent();

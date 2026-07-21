@@ -65,6 +65,10 @@ export async function handleContact(request, env) {
   const subjectLabel = SUBJECT_LABELS[subject] || subject;
   try {
     await sendEmail(env, {
+      // Reply-To set to the customer's own address (not the noreply@ sender)
+      // so Shawn can just hit Reply in Gmail and land in the customer's
+      // inbox, instead of having to copy their email out of the message body.
+      replyTo: email,
       subject: `Website inquiry: ${subjectLabel} - ${fname} ${lname}`,
       text: [
         `New contact form submission from goldenvalleygunsllc.com`,

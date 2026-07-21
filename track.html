@@ -179,6 +179,10 @@
     .status-badge.intake        { background: var(--s-intake); }
     .status-badge.parts-ordered { background: var(--s-parts-ordered); }
     .status-badge.in-progress   { background: var(--s-in-progress); }
+    .status-badge.weld          { background: var(--s-weld); }
+    .status-badge.machining     { background: var(--s-machining); }
+    .status-badge.blasting      { background: var(--s-blasting); }
+    .status-badge.refinishing   { background: var(--s-refinishing); }
     .status-badge.testing       { background: var(--s-testing); }
     .status-badge.atf-filed     { background: var(--s-atf-filed); }
     .status-badge.atf-approved  { background: var(--s-atf-approved); }
@@ -451,7 +455,7 @@
 
       <div class="help-row">
         <p><strong>Can't find your code?</strong> Every build gets one at intake.</p>
-        <a href="tel:9287270893" class="tel-link">(928) 727-0893</a>
+        <a href="tel:9287270893" class="tel-link">Call or text: (928) 727-0893</a>
       </div>
 
     </div>
@@ -480,6 +484,7 @@
         <h5>Contact</h5>
         <ul>
           <li><a href="tel:9287270893">(928) 727-0893</a></li>
+          <li><a href="sms:9287270893">Text: (928) 727-0893</a></li>
           <li><a href="mailto:goldenvalleyguns@gmail.com">goldenvalleyguns@gmail.com</a></li>
           <li><a href="https://maps.google.com/?q=7088+W+Jupiter+Dr+Golden+Valley+AZ+86413" target="_blank">7088 W Jupiter Dr<br>Golden Valley, AZ 86413</a></li>
           <li><a href="https://www.facebook.com/p/Golden-Valley-Guns-LLC-61565769817507/" target="_blank">Facebook</a></li>
@@ -500,8 +505,8 @@
   <script>
     // BUILD_STAGES_NFA / BUILD_STAGES_STD / calcProgress / STATUS_LABELS /
     // STATUS_DESCRIPTIONS come from js/main.js
-    const stageNamesNFA = ['Intake','Parts','In Progress','Testing','ATF Filed','Approved','Ready'];
-    const stageNamesSTD = ['Intake','Parts Ordered','In Progress','Testing','Ready'];
+    const stageNamesNFA = ['Intake','Parts','In Progress','Weld','Machining','Blasting','Refinishing','Testing','ATF Filed','Approved','Ready'];
+    const stageNamesSTD = ['Intake','Parts Ordered','In Progress','Weld','Machining','Blasting','Refinishing','Testing','Ready'];
 
     function formatDate(d) {
       if (!d) return '—';

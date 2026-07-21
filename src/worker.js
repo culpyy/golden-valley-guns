@@ -4,6 +4,12 @@ import { run as runDavidsons } from './sync/davidsons.js';
 import { run as runOrion } from './sync/orion.js';
 import { handleCheckout } from './api/checkout.js';
 import { handleContact } from './api/contact.js';
+import { handleIntake } from './api/intake.js';
+import { handleNotifyBuildStatus } from './api/notifyBuildStatus.js';
+import { handleUploadProductImage } from './api/uploadProductImage.js';
+import { handleCreateSpecialOrder } from './api/specialOrder.js';
+import { handleGetPayOrder, handlePayOrder } from './api/pay.js';
+import { handleRefundOrder } from './api/refundOrder.js';
 import { checkRateLimit } from './lib/rateLimit.js';
 import { addSecurityHeaders } from './lib/securityHeaders.js';
 
@@ -45,6 +51,130 @@ async function route(request, env) {
     });
   }
 
+  if (url.pathname.startsWith('/product-images/')) {
+    // Photos Shawn uploads for his own products (uploadProductImage.js) -
+    // same R2 bucket as distributor images, just a different key prefix and
+    // a route name that doesn't lie about what's actually being served.
+    const key = 'products/' + url.pathname.slice('/product-images/'.length);
+    const object = await env.DISTRIBUTOR_IMAGES.get(key);
+    if (!object) return new Response('Not found', { status: 404 });
+    return new Response(object.body, {
+      headers: {
+        'Content-Type': object.httpMetadata?.contentType || 'application/octet-stream',
+        'Cache-Control': 'public, max-age=31536000, immutable'
+      }
+    });
+  }
+
+  if (url.pathname === '/api/admin/upload-product-image' && request.method === 'POST') {
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    const { allowed, retryAfterSeconds } = await checkRateLimit(env, `upload-image:${ip}`, { limit: 20, windowSeconds: 600 });
+    if (!allowed) {
+      return new Response(JSON.stringify({ error: 'Too many uploads. Try again shortly.' }), {
+        status: 429,
+        headers: { 'Content-Type': 'application/json', 'Retry-After': String(retryAfterSeconds) }
+      });
+    }
+
+    try {
+      return await handleUploadProductImage(request, env);
+    } catch (err) {
+      console.error('Product image upload failed:', err);
+      return new Response(JSON.stringify({ error: 'Upload failed.' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+  }
+
+  if (url.pathname === '/api/admin/create-special-order' && request.method === 'POST') {
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    const { allowed, retryAfterSeconds } = await checkRateLimit(env, `create-special-order:${ip}`, { limit: 20, windowSeconds: 600 });
+    if (!allowed) {
+      return new Response(JSON.stringify({ error: 'Too many requests.' }), {
+        status: 429,
+        headers: { 'Content-Type': 'application/json', 'Retry-After': String(retryAfterSeconds) }
+      });
+    }
+
+    try {
+      return await handleCreateSpecialOrder(request, env);
+    } catch (err) {
+      console.error('Special order creation failed:', err);
+      return new Response(JSON.stringify({ error: 'Failed to create special order.' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+  }
+
+  if (url.pathname === '/api/admin/refund-order' && request.method === 'POST') {
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    const { allowed, retryAfterSeconds } = await checkRateLimit(env, `refund-order:${ip}`, { limit: 10, windowSeconds: 600 });
+    if (!allowed) {
+      return new Response(JSON.stringify({ error: 'Too many requests.' }), {
+        status: 429,
+        headers: { 'Content-Type': 'application/json', 'Retry-After': String(retryAfterSeconds) }
+      });
+    }
+
+    try {
+      return await handleRefundOrder(request, env);
+    } catch (err) {
+      console.error('Refund failed:', err);
+      return new Response(JSON.stringify({ error: 'Refund failed.' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+  }
+
+  if (url.pathname === '/api/pay' && request.method === 'GET') {
+    // Read-only lookup by token - generous but still bounded, mainly to
+    // blunt token-guessing attempts rather than protect against real customers.
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    const { allowed, retryAfterSeconds } = await checkRateLimit(env, `pay-lookup:${ip}`, { limit: 30, windowSeconds: 600 });
+    if (!allowed) {
+      return new Response(JSON.stringify({ error: 'Too many requests.' }), {
+        status: 429,
+        headers: { 'Content-Type': 'application/json', 'Retry-After': String(retryAfterSeconds) }
+      });
+    }
+
+    try {
+      return await handleGetPayOrder(request, env);
+    } catch (err) {
+      console.error('Pay order lookup failed:', err);
+      return new Response(JSON.stringify({ error: 'Something went wrong.' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+  }
+
+  if (url.pathname === '/api/pay' && request.method === 'POST') {
+    // Same reasoning as /api/checkout - a card-testing target, throttle it
+    // the same way.
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    const { allowed, retryAfterSeconds } = await checkRateLimit(env, `pay:${ip}`, { limit: 5, windowSeconds: 600 });
+    if (!allowed) {
+      return new Response(JSON.stringify({ error: 'Too many attempts. Please try again later or contact us directly.' }), {
+        status: 429,
+        headers: { 'Content-Type': 'application/json', 'Retry-After': String(retryAfterSeconds) }
+      });
+    }
+
+    try {
+      return await handlePayOrder(request, env);
+    } catch (err) {
+      console.error('Payment failed:', err);
+      return new Response(JSON.stringify({ error: 'Payment failed. Please try again or contact us.' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+  }
+
   if (url.pathname === '/api/checkout' && request.method === 'POST') {
     // Checkout endpoints are a standard target for card-testing/carding
     // fraud (submit many stolen card numbers to find which ones work) -
@@ -76,6 +206,43 @@ async function route(request, env) {
     } catch (err) {
       console.error('Contact form submission failed:', err);
       return new Response(JSON.stringify({ error: 'Something went wrong. Please call us instead.' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+  }
+
+  if (url.pathname === '/api/intake' && request.method === 'POST') {
+    try {
+      return await handleIntake(request, env);
+    } catch (err) {
+      console.error('Intake submission failed:', err);
+      return new Response(JSON.stringify({ error: 'Something went wrong. Please call us instead.' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+  }
+
+  if (url.pathname === '/api/notify-build-status' && request.method === 'POST') {
+    // Admin-only route, but still rate-limited per IP as a floor in case the
+    // admin-token check in notifyBuildStatus.js is ever bypassed some other
+    // way - matches the defense-in-depth pattern already used for
+    // checkout/contact rather than trusting a single layer of protection.
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    const { allowed, retryAfterSeconds } = await checkRateLimit(env, `notify-build:${ip}`, { limit: 20, windowSeconds: 600 });
+    if (!allowed) {
+      return new Response(JSON.stringify({ error: 'Too many requests.' }), {
+        status: 429,
+        headers: { 'Content-Type': 'application/json', 'Retry-After': String(retryAfterSeconds) }
+      });
+    }
+
+    try {
+      return await handleNotifyBuildStatus(request, env);
+    } catch (err) {
+      console.error('Build status notification failed:', err);
+      return new Response(JSON.stringify({ error: 'Failed to send notification.' }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' }
       });

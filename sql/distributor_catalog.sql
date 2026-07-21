@@ -217,3 +217,13 @@ revoke select on distributor_products_public from anon;
 -- still missing an image_url and catches them up over several days -
 -- pricing/stock data is never blocked waiting on images again.
 alter table distributor_products add column if not exists image_source_name text;
+
+-- 10) DOCUMENTATION RECONCILIATION (2026-07-20 full-site audit): Lipsey's
+-- API access was approved 2026-07-18 (see src/worker.js's header comment)
+-- and access was re-granted directly via the Supabase SQL editor at the
+-- time, but that re-grant was never captured back into this tracked file -
+-- so block 8's revoke reads as the chronological last word here even
+-- though it's been re-granted live for days. Confirmed live via a real
+-- anon-key REST query (6,957 rows readable) before writing this. Re-running
+-- the grant here is a no-op if already granted.
+grant select on distributor_products_public to anon;

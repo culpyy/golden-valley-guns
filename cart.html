@@ -47,6 +47,7 @@
       color: var(--text);
     }
     .cart-row-price { font-size: 13px; color: var(--muted); margin-top: 4px; }
+    .cart-row-note { font-size: 12px; color: var(--gold-light); margin-top: 4px; }
     .cart-qty {
       display: flex;
       align-items: center;
@@ -162,7 +163,7 @@
   <div class="page-header">
     <div class="section-label">Golden Valley Guns</div>
     <h1>Your Cart</h1>
-    <p>Review your items, then head to checkout. Firearms and distributor stock aren't sold this way &mdash; <a href="contact.html" class="tel-link">contact us</a> about those instead.</p>
+    <p>Review your items, then head to checkout. A firearm in your cart is reserved when you pay, but pickup is in person only. Distributor stock isn't sold this way &mdash; <a href="contact.html" class="tel-link">contact us</a> about that instead.</p>
   </div>
 
   <!-- CART -->
@@ -198,6 +199,7 @@
         <h5>Contact</h5>
         <ul>
           <li><a href="tel:9287270893">(928) 727-0893</a></li>
+          <li><a href="sms:9287270893">Text: (928) 727-0893</a></li>
           <li><a href="mailto:goldenvalleyguns@gmail.com">goldenvalleyguns@gmail.com</a></li>
           <li><a href="https://maps.google.com/?q=7088+W+Jupiter+Dr+Golden+Valley+AZ+86413" target="_blank">7088 W Jupiter Dr<br>Golden Valley, AZ 86413</a></li>
           <li><a href="https://www.facebook.com/p/Golden-Valley-Guns-LLC-61565769817507/" target="_blank">Facebook</a></li>
@@ -224,6 +226,7 @@
           <div class="cart-row-main">
             <div class="cart-row-name">${escapeHtml(item.name)}</div>
             <div class="cart-row-price">$${item.price.toFixed(2)} each</div>
+            ${item.category === 'firearms' ? '<div class="cart-row-note">Pickup only &mdash; NICS/4473 required</div>' : ''}
           </div>
           <div class="cart-qty">
             <button data-qty-dir="-1" data-id="${escapeHtml(item.id)}">&minus;</button>

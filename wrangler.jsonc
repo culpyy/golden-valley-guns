@@ -16,11 +16,17 @@
     "run_worker_first": true
   },
   "triggers": {
-    // "0 8 * * *"    - daily full distributor catalog sync (all SYNC_JOBS)
+    // "0 */4 * * *"  - full distributor catalog sync (all SYNC_JOBS), 6x/day.
+    //                  Widened from once daily 2026-07-20: at 1500 raw items/run
+    //                  (CHUNK_SIZE in sync/lipseys.js - see that file for why),
+    //                  once daily meant ~13 days to walk the full ~19,000-item
+    //                  catalog and unlock every row's image_source_name for
+    //                  backfillLipseysImages to act on. 6x/day cuts that to ~2
+    //                  days without changing the safe per-run chunk size.
     // "*/10 * * * *" - Lipsey's image backfill only, see IMAGE_BACKFILL_CRON
     //                  in src/worker.js for why this needs its own frequent
-    //                  schedule instead of waiting on the once-daily sync
-    "crons": ["0 8 * * *", "*/10 * * * *"]
+    //                  schedule instead of waiting on the catalog sync
+    "crons": ["0 */4 * * *", "*/10 * * * *"]
   },
   "r2_buckets": [
     {
@@ -39,10 +45,17 @@
   // entire site's lead-generation path silently/visibly failed until this).
   // Cloudflare Email Routing enabled on the zone 2026-07-18, destination
   // already verified since it's the same email used to log into Cloudflare.
+  //
+  // 2026-07-20: dropped the destination_address restriction (was locked to
+  // just goldenvalleyguns@gmail.com) so this binding can also send order
+  // confirmations and build-status updates to arbitrary customer addresses,
+  // not just Shawn's inbox - see src/lib/email.js. Requires the domain to be
+  // onboarded for sending under Compute > Email Service > Email Sending in
+  // the dashboard (adds SPF/DKIM/DMARC records); without that, sends to any
+  // address other than a verified one in the account will fail.
   "send_email": [
     {
-      "name": "CONTACT_EMAIL",
-      "destination_address": "goldenvalleyguns@gmail.com"
+      "name": "CONTACT_EMAIL"
     }
   ],
   "vars": {
@@ -59,6 +72,7 @@
   // Secrets (not stored here - set via `wrangler secret put NAME`):
   //   SUPABASE_SERVICE_ROLE_KEY     - already set (Project Settings > API > service_role)
   //   LIPSEYS_EMAIL / LIPSEYS_PASSWORD - already set
+  //   LIPSEYS_RELAY_URL / LIPSEYS_RELAY_SECRET - already set (relay/ - see src/sync/lipseys.js)
   //   AUTHORIZENET_API_LOGIN_ID     - set 2026-07-18
   //   AUTHORIZENET_TRANSACTION_KEY  - set 2026-07-18
   // See src/lib/authorizeNet.js and js/checkout-config.js for how these are used.

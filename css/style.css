@@ -17,6 +17,10 @@
   --s-intake:        #555555;
   --s-parts-ordered: #8a6a00;
   --s-in-progress:   #1a4f8a;
+  --s-weld:          #b35900;
+  --s-machining:     #4a6a8a;
+  --s-blasting:      #8a6d3b;
+  --s-refinishing:   #7a3d82;
   --s-testing:       #5a2d82;
   --s-atf-filed:     #7a3d00;
   --s-atf-approved:  #1a6b3a;
@@ -1309,6 +1313,16 @@ footer {
   flex-direction: column;
 }
 .build-preview-card:hover { background: var(--surface2); }
+
+/* Only when there are fewer than 3 real builds to show (see index.html's
+   loadBuildPreview) - scoped to min-width so it never competes with the
+   plain .build-preview-grid single-column rule under the 900px breakpoint
+   below; a class-based selector would otherwise win that fight on
+   specificity alone regardless of which rule appears later in the file. */
+@media (min-width: 901px) {
+  .build-preview-grid.cols-1 { grid-template-columns: 1fr; }
+  .build-preview-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+}
 .bp-label {
   font-size: 10px;
   letter-spacing: 2.5px;
@@ -1346,6 +1360,10 @@ footer {
 .bp-status.intake        { color: #888; border: 1px solid #555; }
 .bp-status.parts-ordered { color: #a0a0f0; border: 1px solid #5555aa; }
 .bp-status.in-progress   { color: #7ec8e3; border: 1px solid #336688; }
+.bp-status.weld          { color: #ff9d5c; border: 1px solid #b35900; }
+.bp-status.machining     { color: #9fb8d9; border: 1px solid #4a6a8a; }
+.bp-status.blasting      { color: #d9c08a; border: 1px solid #8a6d3b; }
+.bp-status.refinishing   { color: #c99ee6; border: 1px solid #7a3d82; }
 .bp-status.testing       { color: #f0d060; border: 1px solid #887700; }
 .bp-status.atf-filed     { color: #e07b39; border: 1px solid #7a3d00; }
 .bp-status.atf-approved  { color: #4caf50; border: 1px solid #2d7a3a; }
