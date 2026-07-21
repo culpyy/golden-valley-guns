@@ -931,6 +931,50 @@ h2.section-title {
 }
 .legal-notice strong { color: var(--text); }
 
+/* ── LEGAL DOCUMENT PAGES (privacy.html, terms.html) ── */
+.legal-doc { max-width: 760px; margin: 0 auto; }
+.legal-doc .updated-date { font-size: 13px; color: var(--muted); margin-bottom: 40px; }
+.legal-doc .toc {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 20px 24px;
+  margin-bottom: 40px;
+}
+.legal-doc .toc h4 {
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--gold-light);
+  margin-bottom: 10px;
+}
+.legal-doc .toc ul { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.legal-doc .toc a { font-size: 14px; color: var(--muted); }
+.legal-doc .toc a:hover { color: var(--gold-light); }
+.legal-doc h2 {
+  font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
+  font-size: 26px;
+  letter-spacing: 1px;
+  color: var(--text);
+  margin-top: 44px;
+  margin-bottom: 14px;
+  scroll-margin-top: calc(var(--nav-h) + 20px);
+}
+.legal-doc h2:first-of-type { margin-top: 0; }
+.legal-doc h3 {
+  font-family: 'Big Shoulders Display', sans-serif; font-weight: 700;
+  font-size: 17px;
+  letter-spacing: 0.5px;
+  color: var(--silver);
+  margin-top: 22px;
+  margin-bottom: 8px;
+}
+.legal-doc p { color: var(--muted); font-size: 15px; line-height: 1.75; margin-bottom: 14px; }
+.legal-doc ul { margin: 0 0 14px 20px; color: var(--muted); font-size: 15px; line-height: 1.75; }
+.legal-doc li { margin-bottom: 6px; }
+.legal-doc strong { color: var(--text); }
+.legal-doc a { color: var(--gold-light); text-decoration: underline; text-underline-offset: 2px; }
+.legal-doc a:hover { color: var(--gold); }
+
 /* ── FOOTER ── */
 footer {
   border-top: 1px solid var(--border);
@@ -1006,6 +1050,9 @@ footer {
   font-size: 12px;
   color: var(--muted);
 }
+
+.footer-bottom p a { color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
+.footer-bottom p a:hover { color: var(--gold-light); }
 
 .footer-bottom .ffl-badge {
   font-size: 11px;
