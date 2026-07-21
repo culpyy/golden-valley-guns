@@ -217,6 +217,7 @@
             <input type="checkbox" id="i-nfa" style="width:16px;height:16px;accent-color:var(--gold-light);cursor:pointer;" />
             <label for="i-nfa" style="text-transform:none;letter-spacing:normal;font-size:13px;cursor:pointer;">This is an NFA item (suppressor, SBR, SBS)</label>
           </div>
+          <p class="form-note" id="i-nfa-locked-note" style="display:none;margin-top:-8px;">Locked on &mdash; the firearm type you selected is an NFA item.</p>
           <div class="form-group">
             <label for="i-notes">Notes</label>
             <textarea id="i-notes" placeholder="What's in the box, what you want done..."></textarea>
@@ -302,6 +303,32 @@
 
     const intakeForm = document.getElementById('intakeForm');
     const errorEl = document.getElementById('intakeError');
+
+    // A customer picking "Short-Barreled Rifle" etc. but leaving the NFA
+    // checkbox unchecked would let Shawn's intake record understate a
+    // regulated item - lock it on (and disable unchecking) whenever the
+    // firearm type itself is NFA, so there's no way to submit that
+    // combination. .checked still reads correctly on a disabled input, and
+    // the submit handler reads it directly rather than via form-serialize,
+    // so disabling it doesn't drop the value.
+    const NFA_TYPES = ['Short-Barreled Rifle', 'Short-Barreled Shotgun', 'Suppressor'];
+    const typeSelect = document.getElementById('i-type');
+    const nfaCheckbox = document.getElementById('i-nfa');
+    const nfaLockedNote = document.getElementById('i-nfa-locked-note');
+
+    function syncNfaFromType() {
+      const isNfaType = NFA_TYPES.includes(typeSelect.value);
+      if (isNfaType) {
+        nfaCheckbox.checked = true;
+        nfaCheckbox.disabled = true;
+        nfaLockedNote.style.display = 'block';
+      } else {
+        nfaCheckbox.disabled = false;
+        nfaLockedNote.style.display = 'none';
+      }
+    }
+    typeSelect.addEventListener('change', syncNfaFromType);
+    syncNfaFromType();
 
     // Generates a printable slip for the box either way (that's what
     // actually matters for shipping), and also saves the same info to
