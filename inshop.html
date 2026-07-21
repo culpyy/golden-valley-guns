@@ -652,8 +652,8 @@
   <script src="js/cart.js"></script>
   <script>
     // BUILD_STAGES_NFA / BUILD_STAGES_STD / calcProgress come from js/main.js
-    const stageNamesNFA = ['Intake','Parts','In Progress','Weld','Machining','Blasting','Refinishing','Testing','ATF Filed','ATF Approved','Ready'];
-    const stageNamesSTD = ['Intake','Parts Ordered','In Progress','Weld','Machining','Blasting','Refinishing','Testing','Ready'];
+    const stageNamesNFA = ['Intake','Parts','Weld','Machining','Blasting','Refinishing','Testing','ATF Filed','ATF Approved','Ready'];
+    const stageNamesSTD = ['Intake','Parts Ordered','Weld','Machining','Blasting','Refinishing','Testing','Ready'];
     // STATUS_LABELS / STATUS_DESCRIPTIONS come from js/main.js
 
     let builds = [];
@@ -693,6 +693,10 @@
 
     function renderBuilds() {
       const order = ['ready','atf-approved','atf-filed','testing','refinishing','blasting','machining','weld','in-progress','parts-ordered','intake'];
+      // 'in-progress' kept in this sort order only as a legacy fallback -
+      // it's no longer a selectable status (see js/main.js), but any build
+      // not yet migrated to a specific stage still needs a defined sort
+      // position instead of landing at the end via indexOf's -1.
       const sorted = [...builds].sort((a, b) => order.indexOf(a.status) - order.indexOf(b.status));
       const list = document.getElementById('buildsList');
 

@@ -22,8 +22,15 @@ function escapeHtml(str) {
 // Build pipeline stages - single source of truth, shared by index.html
 // (homepage build preview), admin-dashboard.html, and track.html so the
 // stage list and progress math can't drift between them.
-const BUILD_STAGES_NFA = ['intake', 'parts-ordered', 'in-progress', 'weld', 'machining', 'blasting', 'refinishing', 'testing', 'atf-filed', 'atf-approved', 'ready'];
-const BUILD_STAGES_STD = ['intake', 'parts-ordered', 'in-progress', 'weld', 'machining', 'blasting', 'refinishing', 'testing', 'ready'];
+// 'in-progress' was removed as a pipeline stage (2026-07-21) - Weld/
+// Machining/Blasting/Refinishing replaced it with actual granular progress
+// instead of one vague bucket sitting next to four specific ones. Its
+// label/description entries stay below (but out of the stage arrays and
+// admin-dashboard.html's status <select>) purely so any build a stage
+// migration hasn't reached yet still renders a real word instead of
+// "undefined" - it's no longer a selectable or pipeline-tracked status.
+const BUILD_STAGES_NFA = ['intake', 'parts-ordered', 'weld', 'machining', 'blasting', 'refinishing', 'testing', 'atf-filed', 'atf-approved', 'ready'];
+const BUILD_STAGES_STD = ['intake', 'parts-ordered', 'weld', 'machining', 'blasting', 'refinishing', 'testing', 'ready'];
 
 const STATUS_LABELS = {
   'intake': 'Intake', 'parts-ordered': 'Parts Ordered', 'in-progress': 'In Progress',
