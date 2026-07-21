@@ -742,8 +742,18 @@
           ? `<a href="track.html?code=${encodeURIComponent(b.tracking_code)}" class="track-link">Track this build</a>`
           : '';
 
-        const cardFooter = trackLink
-          ? `<div class="card-footer-row">${trackLink}</div>`
+        // Only rendered when isAdmin (client-side check in init(), based on
+        // a real Supabase session) - the real security boundary is server
+        // side: admin-dashboard.html's own auth guard redirects to
+        // admin.html without a session, and RLS (is_admin(), see
+        // sql/security_hardening.sql) is what actually blocks writes, not
+        // this link's visibility.
+        const adminActions = isAdmin
+          ? `<div class="card-admin-actions"><a href="admin-dashboard.html?edit=${encodeURIComponent(b.id)}" class="btn-card-edit">Edit Build</a></div>`
+          : '';
+
+        const cardFooter = (trackLink || adminActions)
+          ? `<div class="card-footer-row"><div>${trackLink}</div>${adminActions}</div>`
           : '';
 
         return `
