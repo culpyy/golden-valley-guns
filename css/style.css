@@ -221,10 +221,6 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
 /* ── HERO ── */
 .hero {
   position: relative;
-  min-height: 72vh;
-  min-height: 72svh;
-  display: flex;
-  align-items: center;
   padding: 0 48px;
   padding-top: var(--nav-h);
   overflow: hidden;
@@ -245,6 +241,24 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
     linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
   background-size: 60px 60px;
+}
+
+/* Caps how far the logo/stamp can drift from the text on wide monitors -
+   .hero itself is full-bleed (so hero-bg/hero-grid still cover edge to
+   edge), but everything that actually needs to read as one composition
+   lives in here, same max-width convention as .footer-inner. Without this,
+   hero-logo's `right: 6%` is 6% of the raw viewport, so the gap between
+   the text block and the logo grew unbounded past ~900px of empty space
+   on an ultrawide screen instead of staying constant. */
+.hero-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  min-height: 72vh;
+  min-height: 72svh;
+  display: flex;
+  align-items: center;
 }
 
 .hero-content {
@@ -333,10 +347,16 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
   color: var(--text);
 }
 
+/* Positioned relative to .hero-logo (now its parent), not .hero itself -
+   .hero-logo is vertically centered (top:50%) while this used to be
+   bottom-anchored to .hero's own box, so on any viewport shorter than the
+   ~830px this was eyeballed against, the two would drift together and
+   overlap. Anchoring to the logo (a fixed 230px image, never responsive
+   while shown) keeps a constant gap regardless of hero height. */
 .hero-stamp {
   position: absolute;
-  bottom: 40px;
-  right: 48px;
+  top: 250px;
+  left: 105px;
   width: 150px;
   height: 150px;
   border: 2px solid var(--gold-light);
@@ -1239,7 +1259,8 @@ footer {
   .nav-logo-img { height: 38px; }
 
   section { padding: 40px 20px; }
-  .hero { padding: 20px; padding-top: calc(var(--nav-h) + 32px); padding-bottom: 48px; align-items: flex-start; }
+  .hero { padding: 20px; padding-top: calc(var(--nav-h) + 32px); padding-bottom: 48px; }
+  .hero-inner { align-items: flex-start; }
   .page-header { padding: calc(var(--nav-h) + 32px) 20px 20px; }
   .hero h1 { font-size: clamp(42px, 11vw, 60px); }
   .hero-desc { font-size: 15px; }
