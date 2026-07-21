@@ -253,7 +253,7 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
 .hero-inner {
   position: relative;
   z-index: 1;
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   min-height: 72vh;
   min-height: 72svh;
@@ -352,10 +352,16 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
    bottom-anchored to .hero's own box, so on any viewport shorter than the
    ~830px this was eyeballed against, the two would drift together and
    overlap. Anchoring to the logo (a fixed 230px image, never responsive
-   while shown) keeps a constant gap regardless of hero height. */
+   while shown) keeps a constant gap regardless of hero height.
+   `top: 236px` is measured against the logo's actual visible artwork, not
+   its full 230px image box - a canvas pixel-alpha scan of images/logo.png
+   found the crest only fills 49-474 of 512px (ends at 92.6%, ~213px at
+   this render size), so anchoring flush to the box's bottom edge left a
+   bigger gap than intended (first pass used 250px and visibly floated
+   the stamp too far below the ribbon). */
 .hero-stamp {
   position: absolute;
-  top: 250px;
+  top: 236px;
   left: 105px;
   width: 150px;
   height: 150px;
