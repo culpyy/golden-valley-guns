@@ -253,6 +253,19 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
   max-width: 680px;
 }
 
+.hero-flagship {
+  display: inline-flex;
+  align-items: center;
+  font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #000;
+  background: var(--gold-light);
+  padding: 6px 16px;
+  margin-bottom: 20px;
+}
+
 .hero h1 {
   font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
   font-size: clamp(56px, 8vw, 96px);
