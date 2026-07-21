@@ -75,6 +75,12 @@
         padding: 24px;
         break-inside: avoid;
       }
+      /* Every text color on the slip is a light-on-dark theme value
+         (--text/--silver/--muted are all near-white to mid-gray) - fine on
+         the site's dark background, but printed on plain white paper that
+         leaves the actual customer/build info almost invisible, defeating
+         the point of a slip meant to go in the box. Force real black. */
+      .intake-slip, .intake-slip * { color: #000 !important; }
       .slip-row { padding: 6px 0; }
       .slip-actions { display: none !important; }
     }
