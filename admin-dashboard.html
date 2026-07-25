@@ -514,6 +514,21 @@
             <label>Notes (public-facing)</label>
             <textarea id="b-notes" placeholder="Short note visible to customers..."></textarea>
           </div>
+          <div class="form-field full" style="display:flex;gap:16px;align-items:flex-start;">
+            <img id="b-image-preview" style="display:none;width:80px;height:80px;object-fit:cover;background:var(--bg);border:1px solid var(--border);" />
+            <div style="flex:1;">
+              <label>Photo (gallery, once the build is Ready)</label>
+              <input type="file" id="b-image-file" accept="image/jpeg,image/png,image/webp,image/gif" />
+              <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+                <input type="checkbox" id="b-image-remove" style="width:14px;height:14px;accent-color:var(--gold-light);cursor:pointer;" />
+                <label for="b-image-remove" style="cursor:pointer;font-size:11px;letter-spacing:1px;color:var(--muted);">Remove current photo</label>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;margin-top:10px;">
+                <input type="checkbox" id="b-is-showcase" style="width:16px;height:16px;accent-color:var(--gold-light);cursor:pointer;" />
+                <label for="b-is-showcase" style="cursor:pointer;font-size:11px;letter-spacing:1.5px;">Always showcase in gallery (skips the normal rotation)</label>
+              </div>
+            </div>
+          </div>
           <div class="form-section-label">Customer Info</div>
           <div class="form-field">
             <label>Tracking Code</label>
@@ -661,6 +676,10 @@
           <div class="form-field">
             <label>Badge (optional)</label>
             <input type="text" id="p-badge" placeholder="New, Sale..." />
+          </div>
+          <div class="form-field" style="display:flex;align-items:center;gap:10px;padding-top:22px;">
+            <input type="checkbox" id="p-is-best-seller" style="width:16px;height:16px;accent-color:var(--gold-light);cursor:pointer;" />
+            <label for="p-is-best-seller" style="cursor:pointer;font-size:11px;letter-spacing:1.5px;">Best Seller (featured on shop page)</label>
           </div>
           <div class="form-field full">
             <label>Photo</label>
@@ -848,6 +867,7 @@
 
     // ── BUILDS ──
     let editingBuildOriginalStatus = null;
+    let editingBuildImageUrl = null;
 
     async function openBuildForm(build) {
       editingBuildOriginalStatus = build ? build.status : null;
@@ -868,6 +888,18 @@
       document.getElementById('b-customer-name').value = build ? (build.customer_name || '') : '';
       document.getElementById('b-customer-email').value = build ? (build.customer_email || '') : '';
       document.getElementById('b-customer-phone').value = build ? (build.customer_phone || '') : '';
+      document.getElementById('b-is-showcase').checked = build ? !!build.is_showcase : false;
+
+      editingBuildImageUrl = build ? (build.photo_url || null) : null;
+      document.getElementById('b-image-file').value = '';
+      document.getElementById('b-image-remove').checked = false;
+      const bPreview = document.getElementById('b-image-preview');
+      if (editingBuildImageUrl) {
+        bPreview.src = editingBuildImageUrl;
+        bPreview.style.display = '';
+      } else {
+        bPreview.style.display = 'none';
+      }
 
       if (build && build.tracking_code) {
         document.getElementById('b-tracking-code').value = build.tracking_code;
@@ -904,6 +936,35 @@
     document.getElementById('addBuildBtn').addEventListener('click', () => openBuildForm(null));
     document.getElementById('cancelBuildBtn').addEventListener('click', closeBuildForm);
 
+    // Live preview of a newly-picked file, before it's actually uploaded -
+    // same pattern as the product image field.
+    document.getElementById('b-image-file').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      const preview = document.getElementById('b-image-preview');
+      if (!file) return;
+      preview.src = URL.createObjectURL(file);
+      preview.style.display = '';
+      document.getElementById('b-image-remove').checked = false;
+    });
+
+    async function uploadBuildImage(file, buildSlug) {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`/api/admin/upload-build-image?buildId=${encodeURIComponent(buildSlug)}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': file.type,
+          Authorization: `Bearer ${session?.access_token || ''}`
+        },
+        body: file
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || `Upload failed (${res.status})`);
+      }
+      const { url } = await res.json();
+      return url;
+    }
+
     document.getElementById('saveBuildBtn').addEventListener('click', async () => {
       const title = document.getElementById('b-title').value.trim();
       if (!title) { showToast('Title is required.'); return; }
@@ -924,11 +985,31 @@
         notes:          document.getElementById('b-notes').value || '',
         customer_name:  document.getElementById('b-customer-name').value || '',
         customer_email: document.getElementById('b-customer-email').value || '',
-        customer_phone: document.getElementById('b-customer-phone').value || ''
+        customer_phone: document.getElementById('b-customer-phone').value || '',
+        is_showcase:    document.getElementById('b-is-showcase').checked
       };
 
       const saveBtn = document.getElementById('saveBuildBtn');
       saveBtn.disabled = true;
+
+      // Photo upload needs some slug to key the R2 object under. A new build
+      // has no id yet (Postgres assigns it on insert), but the tracking code
+      // is already generated client-side by this point (see below/openBuildForm),
+      // so it doubles as a stable-enough identifier for the upload path.
+      const imageFile = document.getElementById('b-image-file').files[0];
+      const removeImage = document.getElementById('b-image-remove').checked;
+      if (imageFile) {
+        try {
+          const slug = id || document.getElementById('b-tracking-code').value || 'build';
+          payload.photo_url = await uploadBuildImage(imageFile, slug);
+        } catch (err) {
+          saveBtn.disabled = false;
+          showToast('Photo upload failed: ' + err.message);
+          return;
+        }
+      } else if (removeImage) {
+        payload.photo_url = null;
+      }
 
       let error, trackingCode;
       // Whether editing or adding, a code only needs to be freshly *assigned*
@@ -1053,9 +1134,11 @@
             </tr>
           </thead>
           <tbody>
-            ${ordersAllRows.map(o => `
+            ${ordersAllRows.map(o => {
+              const isFflTransfer = o.fulfillment_method === 'ffl_transfer';
+              return `
               <tr>
-                <td class="title">${escapeHtml(o.order_number)}${o.source === 'special_order' ? ' <span class="part-badge-pill" style="position:static;display:inline-block;">Special Order</span>' : ''}${o.is_firearm ? ' <span class="part-badge-pill" style="position:static;display:inline-block;background:var(--surface2);">Firearm</span>' : ''}</td>
+                <td class="title">${escapeHtml(o.order_number)}${o.source === 'special_order' ? ' <span class="part-badge-pill" style="position:static;display:inline-block;">Special Order</span>' : ''}${o.is_firearm ? ' <span class="part-badge-pill" style="position:static;display:inline-block;background:var(--surface2);">Firearm</span>' : ''}${isFflTransfer ? ` <span class="part-badge-pill" style="position:static;display:inline-block;background:${o.ffl_verified ? '#2d7a3a' : '#8B1414'};">FFL Transfer${o.ffl_verified ? ' - Verified' : ' - NOT VERIFIED'}</span>` : ''}</td>
                 <td style="font-size:12px;">${escapeHtml(o.customer_name)}<br><span style="color:var(--muted);">${escapeHtml(o.customer_email)}</span></td>
                 <td>$${parseFloat(o.total).toFixed(2)}</td>
                 <td>
@@ -1072,6 +1155,21 @@
                   </div>
                 </td>
               </tr>
+              ${isFflTransfer ? `
+              <tr class="ffl-transfer-row">
+                <td colspan="6" style="background:${o.ffl_verified ? 'rgba(45,122,58,0.08)' : 'rgba(139,20,20,0.1)'};border-left:3px solid ${o.ffl_verified ? '#2d7a3a' : '#8B1414'};">
+                  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+                    <div style="font-size:12px;line-height:1.7;">
+                      <strong style="color:${o.ffl_verified ? '#4caf50' : '#e08080'};">${o.ffl_verified ? 'FFL VERIFIED' : 'DO NOT SHIP - FFL NOT YET VERIFIED'}</strong><br>
+                      Receiving dealer: ${escapeHtml(o.transfer_ffl_business_name || '—')}<br>
+                      License #: ${escapeHtml(o.transfer_ffl_license_number || '—')} &middot; Phone: ${escapeHtml(o.transfer_ffl_phone || '—')}<br>
+                      ${escapeHtml(o.transfer_ffl_address || '—')}
+                      ${o.ffl_verified && o.ffl_verified_at ? `<br><span style="color:var(--muted);">Verified ${new Date(o.ffl_verified_at).toLocaleString()}</span>` : ''}
+                    </div>
+                    ${!o.ffl_verified ? `<button class="btn-edit" onclick="markFflVerified('${o.id}')">Mark FFL Verified</button>` : ''}
+                  </div>
+                </td>
+              </tr>` : ''}
               <tr class="items-detail-row" id="items-${o.id}" style="display:none;">
                 <td colspan="6">
                   <ul>
@@ -1080,7 +1178,7 @@
                   ${o.authorize_net_transaction_id ? `<div style="margin-top:8px;font-size:11px;color:var(--muted);">Authorize.net txn: ${escapeHtml(o.authorize_net_transaction_id)}</div>` : ''}
                 </td>
               </tr>
-            `).join('')}
+            `;}).join('')}
           </tbody>
         </table>`;
     }
@@ -1200,6 +1298,24 @@
     function toggleOrderItems(id) {
       const row = document.getElementById('items-' + id);
       row.style.display = row.style.display === 'none' ? '' : 'none';
+    }
+
+    // Manual gate, not automated - there's no free/official ATF API for
+    // real-time FFL verification. This just records that Shawn actually did
+    // his own check (phone/fax/email copy of the license) before shipping,
+    // same as he already does it outside the site.
+    async function markFflVerified(id) {
+      const row = ordersAllRows.find(o => o.id === id);
+      if (!confirm(`Confirm you've verified ${row?.transfer_ffl_business_name || 'this dealer'}'s FFL is current (license copy, phone, or fax) before marking this ready to ship?`)) return;
+
+      const { error } = await supabase.from('orders').update({
+        ffl_verified: true,
+        ffl_verified_at: new Date().toISOString()
+      }).eq('id', id);
+      if (error) { showToast('Error: ' + error.message); return; }
+      if (row) { row.ffl_verified = true; row.ffl_verified_at = new Date().toISOString(); }
+      renderOrdersTable();
+      showToast('FFL marked verified.');
     }
 
     // ── MESSAGES ──
@@ -1474,6 +1590,7 @@
       document.getElementById('p-stock').value = product ? product.stock : 'in_stock';
       document.getElementById('p-quantity').value = product ? (product.quantity || 0) : 0;
       document.getElementById('p-badge').value = product ? (product.badge || '') : '';
+      document.getElementById('p-is-best-seller').checked = product ? !!product.is_best_seller : false;
       document.getElementById('p-desc').value = product ? product.description : '';
       const idField = document.getElementById('p-id');
       idField.readOnly = !!product;
@@ -1544,7 +1661,8 @@
         price:       parseFloat(document.getElementById('p-price').value) || 0,
         stock:       document.getElementById('p-stock').value,
         quantity:    parseInt(document.getElementById('p-quantity').value, 10) || 0,
-        badge:       document.getElementById('p-badge').value || null
+        badge:       document.getElementById('p-badge').value || null,
+        is_best_seller: document.getElementById('p-is-best-seller').checked
       };
 
       // Only touch image_url when something actually changed (new file, or
@@ -1603,7 +1721,7 @@
           <tbody>
             ${data.map(p => `
               <tr>
-                <td class="title">${escapeHtml(p.name)}</td>
+                <td class="title">${p.is_best_seller ? '<span title="Best Seller" style="color:var(--gold-light);">&#9733;</span> ' : ''}${escapeHtml(p.name)}</td>
                 <td>${escapeHtml(p.category)}</td>
                 <td>$${parseFloat(p.price).toFixed(2)}</td>
                 <td>${p.quantity ?? 0}</td>

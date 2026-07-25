@@ -1,12 +1,13 @@
 import { run as runLipseys, backfillLipseysImages } from './sync/lipseys.js';
 import { run as runRsr } from './sync/rsr.js';
 import { run as runDavidsons } from './sync/davidsons.js';
-import { run as runOrion } from './sync/orion.js';
+import { run as runOrion, backfillOrionImages } from './sync/orion.js';
 import { handleCheckout } from './api/checkout.js';
 import { handleContact } from './api/contact.js';
 import { handleIntake } from './api/intake.js';
 import { handleNotifyBuildStatus } from './api/notifyBuildStatus.js';
 import { handleUploadProductImage } from './api/uploadProductImage.js';
+import { handleUploadBuildImage } from './api/uploadBuildImage.js';
 import { handleCreateSpecialOrder } from './api/specialOrder.js';
 import { handleGetPayOrder, handlePayOrder } from './api/pay.js';
 import { handleRefundOrder } from './api/refundOrder.js';
@@ -18,11 +19,13 @@ import { addSecurityHeaders } from './lib/securityHeaders.js';
 // hotlinking was already fixed before this (sync/lipseys.js downloads to
 // our own R2 bucket, see src/lib/imageCache.js) - both compliance blockers
 // from the 2026-07-17 pause are now cleared, sync is back on.
+//
+// Orion is NOT in this list - see ORION_SYNC_CRON below for why it runs on
+// its own separate trigger instead of bundled in here with the others.
 const SYNC_JOBS = [
   ['lipseys', runLipseys],
   ['rsr', runRsr],
   ['davidsons', runDavidsons],
-  ['orion', runOrion],
 ];
 
 // Must match one entry in wrangler.jsonc's triggers.crons exactly - image
@@ -33,6 +36,32 @@ const SYNC_JOBS = [
 // daily sync alone, a several-thousand-image backlog would take the better
 // part of a year to clear.
 const IMAGE_BACKFILL_CRON = '*/10 * * * *';
+
+// Orion (orionfflsales.com) went from a scaffold to fully live 2026-07-24 -
+// real dealer key verified against the live API, see sync/orion.js for the
+// full writeup. Originally bundled into SYNC_JOBS above, but its ~25MB
+// unpaginated catalog + inventory fetch pushed that shared invocation over
+// Cloudflare's per-invocation subrequest limit on the very first live run
+// ("Too many subrequests by single Worker invocation" - same failure mode
+// that made Lipsey's image backfill need its own cron, see
+// IMAGE_BACKFILL_CRON above). Its own dedicated trigger gives it a clean
+// subrequest budget instead of sharing one with Lipsey's/RSR/Davidson's.
+//
+// NOTE this constant's value is intentionally NOT in wrangler.jsonc's
+// triggers.crons right now - the sync is paused pending review of Orion's
+// actual dealer/API agreement (see wrangler.jsonc for the full reasoning).
+// This branch in scheduled() below is correct and tested; it just never
+// fires until that cron string is re-added.
+//
+// catalog_manufacturers is a SHARED allow-list across every distributor, not
+// per-distributor - learned this the hard way during testing: it was NOT
+// actually empty (Lipsey's already has real manufacturers approved), so
+// Orion immediately started syncing real products (~1,386 Browning items)
+// for every manufacturer name it happens to share with Lipsey's, the moment
+// it ran, with no distributor-specific review step. Worth deciding
+// deliberately whether that's wanted before re-enabling, not just assuming
+// the old "empty allow-list = safe by default" reasoning still holds.
+const ORION_SYNC_CRON = '15 */4 * * *';
 
 async function route(request, env) {
   const url = new URL(request.url);
@@ -64,6 +93,41 @@ async function route(request, env) {
         'Cache-Control': 'public, max-age=31536000, immutable'
       }
     });
+  }
+
+  if (url.pathname.startsWith('/build-images/')) {
+    // Photos Shawn uploads for completed builds (uploadBuildImage.js), shown
+    // on gallery.html - same R2 bucket/prefix pattern as product images.
+    const key = 'builds/' + url.pathname.slice('/build-images/'.length);
+    const object = await env.DISTRIBUTOR_IMAGES.get(key);
+    if (!object) return new Response('Not found', { status: 404 });
+    return new Response(object.body, {
+      headers: {
+        'Content-Type': object.httpMetadata?.contentType || 'application/octet-stream',
+        'Cache-Control': 'public, max-age=31536000, immutable'
+      }
+    });
+  }
+
+  if (url.pathname === '/api/admin/upload-build-image' && request.method === 'POST') {
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    const { allowed, retryAfterSeconds } = await checkRateLimit(env, `upload-build-image:${ip}`, { limit: 20, windowSeconds: 600 });
+    if (!allowed) {
+      return new Response(JSON.stringify({ error: 'Too many uploads. Try again shortly.' }), {
+        status: 429,
+        headers: { 'Content-Type': 'application/json', 'Retry-After': String(retryAfterSeconds) }
+      });
+    }
+
+    try {
+      return await handleUploadBuildImage(request, env);
+    } catch (err) {
+      console.error('Build image upload failed:', err);
+      return new Response(JSON.stringify({ error: 'Upload failed.' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
   }
 
   if (url.pathname === '/api/admin/upload-product-image' && request.method === 'POST') {
@@ -264,6 +328,20 @@ export default {
         backfillLipseysImages(env)
           .then(count => console.log(`lipseys image backfill: ${count} images cached.`))
           .catch(err => console.error('lipseys image backfill failed:', err))
+      );
+      ctx.waitUntil(
+        backfillOrionImages(env)
+          .then(count => console.log(`orion image backfill: ${count} images cached.`))
+          .catch(err => console.error('orion image backfill failed:', err))
+      );
+      return;
+    }
+
+    if (event.cron === ORION_SYNC_CRON) {
+      ctx.waitUntil(
+        runOrion(env)
+          .then(count => console.log(`orion sync complete: ${count ?? 0} items upserted.`))
+          .catch(err => console.error('orion sync failed:', err))
       );
       return;
     }

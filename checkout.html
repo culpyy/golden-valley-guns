@@ -86,6 +86,34 @@
       margin-bottom: 20px;
     }
     .firearm-notice strong { color: var(--gold-light); }
+    .fulfillment-option {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-weight: 400;
+      font-size: 13px;
+      cursor: pointer;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      margin-bottom: 8px;
+    }
+    .fulfillment-option:has(input:checked) { border-color: var(--gold-light); background: rgba(212, 175, 55, 0.06); }
+    /* .form-group input (site-wide, for text fields) sets width:100% and
+       text-input padding/background - overridden back to a normal radio
+       button here, since these radios are nested inside a .form-group. */
+    .fulfillment-option input[type="radio"] {
+      width: 16px;
+      height: 16px;
+      padding: 0;
+      background: none;
+      border: none;
+      border-radius: 0;
+      margin-top: 3px;
+      accent-color: var(--gold-light);
+      flex-shrink: 0;
+    }
+    .fulfillment-option span { flex: 1; }
+    #fflTransferFields { margin-top: 4px; margin-bottom: 16px; }
     @media (max-width: 800px) {
       .checkout-wrap { grid-template-columns: 1fr; padding: 32px 16px; }
       .card-fields-row { grid-template-columns: 1fr; }
@@ -160,10 +188,42 @@
 
     <!-- FORM -->
     <div class="checkout-form-panel">
-      <div class="firearm-notice" id="firearmNotice" style="display:none;">
-        <strong>Your cart includes a firearm.</strong> Paying now reserves it for you, but by federal law you'll still need to complete a NICS background check and ATF Form 4473 in person at our shop before it transfers to you. Nothing ships - pickup is in person only. If your background check is denied, this order is refunded in full.
-      </div>
       <form id="checkoutForm" novalidate>
+
+        <div class="firearm-notice" id="firearmNotice" style="display:none;">
+          <strong>Your cart includes a firearm.</strong> By federal law it can't ship directly to you - choose how you'd like to receive it below. Paying now reserves it either way. If your NICS background check is denied, this order is refunded in full.
+        </div>
+
+        <div class="form-group" id="fulfillmentGroup" style="display:none;">
+          <label style="margin-bottom:8px;display:block;">How do you want to receive it?</label>
+          <label class="fulfillment-option">
+            <input type="radio" name="fulfillmentMethod" value="pickup" checked />
+            <span><strong>Pick up at Golden Valley Guns</strong> - complete your NICS check and ATF Form 4473 here in person. Nothing ships.</span>
+          </label>
+          <label class="fulfillment-option">
+            <input type="radio" name="fulfillmentMethod" value="ffl_transfer" />
+            <span><strong>Transfer to my local FFL dealer</strong> - we ship it to your dealer, who handles your NICS check and Form 4473 there. We verify your dealer's license before shipping, which can add a few days. Your dealer may charge their own transfer fee.</span>
+          </label>
+        </div>
+
+        <div id="fflTransferFields" style="display:none;">
+          <div class="form-group">
+            <label for="fflBusinessName">Receiving FFL Business Name</label>
+            <input type="text" id="fflBusinessName" />
+          </div>
+          <div class="form-group">
+            <label for="fflLicenseNumber">FFL License Number</label>
+            <input type="text" id="fflLicenseNumber" placeholder="e.g. 1-23-456-78-9A-01234" />
+          </div>
+          <div class="form-group">
+            <label for="fflPhone">Dealer Phone</label>
+            <input type="tel" id="fflPhone" />
+          </div>
+          <div class="form-group">
+            <label for="fflAddress">Dealer Address</label>
+            <input type="text" id="fflAddress" />
+          </div>
+        </div>
 
         <div class="checkout-section-title">Contact Info</div>
         <div class="form-row">
@@ -212,7 +272,7 @@
 
         <div class="form-group" id="firearmTermsGroup" style="display:none;align-items:flex-start;gap:10px;margin-top:14px;">
           <input type="checkbox" id="agreeTerms" style="width:16px;height:16px;margin-top:2px;accent-color:var(--gold-light);cursor:pointer;flex-shrink:0;" />
-          <label for="agreeTerms" style="cursor:pointer;font-size:13px;font-weight:400;">I've read and agree to the firearm pickup terms above.</label>
+          <label for="agreeTerms" style="cursor:pointer;font-size:13px;font-weight:400;">I've read and agree to the firearm transfer terms above.</label>
         </div>
 
         <div class="checkout-error" id="checkoutError"></div>
@@ -292,9 +352,27 @@
     const cartHasFirearm = cart.some(item => item.category === 'firearms');
     if (cartHasFirearm) {
       document.getElementById('firearmNotice').style.display = 'block';
+      document.getElementById('fulfillmentGroup').style.display = 'block';
       document.getElementById('firearmTermsGroup').style.display = 'flex';
       document.getElementById('agreeTerms').setAttribute('required', '');
     }
+
+    // FFL fields only need to be filled in (and only get submitted) when the
+    // customer actually picks the transfer option - required toggles with
+    // it so "pickup" (the default) never blocks submission on empty dealer
+    // fields nobody's supposed to fill in for that choice.
+    const fflFieldIds = ['fflBusinessName', 'fflLicenseNumber', 'fflPhone', 'fflAddress'];
+    document.querySelectorAll('input[name="fulfillmentMethod"]').forEach(radio => {
+      radio.addEventListener('change', () => {
+        const isTransfer = radio.value === 'ffl_transfer' && radio.checked;
+        if (!radio.checked) return;
+        document.getElementById('fflTransferFields').style.display = isTransfer ? 'block' : 'none';
+        fflFieldIds.forEach(id => {
+          const el = document.getElementById(id);
+          if (isTransfer) el.setAttribute('required', ''); else el.removeAttribute('required');
+        });
+      });
+    });
 
     // Accept.js is loaded dynamically so the sandbox/production choice lives
     // in one place (js/checkout-config.js) instead of duplicating the whole
@@ -339,11 +417,27 @@
       };
       const items = getCart().map(i => ({ id: i.id, qty: i.qty }));
 
+      // Only meaningful when the cart actually has a firearm - checkout.js
+      // ignores this entirely otherwise, same as it re-derives hasFirearm
+      // itself rather than trusting the client on whether it applies.
+      const fulfillmentMethod = cartHasFirearm
+        ? (document.querySelector('input[name="fulfillmentMethod"]:checked')?.value || 'pickup')
+        : 'pickup';
+      const fulfillment = { method: fulfillmentMethod };
+      if (fulfillmentMethod === 'ffl_transfer') {
+        fulfillment.ffl = {
+          businessName: document.getElementById('fflBusinessName').value.trim(),
+          licenseNumber: document.getElementById('fflLicenseNumber').value.trim(),
+          phone: document.getElementById('fflPhone').value.trim(),
+          address: document.getElementById('fflAddress').value.trim()
+        };
+      }
+
       try {
         const res = await fetch('/api/checkout', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ items, customer, opaqueData })
+          body: JSON.stringify({ items, customer, opaqueData, fulfillment })
         });
         const data = await res.json();
         if (!res.ok) {
@@ -353,9 +447,13 @@
         }
         clearCart();
         document.getElementById('checkoutForm').style.display = 'none';
-        document.getElementById('successMessage').textContent = data.isFirearm
-          ? `Order #${data.orderNumber} confirmed. A receipt will be sent to ${customer.email}. This includes a firearm - stop by the shop to complete your NICS check and Form 4473; nothing ships.`
-          : `Order #${data.orderNumber} confirmed. A receipt will be sent to ${customer.email}.`;
+        let message = `Order #${data.orderNumber} confirmed. A receipt will be sent to ${customer.email}.`;
+        if (data.isFirearm) {
+          message += fulfillmentMethod === 'ffl_transfer'
+            ? ` We'll verify your dealer's license and be in touch once it's on its way.`
+            : ` Stop by the shop to complete your NICS check and Form 4473; nothing ships.`;
+        }
+        document.getElementById('successMessage').textContent = message;
         document.getElementById('checkoutSuccess').style.display = 'block';
       } catch (err) {
         showError('Could not reach the server. Please try again.');

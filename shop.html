@@ -218,6 +218,7 @@
       background: var(--border);
     }
     .part-card {
+      position: relative;
       background: var(--bg);
       padding: 24px;
       display: flex;
@@ -372,6 +373,62 @@
       box-shadow: 0 0 0 3px rgba(200, 149, 26, 0.15);
     }
 
+    /* ── BEST SELLERS ── */
+    /* A curated strip above the full catalog wall - meant to be the first
+       thing a visitor's eye lands on, not buried in ~9,000 filterable items. */
+    .best-sellers-section {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 40px 48px 8px;
+    }
+    .best-sellers-heading {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .best-sellers-heading svg { color: var(--gold-light); flex-shrink: 0; }
+    .best-sellers-heading h2 {
+      font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
+      font-size: 26px;
+      letter-spacing: 2px;
+      color: var(--text);
+    }
+    .best-sellers-row {
+      display: flex;
+      gap: 2px;
+      overflow-x: auto;
+      background: var(--border);
+      scroll-snap-type: x proximity;
+      /* Room for the ribbon (positioned outside the card's own padding box)
+         so it doesn't get clipped by the scroll container. */
+      padding: 2px;
+    }
+    .best-sellers-row .part-card {
+      width: 260px;
+      flex-shrink: 0;
+      scroll-snap-align: start;
+      position: relative;
+    }
+    .best-seller-ribbon {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--gold);
+      color: #fff;
+      font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 4px 9px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+    }
+    .best-seller-ribbon svg { width: 11px; height: 11px; }
+
     /* ── DISTRIBUTOR CARD EXTRAS ── */
     .part-source {
       display: inline-block;
@@ -411,6 +468,7 @@
 
     /* ── RESPONSIVE ── */
     @media (max-width: 900px) {
+      .best-sellers-section { padding: 32px 20px 8px; }
       .shop-wrap { padding: 40px 20px; }
       .parts-grid { grid-template-columns: repeat(2, 1fr); }
       .filters-toggle { display: block; }
@@ -419,6 +477,8 @@
       .shop-layout { flex-direction: column; }
     }
     @media (max-width: 580px) {
+      .best-sellers-section { padding: 24px 16px 4px; }
+      .best-sellers-row .part-card { width: 220px; }
       .shop-wrap { padding: 32px 16px; }
       .parts-grid { grid-template-columns: 1fr; }
       .builds-header { padding: 20px; flex-direction: column; align-items: flex-start; }
@@ -499,6 +559,15 @@
       <svg class="catalog-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <input type="text" id="catalogSearch" placeholder="Search firearms, ammo, and parts by name, manufacturer, or caliber..." />
     </div>
+  </div>
+
+  <!-- BEST SELLERS -->
+  <div class="best-sellers-section" id="bestSellersSection" style="display:none;">
+    <div class="best-sellers-heading">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1.5l3.09 6.26 6.91 1-5 4.87 1.18 6.87L12 17.27l-6.18 3.25L7 13.63l-5-4.87 6.91-1L12 1.5z"/></svg>
+      <h2>Best Sellers</h2>
+    </div>
+    <div class="best-sellers-row" id="bestSellersRow"></div>
   </div>
 
   <!-- SHOP -->
@@ -632,8 +701,21 @@
     let selectedCategory = 'all';
     let selectedSource = 'all';
     let selectedFirearmTypes = new Set();
+    // Holds normalized keys (see manufacturerKey), not raw manufacturer
+    // strings - different distributor feeds spell/case the same real brand
+    // differently ("GLOCK" vs "Glock", underscored codes on Orion before
+    // sync/orion.js's own name lookup runs, etc), even within one
+    // distributor's own feed. Grouping by a case-insensitive key is what
+    // actually blends them into one filter option instead of splitting the
+    // same brand across two checkboxes. manufacturerLabelByKey holds the
+    // display label to show for each key, rebuilt every render.
     let selectedManufacturers = new Set();
+    let manufacturerLabelByKey = new Map();
     let selectedCalibers = new Set();
+
+    function manufacturerKey(raw) {
+      return (raw || '').trim().toLowerCase();
+    }
 
     // Own products (Shawn's hand-curated stock, added from admin) vs. the
     // ~7,000-item Lipsey's distributor catalog - lets a customer filter to
@@ -702,6 +784,8 @@
       return p.stock === 'in_stock' || p.stock === 'limited';
     }
 
+    const BEST_SELLER_RIBBON = `<span class="best-seller-ribbon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1.5l3.09 6.26 6.91 1-5 4.87 1.18 6.87L12 17.27l-6.18 3.25L7 13.63l-5-4.87 6.91-1L12 1.5z"/></svg>Best Seller</span>`;
+
     function productCardHtml(p) {
       const isFirearm = p.category === 'firearms';
       const cartBtn = canAddToCart(p)
@@ -713,6 +797,7 @@
         : '';
       return `
         <div class="part-card">
+          ${p.is_best_seller ? BEST_SELLER_RIBBON : ''}
           ${imageHtml(p.image_url, p.name)}
           ${badge}
           <div class="part-name">${escapeHtml(p.name)}</div>
@@ -792,7 +877,7 @@
       if (!excluded.includes('category') && selectedCategory !== 'all' && item.category !== selectedCategory) return false;
       if (!excluded.includes('source') && selectedSource !== 'all' && itemSource(item) !== selectedSource) return false;
       if (!excluded.includes('firearmType') && selectedFirearmTypes.size && !(item.firearm_type && selectedFirearmTypes.has(item.firearm_type))) return false;
-      if (!excluded.includes('manufacturer') && selectedManufacturers.size && !(item.manufacturer && selectedManufacturers.has(item.manufacturer))) return false;
+      if (!excluded.includes('manufacturer') && selectedManufacturers.size && !(item.manufacturer && selectedManufacturers.has(manufacturerKey(item.manufacturer)))) return false;
       if (!excluded.includes('caliber') && selectedCalibers.size && !(item.caliber && selectedCalibers.has(item.caliber))) return false;
       return true;
     }
@@ -908,9 +993,55 @@
       });
     }
 
-    // Shared by Manufacturer and Caliber - both are plain multi-select
-    // checkbox facets built from whatever distinct values are actually
-    // present in the currently-scoped item set, sorted alphabetically.
+    // Manufacturer needs case-insensitive grouping (see manufacturerKey) that
+    // Caliber doesn't - calibers come from structured facet data on both
+    // distributors and haven't shown the same casing drift, so this stays
+    // separate rather than adding an opt-in flag to renderChecklistFilter
+    // that only one of its two callers would ever use.
+    function renderManufacturerFilter() {
+      const container = document.getElementById('manufacturerFilters');
+      const scoped = itemsMatchingExcept('manufacturer');
+      const groups = new Map(); // key -> { label, count }
+      scoped.forEach(item => {
+        if (!item.manufacturer) return;
+        const key = manufacturerKey(item.manufacturer);
+        if (!groups.has(key)) groups.set(key, { label: item.manufacturer, count: 0 });
+        const g = groups.get(key);
+        g.count++;
+        // Prefer a mixed-case label over ALL CAPS when both variants exist
+        // for the same brand - cosmetic only, matching is unaffected either way.
+        if (item.manufacturer !== item.manufacturer.toUpperCase() && g.label === g.label.toUpperCase()) {
+          g.label = item.manufacturer;
+        }
+      });
+      manufacturerLabelByKey = new Map([...groups].map(([key, g]) => [key, g.label]));
+
+      if (groups.size === 0) {
+        container.innerHTML = '<div class="filter-option-empty">No items</div>';
+        return;
+      }
+      const keys = [...groups.keys()].sort((a, b) => groups.get(a).label.localeCompare(groups.get(b).label));
+      container.innerHTML = keys.map(key => {
+        const g = groups.get(key);
+        const checked = selectedManufacturers.has(key);
+        return `<label class="filter-option">
+          <input type="checkbox" value="${escapeHtml(key)}" ${checked ? 'checked' : ''}>
+          <span class="filter-option-label">${escapeHtml(g.label)}</span>
+          <span class="filter-option-count">${g.count}</span>
+        </label>`;
+      }).join('');
+      container.querySelectorAll('input').forEach(input => {
+        input.addEventListener('change', () => {
+          if (input.checked) selectedManufacturers.add(input.value); else selectedManufacturers.delete(input.value);
+          currentPage = 1;
+          renderShop();
+        });
+      });
+    }
+
+    // Shared by Caliber (Manufacturer has its own renderManufacturerFilter
+    // above) - a plain multi-select checkbox facet built from whatever
+    // distinct values are actually present in the currently-scoped item set.
     function renderChecklistFilter(containerId, field, excludeGroup, selectedSet) {
       const container = document.getElementById(containerId);
       const scoped = itemsMatchingExcept(excludeGroup);
@@ -947,7 +1078,7 @@
         chips.push({ label: SOURCE_LABELS[selectedSource], onRemove: () => { selectedSource = 'all'; } });
       }
       selectedFirearmTypes.forEach(t => chips.push({ label: t, onRemove: () => selectedFirearmTypes.delete(t) }));
-      selectedManufacturers.forEach(m => chips.push({ label: m, onRemove: () => selectedManufacturers.delete(m) }));
+      selectedManufacturers.forEach(m => chips.push({ label: manufacturerLabelByKey.get(m) || m, onRemove: () => selectedManufacturers.delete(m) }));
       selectedCalibers.forEach(c => chips.push({ label: c, onRemove: () => selectedCalibers.delete(c) }));
       const q = document.getElementById('catalogSearch').value.trim();
       if (q) chips.push({ label: `"${q}"`, onRemove: () => { document.getElementById('catalogSearch').value = ''; } });
@@ -1021,7 +1152,7 @@
       renderCategoryFilter();
       renderSourceFilter();
       renderFirearmTypeFilter();
-      renderChecklistFilter('manufacturerFilters', 'manufacturer', 'manufacturer', selectedManufacturers);
+      renderManufacturerFilter();
       renderChecklistFilter('caliberFilters', 'caliber', 'caliber', selectedCalibers);
       renderActiveFilters();
       renderResultsAndGrid();
@@ -1072,7 +1203,24 @@
       const ownParts = (prodErr || !products) ? [] : products.map(p => ({ ...p, _own: true }));
       allItems = [...dist, ...ownParts].sort(byStockThenName);
 
+      renderBestSellers(ownParts);
       renderShop();
+    }
+
+    // Manual curation (products.is_best_seller), not computed from sales -
+    // there's no real order history to aggregate yet. Scoped to Shawn's own
+    // products only, same reasoning as builds.is_showcase: distributor items
+    // are auto-synced thousands at a time, not something he's reviewed one by
+    // one. Hidden entirely (not an empty section) until at least one is set.
+    function renderBestSellers(ownParts) {
+      const section = document.getElementById('bestSellersSection');
+      const featured = ownParts.filter(p => p.is_best_seller);
+      if (featured.length === 0) {
+        section.style.display = 'none';
+        return;
+      }
+      section.style.display = '';
+      document.getElementById('bestSellersRow').innerHTML = featured.map(productCardHtml).join('');
     }
 
     document.getElementById('catalogSearch').addEventListener('input', () => {
@@ -1080,9 +1228,10 @@
       renderShop();
     });
 
-    // Delegated on the grid container rather than per-button, since
-    // productGrid.innerHTML gets replaced wholesale on every renderShop() call.
-    document.getElementById('productGrid').addEventListener('click', (e) => {
+    // Delegated on the grid containers rather than per-button, since their
+    // innerHTML gets replaced wholesale on every render. Both productGrid
+    // and bestSellersRow share this - a best seller can appear in both.
+    function handleAddToCartClick(e) {
       const btn = e.target.closest('[data-add-to-cart]');
       if (!btn) return;
       addToCart(JSON.parse(btn.dataset.addToCart));
@@ -1090,7 +1239,9 @@
       btn.textContent = 'Added';
       btn.disabled = true;
       setTimeout(() => { btn.textContent = original; btn.disabled = false; }, 1200);
-    });
+    }
+    document.getElementById('productGrid').addEventListener('click', handleAddToCartClick);
+    document.getElementById('bestSellersRow').addEventListener('click', handleAddToCartClick);
 
     // admin sign out
     async function adminSignOut() {

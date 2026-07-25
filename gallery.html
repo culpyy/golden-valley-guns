@@ -107,6 +107,20 @@
       max-width: 400px;
       line-height: 1.7;
     }
+    .showcase-badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: var(--gold);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 1px;
+      z-index: 1;
+    }
   </style>
 </head>
 <body>
@@ -168,21 +182,15 @@
   <!-- GALLERY -->
   <section>
 
-    <!-- FILTER -->
-    <div class="filter-bar">
-      <button class="filter-btn active" data-filter="all">All Builds</button>
-      <button class="filter-btn" data-filter="custom">Custom Builds</button>
-      <button class="filter-btn" data-filter="parts">Parts Work</button>
-      <button class="filter-btn" data-filter="gunsmithing">Gunsmithing</button>
-    </div>
-
-    <!-- PLACEHOLDER — replace with real build sections as photos become available -->
-    <div class="build-section" data-section="custom">
+    <div class="build-section">
       <div class="build-header">
-        <h3>Custom Builds</h3>
-        <span>Completed Customer Projects</span>
+        <h3>Completed Builds</h3>
+        <span>Straight From The Shop</span>
       </div>
-      <div class="gallery-coming-soon fade-in">
+
+      <div id="galleryGrid" class="gallery-grid" style="display:none;"></div>
+
+      <div id="galleryEmpty" class="gallery-coming-soon fade-in">
         <svg width="64" height="64" fill="none" stroke="var(--gold-light)" stroke-width="1.2" viewBox="0 0 24 24">
           <rect x="3" y="3" width="18" height="18" rx="2"/>
           <circle cx="8.5" cy="8.5" r="1.5"/>
@@ -247,21 +255,106 @@
     </div>
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
   <script src="js/main.js"></script>
   <script src="js/cart.js"></script>
   <script>
-    const filterBtns = document.querySelectorAll('.filter-btn');
-    filterBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        filterBtns.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        const cat = btn.dataset.filter;
-        document.querySelectorAll('.build-section').forEach(section => {
-          const key = section.dataset.section;
-          section.style.display = (cat === 'all' || cat === key) ? '' : 'none';
-        });
+    // Always-shown builds (is_showcase) plus this many of the most recently
+    // completed ones - rotation is just "top N by date," so an older build
+    // naturally drops off the moment a newer one pushes past this limit.
+    // Nothing to manage by hand as new builds finish.
+    const RECENT_LIMIT = 12;
+
+    function openGalleryLightbox(photoUrl, title, sub) {
+      const lb = document.getElementById('lightbox');
+      const img = lb.querySelector('.lb-img');
+      img.src = photoUrl;
+      img.alt = title;
+      img.style.display = '';
+      lb.querySelector('.lb-title').textContent = title;
+      lb.querySelector('.lb-sub').textContent = sub;
+      lb.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function buildGalleryItem(build) {
+      const sub = [build.type, build.caliber].filter(Boolean).join(' · ');
+
+      const item = document.createElement('div');
+      item.className = 'gallery-item fade-in';
+
+      if (build.is_showcase) {
+        const badge = document.createElement('span');
+        badge.className = 'showcase-badge';
+        badge.textContent = 'Showcase';
+        item.appendChild(badge);
+      }
+
+      const inner = document.createElement('div');
+      inner.className = 'gallery-item-inner';
+      const img = document.createElement('img');
+      img.src = build.photo_url;
+      img.alt = build.title || '';
+      img.loading = 'lazy';
+      inner.appendChild(img);
+      item.appendChild(inner);
+
+      const overlay = document.createElement('div');
+      overlay.className = 'gallery-overlay';
+      const overlayText = document.createElement('div');
+      overlayText.className = 'gallery-overlay-text';
+      const h4 = document.createElement('h4');
+      h4.textContent = build.title || '';
+      const span = document.createElement('span');
+      span.textContent = sub;
+      overlayText.append(h4, span);
+      overlay.appendChild(overlayText);
+      item.appendChild(overlay);
+
+      item.addEventListener('click', () => openGalleryLightbox(build.photo_url, build.title || '', sub));
+      return item;
+    }
+
+    async function loadGallery() {
+      const { data, error } = await supabase
+        .from('builds_public')
+        .select('*')
+        .eq('status', 'ready')
+        .not('photo_url', 'is', null)
+        .order('updated_at', { ascending: false });
+
+      const grid = document.getElementById('galleryGrid');
+      const empty = document.getElementById('galleryEmpty');
+      if (error || !data || data.length === 0) {
+        grid.style.display = 'none';
+        empty.style.display = '';
+        return;
+      }
+
+      const showcase = data.filter(b => b.is_showcase);
+      const recent = data.filter(b => !b.is_showcase).slice(0, RECENT_LIMIT);
+      const combined = [...showcase, ...recent];
+
+      if (combined.length === 0) {
+        grid.style.display = 'none';
+        empty.style.display = '';
+        return;
+      }
+
+      empty.style.display = 'none';
+      grid.style.display = '';
+      combined.forEach(build => grid.appendChild(buildGalleryItem(build)));
+
+      // Fade-in observer in main.js only picks up elements present at page
+      // load - these were added after, so trigger the same effect directly.
+      grid.querySelectorAll('.fade-in').forEach(el => {
+        el.style.opacity = '1';
+        el.style.transform = 'translateY(0)';
       });
-    });
+    }
+
+    loadGallery();
   </script>
 </body>
 </html>

@@ -9,9 +9,28 @@
 // inventory and stays on the "Request This Item" contact-form path (rejected
 // server-side even if a tampered request includes an id from that table,
 // since the lookup below only ever queries `products`). Firearms in
-// `products` ARE purchasable - paying online reserves it, but it's a
-// pay-online/pick-up-in-person flow, never shipped: NICS/Form 4473 happen in
-// person at pickup, same as a special order (src/api/specialOrder.js).
+// `products` ARE purchasable - paying online reserves it, then transfers
+// either by in-person pickup or FFL-to-FFL dealer transfer (see below),
+// same two options as a special order (src/api/specialOrder.js + pay.js).
+//
+// LEGAL REQUIREMENT, not just a UX choice: a firearm can never ship directly
+// to an unlicensed consumer - federal law requires it transfer FFL-to-FFL.
+// This function supports exactly two fulfillment paths for a firearm order,
+// and no others:
+//   'pickup'       - customer completes NICS/Form 4473 in person at Shawn's
+//                     shop. Nothing ships. (The only option before this.)
+//   'ffl_transfer' - customer's chosen dealer receives it and does the
+//                     NICS/Form 4473 transfer themselves. Requires the
+//                     receiving dealer's business name, FFL license number,
+//                     phone, and address (validated below) - Shawn manually
+//                     verifies that license is current (phone/fax/email
+//                     copy) BEFORE shipping, tracked via orders.ffl_verified
+//                     (see admin-dashboard.html's Orders tab). There is no
+//                     automated/real-time FFL verification here; Shawn's
+//                     manual check is the actual gate.
+// `customer` above is still only ever name/email/phone - there's still no
+// mechanism anywhere in this file that ships to a bare consumer address.
+// If a future change adds one, it must never apply when hasFirearm is true.
 
 import { getSupabaseAdmin } from '../lib/supabaseAdmin.js';
 import { chargeCreditCard } from '../lib/authorizeNet.js';
@@ -26,9 +45,10 @@ function jsonResponse(body, status = 200) {
 }
 
 // Firearms Shawn actually has in stock ARE purchasable through the cart -
-// paying online reserves it, but it never ships. NICS/Form 4473 happen in
-// person at pickup (see is_firearm handling below and the firearm-notice
-// block in checkout.html). This is distinct from distributor_products_public
+// paying online reserves it, then it either transfers by in-person pickup
+// or ships FFL-to-FFL to the customer's chosen dealer (see is_firearm/
+// fulfillment handling below and the firearm-notice block in checkout.html).
+// This is distinct from distributor_products_public
 // (7,000+ items that aren't confirmed-real inventory) and from firearms
 // still sourced through a special order (src/api/specialOrder.js) - both of
 // those stay on the "Request"/contact-form path untouched.
@@ -64,7 +84,7 @@ export async function handleCheckout(request, env) {
     return jsonResponse({ error: 'Invalid JSON body.' }, 400);
   }
 
-  const { items, customer, opaqueData } = payload || {};
+  const { items, customer, opaqueData, fulfillment } = payload || {};
   if (!Array.isArray(items) || items.length === 0) {
     return jsonResponse({ error: 'Cart is empty.' }, 400);
   }
@@ -74,6 +94,9 @@ export async function handleCheckout(request, env) {
   if (!opaqueData?.dataDescriptor || !opaqueData?.dataValue) {
     return jsonResponse({ error: 'Missing payment token - card was not tokenized.' }, 400);
   }
+  // Validated in full once hasFirearm is known below (a non-firearm cart
+  // can't request ffl_transfer at all - see the hasFirearm block).
+  const requestedFulfillment = fulfillment?.method === 'ffl_transfer' ? 'ffl_transfer' : 'pickup';
 
   const supabase = getSupabaseAdmin(env);
 
@@ -114,6 +137,26 @@ export async function handleCheckout(request, env) {
   }
   const hasFirearm = priced.some(i => i.category === 'firearms');
 
+  // A non-firearm order requesting ffl_transfer makes no sense (there's
+  // nothing to transfer) - forced back to 'pickup' rather than trusted, same
+  // "never trust the client" posture as everything else in this handler.
+  // For an actual firearm order requesting ffl_transfer, the receiving
+  // dealer's info is required server-side too - the client marks these
+  // fields required, but that's UX only, not enforcement.
+  const fulfillmentMethod = hasFirearm ? requestedFulfillment : 'pickup';
+  let transferFfl = null;
+  if (fulfillmentMethod === 'ffl_transfer') {
+    const ffl = fulfillment?.ffl || {};
+    const businessName = (ffl.businessName || '').trim();
+    const licenseNumber = (ffl.licenseNumber || '').trim();
+    const phone = (ffl.phone || '').trim();
+    const address = (ffl.address || '').trim();
+    if (!businessName || !licenseNumber || !phone || !address) {
+      return jsonResponse({ error: 'Receiving FFL business name, license number, phone, and address are all required for a dealer transfer.' }, 400);
+    }
+    transferFfl = { businessName, licenseNumber, phone, address };
+  }
+
   // Reserve every item atomically BEFORE ever attempting a charge - a card
   // is never charged for something that isn't actually held for this
   // customer first. If any item in the cart can't be reserved (someone else
@@ -152,7 +195,12 @@ export async function handleCheckout(request, env) {
     subtotal: total,
     total,
     status: 'pending',
-    is_firearm: hasFirearm
+    is_firearm: hasFirearm,
+    fulfillment_method: fulfillmentMethod,
+    transfer_ffl_business_name: transferFfl?.businessName || null,
+    transfer_ffl_license_number: transferFfl?.licenseNumber || null,
+    transfer_ffl_phone: transferFfl?.phone || null,
+    transfer_ffl_address: transferFfl?.address || null
   });
   const orderNumber = orderRow.order_number;
 
@@ -197,7 +245,7 @@ export async function handleCheckout(request, env) {
   // recorded, and stock already decremented via the reservation above), so
   // an email hiccup shouldn't turn into a customer-facing checkout failure.
   try {
-    await sendOrderEmails(env, { orderNumber, customer, items: priced, total, hasFirearm });
+    await sendOrderEmails(env, { orderNumber, customer, items: priced, total, hasFirearm, fulfillmentMethod, transferFfl });
   } catch (err) {
     console.error(`Order ${orderNumber} placed successfully, but confirmation emails failed:`, err);
   }
@@ -205,11 +253,14 @@ export async function handleCheckout(request, env) {
   return jsonResponse({ success: true, orderNumber, transactionId: result.transactionId, isFirearm: hasFirearm });
 }
 
-async function sendOrderEmails(env, { orderNumber, customer, items, total, hasFirearm }) {
+async function sendOrderEmails(env, { orderNumber, customer, items, total, hasFirearm, fulfillmentMethod, transferFfl }) {
   const itemLines = items.map(i => `  ${i.qty} x ${i.name} - $${i.price.toFixed(2)} each`).join('\n');
-  const firearmNote = hasFirearm
-    ? `\n\nThis order includes a firearm - it's reserved for you but nothing ships. You'll complete a NICS background check and ATF Form 4473 in person when you pick it up. If your background check is denied, you'll receive a full refund.`
-    : '';
+  let firearmNote = '';
+  if (hasFirearm && fulfillmentMethod === 'ffl_transfer') {
+    firearmNote = `\n\nThis order includes a firearm, transferring to your dealer (${transferFfl.businessName}) rather than shipping to you directly - required by federal law. We'll verify their FFL is current before anything ships; they'll handle your NICS background check and ATF Form 4473 in person. If your background check is denied, you'll receive a full refund.`;
+  } else if (hasFirearm) {
+    firearmNote = `\n\nThis order includes a firearm - it's reserved for you but nothing ships. You'll complete a NICS background check and ATF Form 4473 in person when you pick it up. If your background check is denied, you'll receive a full refund.`;
+  }
 
   await sendEmail(env, {
     to: customer.email,
@@ -232,6 +283,21 @@ async function sendOrderEmails(env, { orderNumber, customer, items, total, hasFi
     ].join('\n')
   });
 
+  let firearmAdminNote = '';
+  if (hasFirearm && fulfillmentMethod === 'ffl_transfer') {
+    firearmAdminNote = [
+      ``,
+      `FFL TRANSFER REQUESTED - DO NOT SHIP UNTIL VERIFIED.`,
+      `Receiving dealer: ${transferFfl.businessName}`,
+      `License #: ${transferFfl.licenseNumber}`,
+      `Phone: ${transferFfl.phone}`,
+      `Address: ${transferFfl.address}`,
+      `Verify this FFL is current (phone/fax/email copy of license) before shipping, then mark it verified in the Orders tab.`
+    ].join('\n');
+  } else if (hasFirearm) {
+    firearmAdminNote = `\nFirearm - pickup in person, NICS/4473 required before transfer. Nothing ships.`;
+  }
+
   await sendEmail(env, {
     subject: `New order #${orderNumber} (${customer.firstName} ${customer.lastName})`,
     text: [
@@ -245,7 +311,7 @@ async function sendOrderEmails(env, { orderNumber, customer, items, total, hasFi
       itemLines,
       ``,
       `Total: $${total.toFixed(2)}`,
-      hasFirearm ? `\nFirearm - NICS/4473 required in person before transfer. Nothing ships.` : '',
+      firearmAdminNote,
       ``,
       `See the Orders tab in the admin dashboard for full details.`
     ].filter(Boolean).join('\n'),

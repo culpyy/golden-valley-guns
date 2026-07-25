@@ -10,6 +10,18 @@
 // actually confirmed real availability/cost with the distributor before
 // creating this. That confirmed price is exactly what the customer pays;
 // there's no separate step where it could drift.
+//
+// LEGAL REQUIREMENT, not just a UX choice: a firearm can never ship directly
+// to an unlicensed consumer - federal law requires it transfer FFL-to-FFL.
+// This handler only creates the order and pay link; the customer picks
+// their actual fulfillment method (pickup at Shawn's shop, or transfer to
+// their own local FFL dealer) on the payment page itself - see pay.html and
+// src/api/pay.js, which validate and store that choice, and
+// admin-dashboard.html's Orders tab, where Shawn manually verifies a
+// receiving dealer's FFL before anything ships. Nothing here accepts or
+// stores a shipping address (customerName/customerEmail/customerPhone
+// only, see below) - if a future change ever adds one to THIS payload, it
+// must never be honored when isFirearm is true.
 
 import { getSupabaseAdmin } from '../lib/supabaseAdmin.js';
 import { insertOrderWithNumber } from '../lib/orderNumber.js';
@@ -90,7 +102,7 @@ export async function handleCreateSpecialOrder(request, env) {
         `$${total.toFixed(2)}`,
         ``,
         isFirearm
-          ? `This is a firearm - paying now reserves it for you, but you'll still need to complete a NICS background check and ATF Form 4473 in person when you pick it up. Nothing ships or transfers until that's done.`
+          ? `This is a firearm, so it can't ship directly to you - when you pay, you'll choose to either pick it up in person here or have it transferred to your own local FFL dealer. Either way, a NICS background check and ATF Form 4473 are required before it's yours.`
           : '',
         ``,
         payUrl,
