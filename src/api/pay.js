@@ -16,6 +16,13 @@ function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 }
 
+// Same real restrictions as src/api/checkout.js (see sql/direct_shipping.sql
+// for the source) - duplicated rather than shared, same as the FFL
+// validation logic below being its own copy rather than a shared helper.
+const AMMO_HARD_BLOCK_STATES = new Set(['CA', 'NY', 'RI', 'DC', 'IL', 'MA', 'NJ', 'CT']);
+// Maryland isn't blocked statewide - just Annapolis specifically.
+const AMMO_HARD_BLOCK_CITIES = { MD: 'annapolis' };
+
 // Deliberately generic for any status that isn't payable, rather than
 // distinguishing "already paid" from "cancelled" from "not found" in the
 // response - the token is a bearer credential, no reason to hand back more
@@ -26,6 +33,7 @@ function orderPublicView(order) {
     itemName: order.items?.[0]?.name || 'Order',
     total: order.total,
     isFirearm: order.is_firearm,
+    isAmmo: order.items?.[0]?.category === 'ammo',
     status: order.status
   };
 }
@@ -50,7 +58,7 @@ export async function handlePayOrder(request, env) {
     return jsonResponse({ error: 'Invalid request.' }, 400);
   }
 
-  const { token, customer, opaqueData, fulfillment } = payload || {};
+  const { token, customer, opaqueData, fulfillment, shipping } = payload || {};
   if (!token) return jsonResponse({ error: 'Missing token.' }, 400);
   if (!customer?.firstName || !customer?.lastName || !customer?.email) {
     return jsonResponse({ error: 'Missing customer name/email.' }, 400);
@@ -110,6 +118,33 @@ export async function handlePayOrder(request, env) {
     transferFfl = { businessName, licenseNumber, phone, address };
   }
 
+  // Same "only applies when there's no firearm" posture as checkout.js - a
+  // cart with any firearm in it stays on the pickup/ffl_transfer path above.
+  const requestedShipping = shipping?.method === 'ship' ? 'ship' : 'pickup';
+  const shippingMethod = claimed.is_firearm ? 'pickup' : requestedShipping;
+  let shippingAddress = null;
+  if (shippingMethod === 'ship') {
+    const addr = shipping?.address || {};
+    const line1 = (addr.line1 || '').trim();
+    const line2 = (addr.line2 || '').trim();
+    const city = (addr.city || '').trim();
+    const state = (addr.state || '').trim().toUpperCase();
+    const zip = (addr.zip || '').trim();
+    if (!line1 || !city || !state || !zip) {
+      await supabase.from('orders').update({ status: 'pending' }).eq('id', claimed.id);
+      return jsonResponse({ error: 'A complete shipping address (address, city, state, and ZIP) is required to ship your order.' }, 400);
+    }
+    const isAmmo = claimed.items?.[0]?.category === 'ammo';
+    if (isAmmo) {
+      const blockedCity = AMMO_HARD_BLOCK_CITIES[state];
+      if (AMMO_HARD_BLOCK_STATES.has(state) || (blockedCity && city.toLowerCase() === blockedCity)) {
+        await supabase.from('orders').update({ status: 'pending' }).eq('id', claimed.id);
+        return jsonResponse({ error: `We can't ship ammunition to that location. Choose in-store pickup instead, or contact us.` }, 400);
+      }
+    }
+    shippingAddress = { line1, line2, city, state, zip };
+  }
+
   // Confirm/update contact info to whoever's actually paying, in case Shawn
   // only had partial details (e.g. just a phone number) when he created the
   // order, or there's a typo to fix. Card is never re-verified against this
@@ -125,7 +160,13 @@ export async function handlePayOrder(request, env) {
     transfer_ffl_business_name: transferFfl?.businessName || null,
     transfer_ffl_license_number: transferFfl?.licenseNumber || null,
     transfer_ffl_phone: transferFfl?.phone || null,
-    transfer_ffl_address: transferFfl?.address || null
+    transfer_ffl_address: transferFfl?.address || null,
+    ship_to_customer: shippingMethod === 'ship',
+    shipping_line1: shippingAddress?.line1 || null,
+    shipping_line2: shippingAddress?.line2 || null,
+    shipping_city: shippingAddress?.city || null,
+    shipping_state: shippingAddress?.state || null,
+    shipping_zip: shippingAddress?.zip || null
   }).eq('id', claimed.id);
 
   // Wrapped in try/catch, not just relying on chargeCreditCard's own return
@@ -166,7 +207,7 @@ export async function handlePayOrder(request, env) {
   }
 
   try {
-    await sendPaymentConfirmationEmails(env, { order: claimed, customer, customerName, fulfillmentMethod, transferFfl });
+    await sendPaymentConfirmationEmails(env, { order: claimed, customer, customerName, fulfillmentMethod, transferFfl, shippingMethod, shippingAddress });
   } catch (err) {
     console.error(`Special order ${claimed.order_number} paid successfully, but confirmation emails failed:`, err);
   }
@@ -174,13 +215,17 @@ export async function handlePayOrder(request, env) {
   return jsonResponse({ success: true, orderNumber: claimed.order_number, transactionId: result.transactionId });
 }
 
-async function sendPaymentConfirmationEmails(env, { order, customer, customerName, fulfillmentMethod, transferFfl }) {
+async function sendPaymentConfirmationEmails(env, { order, customer, customerName, fulfillmentMethod, transferFfl, shippingMethod, shippingAddress }) {
   const itemName = order.items?.[0]?.name || 'Order';
   let firearmNote = '';
   if (order.is_firearm && fulfillmentMethod === 'ffl_transfer') {
     firearmNote = `\n\nThis includes a firearm, transferring to your dealer (${transferFfl.businessName}) rather than shipping to you directly - required by federal law. We'll verify their FFL is current before anything ships; they'll handle your NICS background check and ATF Form 4473 in person. Nothing transfers until that's done.`;
   } else if (order.is_firearm) {
     firearmNote = `\n\nThis includes a firearm - you'll complete a NICS background check and ATF Form 4473 in person when you pick it up. Nothing transfers until that's done.`;
+  } else if (shippingMethod === 'ship') {
+    firearmNote = `\n\nWe'll ship this to:\n${shippingAddress.line1}${shippingAddress.line2 ? '\n' + shippingAddress.line2 : ''}\n${shippingAddress.city}, ${shippingAddress.state} ${shippingAddress.zip}\n\nWe'll email you when it's on its way.`;
+  } else {
+    firearmNote = `\n\nThis is ready for pickup at our shop whenever works for you.`;
   }
 
   await sendEmail(env, {
@@ -214,6 +259,13 @@ async function sendPaymentConfirmationEmails(env, { order, customer, customerNam
     ].join('\n');
   } else if (order.is_firearm) {
     firearmAdminNote = `\nFirearm - pickup in person, NICS/4473 required before transfer. Nothing ships.`;
+  } else if (shippingMethod === 'ship') {
+    firearmAdminNote = [
+      ``,
+      `SHIP TO CUSTOMER:`,
+      `${shippingAddress.line1}${shippingAddress.line2 ? '\n' + shippingAddress.line2 : ''}`,
+      `${shippingAddress.city}, ${shippingAddress.state} ${shippingAddress.zip}`
+    ].join('\n');
   }
 
   await sendEmail(env, {

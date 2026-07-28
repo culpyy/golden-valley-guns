@@ -20,8 +20,11 @@
 // admin-dashboard.html's Orders tab, where Shawn manually verifies a
 // receiving dealer's FFL before anything ships. Nothing here accepts or
 // stores a shipping address (customerName/customerEmail/customerPhone
-// only, see below) - if a future change ever adds one to THIS payload, it
-// must never be honored when isFirearm is true.
+// only, see below) - that's collected on pay.html/src/api/pay.js instead,
+// once the customer picks pickup vs. ship for a non-firearm special order.
+// isAmmo just tags the single line item's category so pay.js can apply the
+// same real ammo shipping restrictions it uses for cart orders - it's
+// meaningless (and ignored above) when isFirearm is true.
 
 import { getSupabaseAdmin } from '../lib/supabaseAdmin.js';
 import { insertOrderWithNumber } from '../lib/orderNumber.js';
@@ -53,6 +56,7 @@ export async function handleCreateSpecialOrder(request, env) {
   const itemName = (payload?.itemName || '').trim();
   const price = parseFloat(payload?.price);
   const isFirearm = !!payload?.isFirearm;
+  const isAmmo = !isFirearm && !!payload?.isAmmo;
 
   if (!customerName || !customerEmail || !itemName) {
     return jsonResponse({ error: 'Customer name, email, and item description are required.' }, 400);
@@ -74,7 +78,7 @@ export async function handleCreateSpecialOrder(request, env) {
     customer_name: customerName,
     customer_email: customerEmail,
     customer_phone: customerPhone || null,
-    items: [{ id: null, name: itemName, price: total, qty: 1 }],
+    items: [{ id: null, name: itemName, price: total, qty: 1, category: isAmmo ? 'ammo' : null }],
     subtotal: total,
     total,
     status: 'pending',

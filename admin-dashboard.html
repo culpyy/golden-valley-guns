@@ -598,6 +598,10 @@
             <input type="checkbox" id="so-is-firearm" style="width:16px;height:16px;accent-color:var(--gold-light);cursor:pointer;" />
             <label for="so-is-firearm" style="cursor:pointer;font-size:12px;">This is a firearm (customer will see a notice about the in-person NICS/4473 requirement before paying)</label>
           </div>
+          <div class="form-field full" style="display:flex;align-items:center;gap:10px;">
+            <input type="checkbox" id="so-is-ammo" style="width:16px;height:16px;accent-color:var(--gold-light);cursor:pointer;" />
+            <label for="so-is-ammo" style="cursor:pointer;font-size:12px;">This is ammunition (applies our ammo shipping restrictions if the customer chooses to ship it)</label>
+          </div>
         </div>
         <div class="form-actions">
           <button class="btn-save" id="saveSpecialOrderBtn">Create &amp; Send Link</button>
@@ -1136,9 +1140,10 @@
           <tbody>
             ${ordersAllRows.map(o => {
               const isFflTransfer = o.fulfillment_method === 'ffl_transfer';
+              const isShipToCustomer = !!o.ship_to_customer;
               return `
               <tr>
-                <td class="title">${escapeHtml(o.order_number)}${o.source === 'special_order' ? ' <span class="part-badge-pill" style="position:static;display:inline-block;">Special Order</span>' : ''}${o.is_firearm ? ' <span class="part-badge-pill" style="position:static;display:inline-block;background:var(--surface2);">Firearm</span>' : ''}${isFflTransfer ? ` <span class="part-badge-pill" style="position:static;display:inline-block;background:${o.ffl_verified ? '#2d7a3a' : '#8B1414'};">FFL Transfer${o.ffl_verified ? ' - Verified' : ' - NOT VERIFIED'}</span>` : ''}</td>
+                <td class="title">${escapeHtml(o.order_number)}${o.source === 'special_order' ? ' <span class="part-badge-pill" style="position:static;display:inline-block;">Special Order</span>' : ''}${o.is_firearm ? ' <span class="part-badge-pill" style="position:static;display:inline-block;background:var(--surface2);">Firearm</span>' : ''}${isFflTransfer ? ` <span class="part-badge-pill" style="position:static;display:inline-block;background:${o.ffl_verified ? '#2d7a3a' : '#8B1414'};">FFL Transfer${o.ffl_verified ? ' - Verified' : ' - NOT VERIFIED'}</span>` : ''}${isShipToCustomer ? ` <span class="part-badge-pill" style="position:static;display:inline-block;background:var(--surface2);">Ships to Customer</span>` : ''}</td>
                 <td style="font-size:12px;">${escapeHtml(o.customer_name)}<br><span style="color:var(--muted);">${escapeHtml(o.customer_email)}</span></td>
                 <td>$${parseFloat(o.total).toFixed(2)}</td>
                 <td>
@@ -1167,6 +1172,16 @@
                       ${o.ffl_verified && o.ffl_verified_at ? `<br><span style="color:var(--muted);">Verified ${new Date(o.ffl_verified_at).toLocaleString()}</span>` : ''}
                     </div>
                     ${!o.ffl_verified ? `<button class="btn-edit" onclick="markFflVerified('${o.id}')">Mark FFL Verified</button>` : ''}
+                  </div>
+                </td>
+              </tr>` : ''}
+              ${isShipToCustomer ? `
+              <tr class="ffl-transfer-row">
+                <td colspan="6" style="background:rgba(212,175,55,0.08);border-left:3px solid var(--gold-light);">
+                  <div style="font-size:12px;line-height:1.7;">
+                    <strong style="color:var(--gold-light);">SHIP TO CUSTOMER</strong><br>
+                    ${escapeHtml(o.shipping_line1 || '—')}${o.shipping_line2 ? '<br>' + escapeHtml(o.shipping_line2) : ''}<br>
+                    ${escapeHtml(o.shipping_city || '—')}, ${escapeHtml(o.shipping_state || '—')} ${escapeHtml(o.shipping_zip || '—')}
                   </div>
                 </td>
               </tr>` : ''}
@@ -1234,6 +1249,7 @@
       const itemName = document.getElementById('so-item-name').value.trim();
       const price = document.getElementById('so-price').value;
       const isFirearm = document.getElementById('so-is-firearm').checked;
+      const isAmmo = document.getElementById('so-is-ammo').checked;
 
       if (!customerName || !customerEmail || !itemName || !price) {
         showToast('Customer name, email, item description, and price are all required.');
@@ -1252,7 +1268,7 @@
             'Content-Type': 'application/json',
             Authorization: `Bearer ${session?.access_token || ''}`
           },
-          body: JSON.stringify({ customerName, customerEmail, customerPhone, itemName, price, isFirearm })
+          body: JSON.stringify({ customerName, customerEmail, customerPhone, itemName, price, isFirearm, isAmmo })
         });
         const data = await res.json();
         if (!res.ok) {
@@ -1267,6 +1283,7 @@
         document.getElementById('so-item-name').value = '';
         document.getElementById('so-price').value = '';
         document.getElementById('so-is-firearm').checked = false;
+        document.getElementById('so-is-ammo').checked = false;
 
         document.getElementById('payLinkDisplay').textContent = data.payUrl;
         document.getElementById('payLinkModalOverlay').classList.add('open');

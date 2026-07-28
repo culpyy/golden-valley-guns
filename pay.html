@@ -113,7 +113,17 @@
       flex-shrink: 0;
     }
     .fulfillment-option span { flex: 1; }
-    #fflTransferFields { margin-top: 4px; margin-bottom: 16px; }
+    #fflTransferFields, #shippingAddressFields { margin-top: 4px; margin-bottom: 16px; }
+    .restriction-notice {
+      display: none;
+      background: rgba(139, 20, 20, 0.15);
+      border: 1px solid #8B1414;
+      color: #e08080;
+      padding: 12px 16px;
+      font-size: 13px;
+      line-height: 1.5;
+      margin-top: 8px;
+    }
     @media (max-width: 800px) {
       .checkout-wrap { grid-template-columns: 1fr; padding: 32px 16px; }
       .card-fields-row { grid-template-columns: 1fr; }
@@ -235,6 +245,47 @@
           </div>
         </div>
 
+        <!-- Only shown for a non-firearm special order - see initPaymentForm,
+             which reveals this exactly when data.isFirearm is false. -->
+        <div class="form-group" id="shippingGroup" style="display:none;">
+          <label style="margin-bottom:8px;display:block;">How do you want to receive it?</label>
+          <label class="fulfillment-option">
+            <input type="radio" name="shippingMethod" value="pickup" checked />
+            <span><strong>Pick up at Golden Valley Guns</strong> - swing by the shop whenever works for you.</span>
+          </label>
+          <label class="fulfillment-option">
+            <input type="radio" name="shippingMethod" value="ship" />
+            <span><strong>Ship it to me</strong> - we'll ship it directly to your address.</span>
+          </label>
+        </div>
+
+        <div id="shippingAddressFields" style="display:none;">
+          <div class="form-group">
+            <label for="shipLine1">Address</label>
+            <input type="text" id="shipLine1" />
+          </div>
+          <div class="form-group">
+            <label for="shipLine2">Apt / Suite (optional)</label>
+            <input type="text" id="shipLine2" />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="shipCity">City</label>
+              <input type="text" id="shipCity" />
+            </div>
+            <div class="form-group">
+              <label for="shipState">State</label>
+              <select id="shipState">
+                <option value="">Select...</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="shipZip">ZIP Code</label>
+            <input type="text" id="shipZip" inputmode="numeric" maxlength="10" />
+          </div>
+          <div class="restriction-notice" id="shippingRestrictionNotice"></div>
+        </div>
 
         <div class="checkout-section-title">Contact Info</div>
         <div class="form-row">
@@ -340,7 +391,13 @@
       </div>
     </div>
     <div class="footer-bottom">
-      <p>&copy; <span id="copyYear">2025</span> Golden Valley Guns LLC. All rights reserved. &middot; <a href="privacy.html">Privacy Policy</a> &middot; <a href="terms.html">Terms of Service</a></p>
+      <p>&copy; <span id="copyYear">2025</span> Golden Valley Guns LLC. All rights reserved. &middot; <a href="privacy.html">Privacy Policy</a> &middot; <a href="terms.html">Terms of Service</a> &middot; <a href="shipping-returns.html">Shipping &amp; Returns</a></p>
+      <div class="payment-badges" aria-label="Accepted payment methods">
+        <span class="payment-badge">VISA</span>
+        <span class="payment-badge">MASTERCARD</span>
+        <span class="payment-badge">DISCOVER</span>
+        <span class="payment-badge">AMEX</span>
+      </div>
       <span class="ffl-badge">FFL 07 · Golden Valley, AZ</span>
     </div>
   </footer>
@@ -349,6 +406,7 @@
   <script src="js/checkout-config.js"></script>
   <script>
     let orderIsFirearm = false;
+    let orderHasAmmo = false;
 
     // FFL fields only need to be filled in (and only get submitted) when the
     // customer actually picks the transfer option - same pattern as
@@ -365,6 +423,68 @@
         });
       });
     });
+
+    const US_STATES = [
+      ['AL','Alabama'],['AK','Alaska'],['AZ','Arizona'],['AR','Arkansas'],['CA','California'],
+      ['CO','Colorado'],['CT','Connecticut'],['DE','Delaware'],['DC','District of Columbia'],
+      ['FL','Florida'],['GA','Georgia'],['HI','Hawaii'],['ID','Idaho'],['IL','Illinois'],
+      ['IN','Indiana'],['IA','Iowa'],['KS','Kansas'],['KY','Kentucky'],['LA','Louisiana'],
+      ['ME','Maine'],['MD','Maryland'],['MA','Massachusetts'],['MI','Michigan'],['MN','Minnesota'],
+      ['MS','Mississippi'],['MO','Missouri'],['MT','Montana'],['NE','Nebraska'],['NV','Nevada'],
+      ['NH','New Hampshire'],['NJ','New Jersey'],['NM','New Mexico'],['NY','New York'],
+      ['NC','North Carolina'],['ND','North Dakota'],['OH','Ohio'],['OK','Oklahoma'],['OR','Oregon'],
+      ['PA','Pennsylvania'],['RI','Rhode Island'],['SC','South Carolina'],['SD','South Dakota'],
+      ['TN','Tennessee'],['TX','Texas'],['UT','Utah'],['VT','Vermont'],['VA','Virginia'],
+      ['WA','Washington'],['WV','West Virginia'],['WI','Wisconsin'],['WY','Wyoming']
+    ];
+    const shipStateSelect = document.getElementById('shipState');
+    US_STATES.forEach(([code, name]) => {
+      const opt = document.createElement('option');
+      opt.value = code;
+      opt.textContent = name;
+      shipStateSelect.appendChild(opt);
+    });
+
+    // Same real restrictions as checkout.html - see
+    // sql/direct_shipping.sql for the source.
+    const AMMO_HARD_BLOCK_STATES = ['CA', 'NY', 'RI', 'DC', 'IL', 'MA', 'NJ', 'CT'];
+    // Maryland isn't blocked statewide - just Annapolis specifically.
+    const AMMO_HARD_BLOCK_CITIES = { MD: 'annapolis' };
+
+    let shippingBlocked = false;
+    function checkAmmoRestrictions() {
+      const restrictionEl = document.getElementById('shippingRestrictionNotice');
+      restrictionEl.style.display = 'none';
+      shippingBlocked = false;
+      if (!orderHasAmmo) return;
+
+      const state = shipStateSelect.value;
+      const city = document.getElementById('shipCity').value.trim().toLowerCase();
+      if (!state) return;
+
+      const blockedCity = AMMO_HARD_BLOCK_CITIES[state];
+      if (AMMO_HARD_BLOCK_STATES.includes(state) || (blockedCity && city === blockedCity)) {
+        restrictionEl.textContent = `We can't ship ammunition to this location. Choose in-store pickup instead, or contact us.`;
+        restrictionEl.style.display = 'block';
+        shippingBlocked = true;
+      }
+    }
+
+    const shipFieldIds = ['shipLine1', 'shipCity', 'shipState', 'shipZip'];
+    document.querySelectorAll('input[name="shippingMethod"]').forEach(radio => {
+      radio.addEventListener('change', () => {
+        const isShip = radio.value === 'ship' && radio.checked;
+        if (!radio.checked) return;
+        document.getElementById('shippingAddressFields').style.display = isShip ? 'block' : 'none';
+        shipFieldIds.forEach(id => {
+          const el = document.getElementById(id);
+          if (isShip) el.setAttribute('required', ''); else el.removeAttribute('required');
+        });
+        checkAmmoRestrictions();
+      });
+    });
+    shipStateSelect.addEventListener('change', checkAmmoRestrictions);
+    document.getElementById('shipCity').addEventListener('input', checkAmmoRestrictions);
 
     function showError(message) {
       const el = document.getElementById('checkoutError');
@@ -412,7 +532,7 @@
               <span class="name">${escapeHtml(data.itemName)}</span>
               <span>$${data.total.toFixed(2)}</span>
             </div>`;
-          document.getElementById('summaryTotal').textContent = `$${data.total.toFixed(2)}`;
+          document.getElementById('summaryTotal').textContent = `$${data.total.toFixed(2)} USD`;
           document.getElementById('orderNumberLine').textContent = `Order #${data.orderNumber}`;
           if (data.isFirearm) {
             orderIsFirearm = true;
@@ -421,6 +541,8 @@
           } else {
             document.getElementById('termsText').textContent =
               'This is a special order - once placed, it\'s final sale, since we\'re ordering it in specifically for you. Questions before you pay? Call or text us first.';
+            orderHasAmmo = !!data.isAmmo;
+            document.getElementById('shippingGroup').style.display = 'block';
           }
           initPaymentForm();
         })
@@ -474,11 +596,25 @@
           };
         }
 
+        const shippingMethod = !orderIsFirearm
+          ? (document.querySelector('input[name="shippingMethod"]:checked')?.value || 'pickup')
+          : 'pickup';
+        const shipping = { method: shippingMethod };
+        if (shippingMethod === 'ship') {
+          shipping.address = {
+            line1: document.getElementById('shipLine1').value.trim(),
+            line2: document.getElementById('shipLine2').value.trim(),
+            city: document.getElementById('shipCity').value.trim(),
+            state: document.getElementById('shipState').value,
+            zip: document.getElementById('shipZip').value.trim()
+          };
+        }
+
         try {
           const res = await fetch('/api/pay', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token: payToken, customer, opaqueData, fulfillment })
+            body: JSON.stringify({ token: payToken, customer, opaqueData, fulfillment, shipping })
           });
           const data = await res.json();
           if (!res.ok) {
@@ -492,6 +628,10 @@
             message += fulfillmentMethod === 'ffl_transfer'
               ? ` We'll verify your dealer's license and be in touch once it's on its way.`
               : ` Stop by the shop to complete your NICS check and Form 4473; nothing ships.`;
+          } else if (shippingMethod === 'ship') {
+            message += ` We'll ship it to the address you provided and email you when it's on its way.`;
+          } else {
+            message += ` Swing by the shop whenever works for you to pick it up.`;
           }
           document.getElementById('successMessage').textContent = message;
           document.getElementById('checkoutSuccess').style.display = 'block';
@@ -516,6 +656,14 @@
         if (e.target.hasAttribute('data-submitting')) return;
         hideError();
         if (!e.target.reportValidity()) return;
+        const shipMethod = document.querySelector('input[name="shippingMethod"]:checked')?.value;
+        if (!orderIsFirearm && shipMethod === 'ship') {
+          checkAmmoRestrictions();
+          if (shippingBlocked) {
+            showError(`We can't ship ammunition to that location. Choose in-store pickup, or contact us.`);
+            return;
+          }
+        }
         setSubmitting(true);
 
         const secureData = {

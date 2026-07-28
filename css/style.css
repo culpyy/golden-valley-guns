@@ -1103,6 +1103,22 @@ footer {
   border-radius: 1px;
 }
 
+.payment-badges {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.payment-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  padding: 4px 8px;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+
 /* ── PAGE HEADER ── */
 .page-header {
   padding: 160px 48px 32px;
@@ -1500,6 +1516,7 @@ footer {
 
   footer { padding: 28px 16px; }
   .footer-bottom .ffl-badge { font-size: 10px; }
+  .payment-badges { flex-wrap: wrap; justify-content: center; }
 
   .lightbox img { max-width: 95vw; max-height: 75vh; }
   .lightbox-caption h4 { font-size: 18px; }
