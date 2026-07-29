@@ -13,9 +13,10 @@
 //   - GET https://orionfflsales.com/api.php?method=get_catalog with no
 //     product_ids returns the ENTIRE catalog, unpaginated: 15,226 products,
 //     ~25MB of JSON. Same chunked-cursor treatment as Lipsey's 19K-item feed
-//     is needed for the same reason (Workers Free plan CPU budget) - the
-//     full fetch+parse cost is paid every run regardless, only per-item
-//     normalize/filter work is chunked.
+//     is needed for the same reason (Workers Free plan CPU budget) - only
+//     per-item normalize/filter work is chunked. The fetch+parse cost is
+//     only paid once per cursor cycle now, not every run (see
+//     getCatalogItems / CATALOG_CACHE_KEY below).
 //   - get_catalog_inventory (also unpaginated, ~17,800 entries) is a
 //     SEPARATE call - quantity isn't in the catalog response at all.
 //   - IMPORTANT gotcha caught during live verification: inventory's
@@ -62,6 +63,36 @@ async function orionFetch(env, method, extraParams = '') {
 async function fetchCatalog(env) {
   const data = await orionFetch(env, 'get_catalog');
   return Array.isArray(data.products) ? data.products : [];
+}
+
+// get_catalog is ~25MB unpaginated and doesn't change meaningfully within a
+// single ~11-run cursor cycle (see CHUNK_SIZE below) - same reasoning as
+// Lipsey's CatalogFeed (src/sync/lipseys.js). Only the run that starts a new
+// cycle (cursor === 0) actually re-fetches it from Orion; every other run in
+// that cycle reads the same raw JSON back from R2 instead.
+//
+// fetchInventoryMap is deliberately NOT cached this way - stock counts are
+// exactly the data a sync job exists to keep fresh, and at ~17,800 small
+// {id: quantity} entries it's nowhere near the multi-MB cost the catalog is.
+const CATALOG_CACHE_KEY = 'catalog-cache/orion.json';
+
+async function getCatalogItems(env, forceRefresh) {
+  if (!forceRefresh) {
+    const cached = await env.DISTRIBUTOR_IMAGES.get(CATALOG_CACHE_KEY);
+    if (cached) {
+      try {
+        return JSON.parse(await cached.text());
+      } catch {
+        // Fall through to a live refetch rather than failing the run over a
+        // corrupted cache object.
+      }
+    }
+  }
+  const items = await fetchCatalog(env);
+  await env.DISTRIBUTOR_IMAGES.put(CATALOG_CACHE_KEY, JSON.stringify(items), {
+    httpMetadata: { contentType: 'application/json' }
+  });
+  return items;
 }
 
 // Keyed by product_id (the object keys in product_inventory are the same
@@ -187,18 +218,20 @@ const CHUNK_SIZE = 1500;
 
 export async function run(env) {
   const supabase = getSupabaseAdmin(env);
-  // Manufacturer lookup only needs refetching once per cycle (cursor === 0),
-  // not every chunked run - it's 2,582 entries that essentially never change
-  // between a distributor's own sync runs, and skipping the refetch on
-  // every other chunk keeps this run's subrequest count down (see the
-  // subrequest-limit incident this sync already hit once, further down).
+  // The catalog (~25MB) and the manufacturer lookup (2,582 entries) only
+  // need refetching once per cycle (cursor === 0), not every chunked run -
+  // neither changes meaningfully between a distributor's own sync runs, and
+  // skipping the refetch on every other chunk keeps this run's subrequest
+  // count down (see the subrequest-limit incident this sync already hit
+  // once, further down). See getCatalogItems above and
+  // getCachedManufacturerMap below for where each is cached.
   let cursor = await getSyncCursor(supabase, 'orion');
-  const needsManufacturerRefetch = cursor === 0;
+  const isCycleStart = cursor === 0;
 
   const [rawItems, quantityMap, manufacturerMap] = await Promise.all([
-    fetchCatalog(env),
+    getCatalogItems(env, isCycleStart),
     fetchInventoryMap(env),
-    needsManufacturerRefetch ? fetchManufacturerMap(env) : getCachedManufacturerMap(supabase)
+    isCycleStart ? fetchManufacturerMap(env) : getCachedManufacturerMap(supabase)
   ]);
   const allowList = await getAllowedManufacturers(supabase);
   const syncTime = new Date().toISOString();
@@ -211,7 +244,7 @@ export async function run(env) {
     await setCycleStart(supabase, 'orion', cycleStart);
   }
 
-  if (needsManufacturerRefetch) await setCachedManufacturerMap(supabase, manufacturerMap);
+  if (isCycleStart) await setCachedManufacturerMap(supabase, manufacturerMap);
 
   const chunk = rawItems.slice(cursor, cursor + CHUNK_SIZE);
   const normalized = chunk.map(item => normalize(item, quantityMap, manufacturerMap, syncTime)).filter(Boolean);
