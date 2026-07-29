@@ -81,6 +81,34 @@ async function fetchCatalog(env, token) {
   return Array.isArray(data) ? data : (data.data || []);
 }
 
+// The raw catalog doesn't change meaningfully within a single ~13-run cursor
+// cycle (see CHUNK_SIZE below), so only the run that starts a new cycle
+// (cursor === 0) actually logs in and hits Lipsey's relay - every other run
+// in that cycle reads the same raw JSON back from R2 instead. Cuts ~12 of
+// every 13 runs' worth of login+CatalogFeed network calls entirely; the
+// per-run CPU cost of parsing it is unchanged either way.
+const CATALOG_CACHE_KEY = 'catalog-cache/lipseys.json';
+
+async function getCatalogItems(env, forceRefresh) {
+  if (!forceRefresh) {
+    const cached = await env.DISTRIBUTOR_IMAGES.get(CATALOG_CACHE_KEY);
+    if (cached) {
+      try {
+        return JSON.parse(await cached.text());
+      } catch {
+        // Fall through to a live refetch rather than failing the run over a
+        // corrupted cache object.
+      }
+    }
+  }
+  const token = await login(env);
+  const items = await fetchCatalog(env, token);
+  await env.DISTRIBUTOR_IMAGES.put(CATALOG_CACHE_KEY, JSON.stringify(items), {
+    httpMetadata: { contentType: 'application/json' }
+  });
+  return items;
+}
+
 function mapCategory(item) {
   const type = (item.itemType || '').toLowerCase();
   if (item.fflRequired) return 'firearms';
@@ -160,19 +188,19 @@ function normalize(item, syncTime) {
 // (error 1102 "Worker exceeded resource limits", confirmed 2026-07-18).
 // Only this many raw items get normalized/filtered per run; the cursor
 // picks up where the last run left off and wraps around, so a full pass
-// through the catalog takes several daily runs instead of one. The raw
-// fetch+JSON.parse cost is paid every run regardless (Lipsey's CatalogFeed
-// has no server-side pagination to fetch only part of it).
+// through the catalog takes several daily runs instead of one. Lipsey's
+// CatalogFeed has no server-side pagination to fetch only part of it, but
+// getCatalogItems above only pays that cost once per cycle now (see
+// CATALOG_CACHE_KEY), not on every one of these chunked runs.
 const CHUNK_SIZE = 1500;
 
 export async function run(env) {
   const supabase = getSupabaseAdmin(env);
-  const token = await login(env);
-  const rawItems = await fetchCatalog(env, token);
   const allowList = await getAllowedManufacturers(supabase);
   const syncTime = new Date().toISOString();
 
   let cursor = await getSyncCursor(supabase, 'lipseys');
+  const rawItems = await getCatalogItems(env, cursor === 0);
   if (cursor >= rawItems.length) cursor = 0;
 
   // A cycle just starting gets its own start-of-cycle timestamp - reused on
