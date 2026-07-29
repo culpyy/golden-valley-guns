@@ -1,6 +1,57 @@
 // Shared by every sync/*.js job so each distributor integration only has to
 // implement auth + fetch + normalize.
 
+// Distributors don't spell the same brand identically - confirmed live
+// 2026-07-28 while auditing why so much of each catalog was being excluded:
+// Orion calls it "Smith & Wesson", Lipsey's "Smith and Wesson"; Orion's
+// "SPRINGFIELD" vs Lipsey's "Springfield Armory"; "Colt Mfg" vs "Colt";
+// "Beretta Usa" vs "Beretta"; Orion splits Winchester's own ammo/firearms
+// lines into "Winchester Ammunition"/"Winchester Repeating" where Lipsey's
+// just says "Winchester". Without normalizing, a brand already on the
+// allow-list can still silently fail to match depending which distributor
+// it came from. normalizeManufacturer folds case/punctuation/whitespace
+// differences automatically; MANUFACTURER_ALIASES covers the handful of
+// real mismatches that aren't just punctuation (a genuinely different
+// string for the same brand).
+function normalizeManufacturer(name) {
+  return (name || '')
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[.,'-]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+const MANUFACTURER_ALIASES = {
+  'springfield': 'springfield armory',
+  'winchester ammunition': 'winchester',
+  'winchester repeating': 'winchester',
+  'winchester repeating arms': 'winchester',
+  'colt mfg': 'colt',
+  'colts manufacturing': 'colt',
+  'beretta usa': 'beretta',
+  'fn america': 'fn',
+  'iwi us': 'iwi',
+  'iwi israel weapon industries': 'iwi',
+  'walther arms': 'walther',
+  'heckler and koch (hk usa)': 'hk',
+  'heckler and koch': 'hk',
+  'savage': 'savage arms',
+  'remington ammunition': 'remington',
+  'bergara rifles': 'bergara',
+  'rock island': 'rock island armory',
+  'heritage mfg': 'heritage manufacturing',
+  'eaa': 'eaa corp',
+  'diamondback firearms': 'diamondback',
+  'dead air armament': 'dead air',
+  'american tactical inc': 'american tactical',
+};
+
+function canonicalManufacturer(name) {
+  const norm = normalizeManufacturer(name);
+  return MANUFACTURER_ALIASES[norm] || norm;
+}
+
 export async function getAllowedManufacturers(supabase) {
   const { data, error } = await supabase
     .from('site_content')
@@ -64,8 +115,8 @@ export async function setCycleStart(supabase, distributor, isoTime) {
 export function filterByAllowList(items, allowList) {
   if (allowList.length === 1 && allowList[0] === '*') return items;
   if (allowList.length === 0) return [];
-  const allowSet = new Set(allowList.map(m => m.toLowerCase()));
-  return items.filter(i => i.manufacturer && allowSet.has(i.manufacturer.toLowerCase()));
+  const allowSet = new Set(allowList.map(canonicalManufacturer));
+  return items.filter(i => i.manufacturer && allowSet.has(canonicalManufacturer(i.manufacturer)));
 }
 
 // syncTime is a single timestamp shared by every item in this run (set by the
