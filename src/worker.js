@@ -47,20 +47,18 @@ const IMAGE_BACKFILL_CRON = '*/10 * * * *';
 // IMAGE_BACKFILL_CRON above). Its own dedicated trigger gives it a clean
 // subrequest budget instead of sharing one with Lipsey's/RSR/Davidson's.
 //
-// NOTE this constant's value is intentionally NOT in wrangler.jsonc's
-// triggers.crons right now - the sync is paused pending review of Orion's
-// actual dealer/API agreement (see wrangler.jsonc for the full reasoning).
-// This branch in scheduled() below is correct and tested; it just never
-// fires until that cron string is re-added.
+// This constant's value is registered in wrangler.jsonc's triggers.crons
+// again as of 2026-07-28 - was paused 2026-07-24 to 2026-07-28 pending
+// review of Orion's actual dealer/API agreement, now confirmed reviewed
+// (see wrangler.jsonc for the full history).
 //
 // catalog_manufacturers is a SHARED allow-list across every distributor, not
-// per-distributor - learned this the hard way during testing: it was NOT
-// actually empty (Lipsey's already has real manufacturers approved), so
-// Orion immediately started syncing real products (~1,386 Browning items)
-// for every manufacturer name it happens to share with Lipsey's, the moment
-// it ran, with no distributor-specific review step. Worth deciding
-// deliberately whether that's wanted before re-enabling, not just assuming
-// the old "empty allow-list = safe by default" reasoning still holds.
+// per-distributor - learned this the hard way during the original testing:
+// it was NOT actually empty (Lipsey's already had real manufacturers
+// approved), so Orion immediately started syncing real products for every
+// manufacturer name it happened to share with Lipsey's, with no
+// distributor-specific review step. Re-enabling now means Orion matches
+// against the full widened brand list (src/lib/catalogSync.js), by design.
 const ORION_SYNC_CRON = '15 */4 * * *';
 
 async function route(request, env) {

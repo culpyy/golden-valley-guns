@@ -27,20 +27,21 @@
     //                  IMAGE_BACKFILL_CRON in src/worker.js for why this
     //                  needs its own frequent schedule instead of waiting
     //                  on the catalog sync
-    // Orion catalog sync ("15 */4 * * *", src/worker.js ORION_SYNC_CRON) is
-    // PAUSED as of 2026-07-24 - not registered here, not running. Working
-    // code + a live-verified subrequest-limit fix both exist (see
-    // sync/orion.js), but only Orion's public *website* Terms of Use has
-    // been checked so far, not the actual dealer/API agreement (unlike
-    // Lipsey's, where that agreement was read in full before going live and
-    // turned up real, specific requirements - IP/domain pre-approval, no
-    // image hotlinking - that a generic ToS wouldn't have shown). Re-add
-    // "15 */4 * * *" to this array once that's actually been reviewed.
-    // ~1,386 real Orion products already synced during testing are left in
-    // place (verified: dealer cost never exposed, images already cached to
-    // our own R2 not hotlinked, MAP price floor already honored) - this
-    // pause only stops it from syncing further, not a rollback.
-    "crons": ["0 */4 * * *", "*/10 * * * *"]
+    // "15 */4 * * *"  - Orion catalog sync (src/worker.js ORION_SYNC_CRON).
+    //                  Was paused 2026-07-24 to 2026-07-28 pending review of
+    //                  the actual Orion dealer/API agreement (not just the
+    //                  public website Terms of Use) - confirmed reviewed
+    //                  2026-07-28, re-enabled. ~1,386 real Orion products
+    //                  already synced during the original testing were left
+    //                  in place the whole time (dealer cost never exposed,
+    //                  images cached to our own R2, MAP price floor already
+    //                  honored) - this cron resumes syncing further, not a
+    //                  fresh start. catalog_manufacturers is a SHARED
+    //                  allow-list across every distributor, so Orion will
+    //                  now match against the full widened brand list (see
+    //                  src/lib/catalogSync.js), not just the handful it
+    //                  happened to share with Lipsey's during testing.
+    "crons": ["0 */4 * * *", "*/10 * * * *", "15 */4 * * *"]
   },
   "r2_buckets": [
     {
