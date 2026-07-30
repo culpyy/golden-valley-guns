@@ -193,6 +193,8 @@
     <div class="checkout-summary">
       <div class="checkout-section-title">Order Summary</div>
       <div id="summaryLines"></div>
+      <div class="summary-line"><span class="name">Subtotal</span><span id="summarySubtotal">$0.00</span></div>
+      <div class="summary-line" id="summaryTaxLine" style="display:none;"><span class="name">AZ Sales Tax (5.6%)</span><span id="summaryTax">$0.00</span></div>
       <div class="summary-total">Total <span id="summaryTotal">$0.00</span></div>
     </div>
 
@@ -404,8 +406,6 @@
         <span>$${(item.price * item.qty).toFixed(2)}</span>
       </div>
     `).join('');
-    document.getElementById('summaryTotal').textContent = `$${cartTotal().toFixed(2)} USD`;
-
     // Client-side only, for UX (showing the notice/checkbox before submit) -
     // checkout.js re-derives this itself from Supabase and is what actually
     // decides whether the order is treated as a firearm sale.
@@ -468,6 +468,31 @@
       }
     }
 
+    // Mirrors src/api/checkout.js's isAzSourced() exactly - this is just a
+    // live preview so the customer isn't surprised by the charge amount;
+    // the server independently recomputes tax from scratch and is what
+    // actually decides what the card is charged.
+    const AZ_TPT_RATE = 0.056;
+    function isAzSourced() {
+      if (cartHasFirearm) {
+        const fulfillmentMethod = document.querySelector('input[name="fulfillmentMethod"]:checked')?.value || 'pickup';
+        return fulfillmentMethod === 'pickup';
+      }
+      const shippingMethod = document.querySelector('input[name="shippingMethod"]:checked')?.value || 'pickup';
+      if (shippingMethod === 'pickup') return true;
+      return shipStateSelect.value === 'AZ';
+    }
+    function updateSummaryTotals() {
+      const subtotal = cartTotal();
+      const taxable = isAzSourced();
+      const tax = taxable ? Math.round(subtotal * AZ_TPT_RATE * 100) / 100 : 0;
+      const total = Math.round((subtotal + tax) * 100) / 100;
+      document.getElementById('summarySubtotal').textContent = `$${subtotal.toFixed(2)}`;
+      document.getElementById('summaryTaxLine').style.display = taxable ? '' : 'none';
+      document.getElementById('summaryTax').textContent = `$${tax.toFixed(2)}`;
+      document.getElementById('summaryTotal').textContent = `$${total.toFixed(2)} USD`;
+    }
+
     // FFL fields only need to be filled in (and only get submitted) when the
     // customer actually picks the transfer option - required toggles with
     // it so "pickup" (the default) never blocks submission on empty dealer
@@ -482,6 +507,7 @@
           const el = document.getElementById(id);
           if (isTransfer) el.setAttribute('required', ''); else el.removeAttribute('required');
         });
+        updateSummaryTotals();
       });
     });
 
@@ -502,10 +528,13 @@
           if (isShip) el.setAttribute('required', ''); else el.removeAttribute('required');
         });
         checkAmmoRestrictions();
+        updateSummaryTotals();
       });
     });
-    shipStateSelect.addEventListener('change', checkAmmoRestrictions);
+    shipStateSelect.addEventListener('change', () => { checkAmmoRestrictions(); updateSummaryTotals(); });
     document.getElementById('shipCity').addEventListener('input', checkAmmoRestrictions);
+
+    updateSummaryTotals();
 
     // Accept.js is loaded dynamically so the sandbox/production choice lives
     // in one place (js/checkout-config.js) instead of duplicating the whole

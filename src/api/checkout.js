@@ -57,6 +57,35 @@ const AMMO_HARD_BLOCK_STATES = new Set(['CA', 'NY', 'RI', 'DC', 'IL', 'MA', 'NJ'
 // Maryland isn't blocked statewide - just Annapolis specifically.
 const AMMO_HARD_BLOCK_CITIES = { MD: 'annapolis' };
 
+// Arizona TPT (transaction privilege tax), Golden Valley / Mohave County -
+// state rate only, confirmed against AZDOR's own rate table 2026-07-29
+// (Mohave County adds no county excise tax, and unincorporated Golden
+// Valley adds no city tax on top of that). No firearms/ammunition
+// exemption exists in Arizona law - checked the current text of A.R.S.
+// 42-5061 directly plus the status of every bill that tried to create one
+// (HB2166 2022, SB1605 2025, HB2635 2025 - all three died without passing),
+// so this applies to the whole order, firearms included.
+const AZ_TPT_RATE = 0.056;
+
+// Arizona sources a single-location in-state seller's sales to the
+// seller's own business address, not the customer's delivery address (an
+// origin-sourcing rule, confirmed 2026-07-29) - so every AZ-sourced sale
+// uses the same Golden Valley rate above regardless of which AZ city it
+// ships to. A sale is AZ-sourced when it's picked up in person (always
+// Arizona) or shipped to an Arizona address. Shipped-out-of-state orders
+// aren't taxed - Golden Valley Guns has no sales tax nexus outside Arizona.
+// An ffl_transfer (firearm shipped to the customer's own dealer) is left
+// untaxed by default: the receiving dealer's address is a single free-text
+// field here, not structured city/state/zip, so the destination state
+// can't be reliably parsed - Shawn already manually verifies every
+// ffl_transfer order's receiving FFL before shipping (see below), and can
+// account for tax by hand in the rare case that dealer is in Arizona.
+function isAzSourced(hasFirearm, fulfillmentMethod, shippingMethod, shippingAddress) {
+  if (hasFirearm) return fulfillmentMethod === 'pickup';
+  if (shippingMethod === 'pickup') return true;
+  return shippingAddress?.state === 'AZ';
+}
+
 // Firearms Shawn actually has in stock ARE purchasable through the cart -
 // paying online reserves it, then it either transfers by in-person pickup
 // or ships FFL-to-FFL to the customer's chosen dealer (see is_firearm/
@@ -212,8 +241,11 @@ export async function handleCheckout(request, env) {
     reserved.push(item);
   }
 
-  const subtotal = priced.reduce((sum, i) => sum + i.price * i.qty, 0);
-  const total = Math.round(subtotal * 100) / 100;
+  const rawSubtotal = priced.reduce((sum, i) => sum + i.price * i.qty, 0);
+  const subtotal = Math.round(rawSubtotal * 100) / 100;
+  const taxable = isAzSourced(hasFirearm, fulfillmentMethod, shippingMethod, shippingAddress);
+  const taxAmount = taxable ? Math.round(subtotal * AZ_TPT_RATE * 100) / 100 : 0;
+  const total = Math.round((subtotal + taxAmount) * 100) / 100;
 
   // Order row is written BEFORE the card is charged, not after. Charging
   // first and persisting second means a transient failure on the insert
@@ -232,7 +264,8 @@ export async function handleCheckout(request, env) {
     customer_email: customer.email,
     customer_phone: customer.phone || null,
     items: priced,
-    subtotal: total,
+    subtotal,
+    tax_amount: taxAmount,
     total,
     status: 'pending',
     is_firearm: hasFirearm,
@@ -291,7 +324,7 @@ export async function handleCheckout(request, env) {
   // recorded, and stock already decremented via the reservation above), so
   // an email hiccup shouldn't turn into a customer-facing checkout failure.
   try {
-    await sendOrderEmails(env, { orderNumber, customer, items: priced, total, hasFirearm, fulfillmentMethod, transferFfl, shippingMethod, shippingAddress });
+    await sendOrderEmails(env, { orderNumber, customer, items: priced, subtotal, taxAmount, total, hasFirearm, fulfillmentMethod, transferFfl, shippingMethod, shippingAddress });
   } catch (err) {
     console.error(`Order ${orderNumber} placed successfully, but confirmation emails failed:`, err);
   }
@@ -299,7 +332,7 @@ export async function handleCheckout(request, env) {
   return jsonResponse({ success: true, orderNumber, transactionId: result.transactionId, isFirearm: hasFirearm });
 }
 
-async function sendOrderEmails(env, { orderNumber, customer, items, total, hasFirearm, fulfillmentMethod, transferFfl, shippingMethod, shippingAddress }) {
+async function sendOrderEmails(env, { orderNumber, customer, items, subtotal, taxAmount, total, hasFirearm, fulfillmentMethod, transferFfl, shippingMethod, shippingAddress }) {
   const itemLines = items.map(i => `  ${i.qty} x ${i.name} - $${i.price.toFixed(2)} each`).join('\n');
   let firearmNote = '';
   if (hasFirearm && fulfillmentMethod === 'ffl_transfer') {
@@ -324,13 +357,15 @@ async function sendOrderEmails(env, { orderNumber, customer, items, total, hasFi
       ``,
       itemLines,
       ``,
+      `Subtotal: $${subtotal.toFixed(2)}`,
+      taxAmount > 0 ? `AZ Sales Tax (5.6%): $${taxAmount.toFixed(2)}` : null,
       `Total: $${total.toFixed(2)}`,
       firearmNote,
       ``,
       `We'll be in touch if there's anything else needed to get your order ready. Questions? Call us at (928) 727-0893.`,
       ``,
       `- Golden Valley Guns`
-    ].join('\n')
+    ].filter(line => line !== null).join('\n')
   });
 
   let firearmAdminNote = '';
@@ -367,6 +402,8 @@ async function sendOrderEmails(env, { orderNumber, customer, items, total, hasFi
       ``,
       itemLines,
       ``,
+      `Subtotal: $${subtotal.toFixed(2)}`,
+      taxAmount > 0 ? `AZ Sales Tax (5.6%): $${taxAmount.toFixed(2)}` : null,
       `Total: $${total.toFixed(2)}`,
       firearmAdminNote,
       ``,
