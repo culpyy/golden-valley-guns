@@ -124,11 +124,78 @@ export async function chargeCreditCard(env, { opaqueData, amount, orderNumber, i
 // way lipseys.js's fields were corrected after its first live call, once
 // that's possible - in particular, confirm the auto-void-on-unsettled
 // behavior described above actually holds for a same-day refund attempt.
-export async function refundTransaction(env, { transactionId, amount }) {
+// --- Diagnostics only, below this line --------------------------------
+// Used exclusively by src/api/paymentDiagnostics.js (an admin-gated route)
+// to verify the live integration is actually working after Shawn's
+// merchant account gets approved for real transaction processing, without
+// moving any real money or touching a real customer's card. Never called
+// from the real checkout path (src/api/checkout.js) - that always tokenizes
+// through Accept.js and never sees a raw card number, which these functions
+// intentionally do (using Authorize.net's own published test PAN, never a
+// real one) since there's no cart/browser involved in a server-side check.
+
+// authenticateTestRequest - confirms the API Login ID + Transaction Key are
+// valid and recognized by Authorize.net's servers. Doesn't touch payment
+// processing at all, just credential validation - safe to call anytime.
+export async function testAuthentication(env) {
   if (!env.AUTHORIZENET_API_LOGIN_ID || !env.AUTHORIZENET_TRANSACTION_KEY) {
     throw new Error('Authorize.net is not configured yet - set AUTHORIZENET_API_LOGIN_ID and AUTHORIZENET_TRANSACTION_KEY (wrangler secret put).');
   }
+  const body = {
+    authenticateTestRequest: {
+      merchantAuthentication: {
+        name: env.AUTHORIZENET_API_LOGIN_ID,
+        transactionKey: env.AUTHORIZENET_TRANSACTION_KEY
+      }
+    }
+  };
+  const res = await fetch(endpointFor(env), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) throw new Error(`Authorize.net request failed: ${res.status}`);
+  return parseAuthNetResponse(res);
+}
 
+// getMerchantDetailsRequest - returns account configuration, including
+// whether the account is currently in Test Mode and which payment
+// methods/processors are actually enabled. This is the closest thing
+// Authorize.net's API has to "is my account actually live yet."
+export async function getMerchantDetails(env) {
+  if (!env.AUTHORIZENET_API_LOGIN_ID || !env.AUTHORIZENET_TRANSACTION_KEY) {
+    throw new Error('Authorize.net is not configured yet - set AUTHORIZENET_API_LOGIN_ID and AUTHORIZENET_TRANSACTION_KEY (wrangler secret put).');
+  }
+  const body = {
+    getMerchantDetailsRequest: {
+      merchantAuthentication: {
+        name: env.AUTHORIZENET_API_LOGIN_ID,
+        transactionKey: env.AUTHORIZENET_TRANSACTION_KEY
+      }
+    }
+  };
+  const res = await fetch(endpointFor(env), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) throw new Error(`Authorize.net request failed: ${res.status}`);
+  return parseAuthNetResponse(res);
+}
+
+// A createTransactionRequest flagged transactionSettings.testRequest=true -
+// Authorize.net's documented mechanism for exercising the full transaction
+// pipeline (auth, field validation, response shape) against a live account
+// WITHOUT ever actually submitting the transaction for authorization or
+// settlement, regardless of whether the account's own Transaction
+// Processing Mode is enabled yet. Uses Authorize.net's own published test
+// card number (4111111111111111) - never a real card. This is what proves
+// the exact code path chargeCreditCard() uses (same request shape, same
+// endpoint, same credentials) is actually accepted by their servers.
+export async function runDiagnosticTestCharge(env, { amount = 1.00 } = {}) {
+  if (!env.AUTHORIZENET_API_LOGIN_ID || !env.AUTHORIZENET_TRANSACTION_KEY) {
+    throw new Error('Authorize.net is not configured yet - set AUTHORIZENET_API_LOGIN_ID and AUTHORIZENET_TRANSACTION_KEY (wrangler secret put).');
+  }
   const body = {
     createTransactionRequest: {
       merchantAuthentication: {
@@ -136,13 +203,53 @@ export async function refundTransaction(env, { transactionId, amount }) {
         transactionKey: env.AUTHORIZENET_TRANSACTION_KEY
       },
       transactionRequest: {
-        transactionType: 'refundTransaction',
+        transactionType: 'authCaptureTransaction',
         amount: amount.toFixed(2),
-        refTransId: transactionId
+        payment: {
+          creditCard: {
+            cardNumber: '4111111111111111',
+            expirationDate: '1230',
+            cardCode: '123'
+          }
+        },
+        order: {
+          invoiceNumber: `DIAG-${Date.now()}`,
+          description: 'Payment integration diagnostic - test request, never settled'
+        },
+        transactionSettings: {
+          setting: [{ settingName: 'testRequest', settingValue: 'true' }]
+        }
       }
     }
   };
+  const res = await fetch(endpointFor(env), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) throw new Error(`Authorize.net request failed: ${res.status}`);
+  const data = await parseAuthNetResponse(res);
+  const txn = data.transactionResponse;
+  return {
+    approved: data.messages?.resultCode === 'Ok' && txn?.responseCode === '1',
+    responseCode: txn?.responseCode || null,
+    authCode: txn?.authCode || null,
+    messages: data.messages,
+    transactionResponseErrors: txn?.errors || null,
+    raw: data
+  };
+}
 
+async function submitTransaction(env, transactionRequest) {
+  const body = {
+    createTransactionRequest: {
+      merchantAuthentication: {
+        name: env.AUTHORIZENET_API_LOGIN_ID,
+        transactionKey: env.AUTHORIZENET_TRANSACTION_KEY
+      },
+      transactionRequest
+    }
+  };
   const res = await fetch(endpointFor(env), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -153,13 +260,52 @@ export async function refundTransaction(env, { transactionId, amount }) {
   const data = await parseAuthNetResponse(res);
   const txn = data.transactionResponse;
   const approved = data.messages?.resultCode === 'Ok' && txn?.responseCode === '1';
-
   return {
     approved,
     transactionId: txn?.transId || null,
+    errorCode: txn?.errors?.[0]?.errorCode || null,
     errorText: approved
       ? null
-      : (txn?.errors?.[0]?.errorText || data.messages?.message?.[0]?.text || 'Refund failed.'),
+      : (txn?.errors?.[0]?.errorText || data.messages?.message?.[0]?.text || 'Transaction failed.'),
     raw: data
   };
+}
+
+// Refunds a transaction by ID. Authorize.net rejects refundTransaction on a
+// transaction that hasn't settled yet (settlement runs once daily) with
+// error code 54, "The referenced transaction does not meet the criteria for
+// issuing a credit" - confirmed live 2026-08-05 on a same-day charge (the
+// header comment's original assumption that a full-amount refund
+// auto-converts to a void internally was wrong). The standard fix is to
+// fall back to voidTransaction in that specific case, which cancels the
+// unsettled authorization instead of crediting a settled one - no card
+// number needed for a void, just the original transaction ID.
+export async function refundTransaction(env, { transactionId, amount, cardLast4 }) {
+  if (!env.AUTHORIZENET_API_LOGIN_ID || !env.AUTHORIZENET_TRANSACTION_KEY) {
+    throw new Error('Authorize.net is not configured yet - set AUTHORIZENET_API_LOGIN_ID and AUTHORIZENET_TRANSACTION_KEY (wrangler secret put).');
+  }
+  if (!cardLast4) {
+    throw new Error('cardLast4 is required - Authorize.net rejects refundTransaction without it even when refTransId is provided.');
+  }
+
+  const result = await submitTransaction(env, {
+    transactionType: 'refundTransaction',
+    amount: amount.toFixed(2),
+    payment: {
+      creditCard: {
+        cardNumber: cardLast4,
+        expirationDate: 'XXXX'
+      }
+    },
+    refTransId: transactionId
+  });
+
+  if (!result.approved && result.errorCode === '54') {
+    return submitTransaction(env, {
+      transactionType: 'voidTransaction',
+      refTransId: transactionId
+    });
+  }
+
+  return result;
 }

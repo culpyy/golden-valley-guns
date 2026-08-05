@@ -17,6 +17,16 @@ const SERVICE_LABELS = {
   other: 'Other'
 };
 
+// Excludes 0/O/1/I - the whole point of this code is a customer hand-writing
+// it on a box, so ambiguous characters defeat the purpose.
+const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+function generateIntakeCode() {
+  const bytes = crypto.getRandomValues(new Uint8Array(6));
+  let code = '';
+  for (const b of bytes) code += CODE_CHARS[b % CODE_CHARS.length];
+  return `SHIP-${code}`;
+}
+
 function jsonResponse(body, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(body), {
     status,
@@ -51,16 +61,27 @@ export async function handleIntake(request, env) {
   }
 
   const supabase = getSupabaseAdmin(env);
-  const { error: insertError } = await supabase.from('intake_submissions').insert({
-    name,
-    email: email || null,
-    phone: phone || null,
-    service,
-    firearm_type: firearmType || null,
-    caliber: caliber || null,
-    is_nfa: !!isNfa,
-    notes: notes || null
-  });
+  // Tiny retry loop for the rare unique-constraint collision on intake_code -
+  // same defensive pattern as tracking-code generation in admin-dashboard.html,
+  // just with random codes instead of sequential ones (no shared counter to
+  // race over, so 3 attempts is already generous for how unlikely a real
+  // collision is at 33^6 possible codes).
+  let intakeCode, insertError;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    intakeCode = generateIntakeCode();
+    ({ error: insertError } = await supabase.from('intake_submissions').insert({
+      name,
+      email: email || null,
+      phone: phone || null,
+      service,
+      firearm_type: firearmType || null,
+      caliber: caliber || null,
+      is_nfa: !!isNfa,
+      notes: notes || null,
+      intake_code: intakeCode
+    }));
+    if (!insertError || insertError.code !== '23505') break;
+  }
   if (insertError) throw insertError;
 
   const serviceLabel = SERVICE_LABELS[service] || service;
@@ -68,10 +89,11 @@ export async function handleIntake(request, env) {
   // shouldn't fail the customer's request (same reasoning as contact.js).
   try {
     await sendEmail(env, {
-      subject: `Incoming shipment: ${serviceLabel} - ${name}`,
+      subject: `Incoming shipment: ${serviceLabel} - ${name} [${intakeCode}]`,
       text: [
         `Someone filled out the intake form for a shipment on the way.`,
         ``,
+        `Reference code: ${intakeCode}`,
         `Name: ${name}`,
         `Email: ${email || '(not provided)'}`,
         `Phone: ${phone || '(not provided)'}`,
@@ -89,5 +111,5 @@ export async function handleIntake(request, env) {
     console.error('Intake notification email failed (submission was still saved):', err);
   }
 
-  return jsonResponse({ success: true });
+  return jsonResponse({ success: true, intakeCode });
 }

@@ -57,6 +57,13 @@ export async function handleCreateSpecialOrder(request, env) {
   const price = parseFloat(payload?.price);
   const isFirearm = !!payload?.isFirearm;
   const isAmmo = !isFirearm && !!payload?.isAmmo;
+  // Optional - set only when this special order was generated from the
+  // Builds tab's "Get Paid" button (admin-dashboard.html), so the build can
+  // be linked back to the resulting order/pay link. Every row in `builds`
+  // represents an actual firearm build, so isFirearm is force-true from the
+  // client for that path - re-asserted here too rather than trusted blindly,
+  // same "never trust the client" posture as checkout.js/pay.js.
+  const buildId = payload?.buildId || null;
 
   if (!customerName || !customerEmail || !itemName) {
     return jsonResponse({ error: 'Customer name, email, and item description are required.' }, 400);
@@ -69,6 +76,19 @@ export async function handleCreateSpecialOrder(request, env) {
   }
 
   const supabase = getSupabaseAdmin(env);
+
+  let build = null;
+  if (buildId) {
+    const { data, error: buildError } = await supabase.from('builds').select('id, payment_status').eq('id', buildId).single();
+    if (buildError || !data) {
+      return jsonResponse({ error: 'Build not found.' }, 404);
+    }
+    build = data;
+  }
+  // Every build IS a firearm - force this regardless of what the client sent,
+  // same "never trust the client" posture as checkout.js/pay.js.
+  const orderIsFirearm = buildId ? true : isFirearm;
+
   // crypto.randomUUID() (128 bits) is the entire access control for
   // pay.html/api/pay - unguessable is the whole point, there's no login.
   const payToken = crypto.randomUUID();
@@ -84,11 +104,26 @@ export async function handleCreateSpecialOrder(request, env) {
     status: 'pending',
     source: 'special_order',
     pay_token: payToken,
-    is_firearm: isFirearm
+    is_firearm: orderIsFirearm
   });
   const orderNumber = orderRow.order_number;
 
   const payUrl = `https://${env.SITE_HOSTNAME}/pay.html?token=${payToken}`;
+
+  if (build) {
+    const { error: buildUpdateError } = await supabase.from('builds').update({
+      order_id: orderRow.id,
+      payment_status: 'invoiced',
+      pay_url: payUrl
+    }).eq('id', build.id);
+    if (buildUpdateError) {
+      // The order itself already exists and is fully payable at this point -
+      // don't fail the request over a bookkeeping-only mismatch, just log it
+      // for manual reconciliation (same posture as the order-status-update
+      // failure paths in checkout.js/pay.js/refundOrder.js).
+      console.error(`Order ${orderNumber} created for build ${build.id}, but linking the build back failed:`, buildUpdateError);
+    }
+  }
 
   // Best-effort - Shawn gets the link back in the dashboard response either
   // way (see admin-dashboard.html), so an email failure here doesn't strand
@@ -105,7 +140,7 @@ export async function handleCreateSpecialOrder(request, env) {
         itemName,
         `$${total.toFixed(2)}`,
         ``,
-        isFirearm
+        orderIsFirearm
           ? `This is a firearm, so it can't ship directly to you - when you pay, you'll choose to either pick it up in person here or have it transferred to your own local FFL dealer. Either way, a NICS background check and ATF Form 4473 are required before it's yours.`
           : '',
         ``,

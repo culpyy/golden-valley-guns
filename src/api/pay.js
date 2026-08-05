@@ -206,6 +206,14 @@ export async function handlePayOrder(request, env) {
     return jsonResponse({ error: result.errorText, orderNumber: claimed.order_number }, 402);
   }
 
+  // Keeps the Builds tab's payment badge in sync when this special order was
+  // generated from a build's "Get Paid" button (src/api/specialOrder.js) -
+  // most orders have no linked build, so this is a no-op for those.
+  const { error: buildSyncError } = await supabase.from('builds').update({ payment_status: 'paid' }).eq('order_id', claimed.id);
+  if (buildSyncError) {
+    console.error(`Order ${claimed.order_number} paid, but syncing linked build's payment_status failed:`, buildSyncError);
+  }
+
   try {
     await sendPaymentConfirmationEmails(env, { order: claimed, customer, customerName, fulfillmentMethod, transferFfl, shippingMethod, shippingAddress });
   } catch (err) {

@@ -11,6 +11,7 @@ import { handleUploadBuildImage } from './api/uploadBuildImage.js';
 import { handleCreateSpecialOrder } from './api/specialOrder.js';
 import { handleGetPayOrder, handlePayOrder } from './api/pay.js';
 import { handleRefundOrder } from './api/refundOrder.js';
+import { handlePaymentDiagnostics } from './api/paymentDiagnostics.js';
 import { checkRateLimit } from './lib/rateLimit.js';
 import { addSecurityHeaders } from './lib/securityHeaders.js';
 
@@ -185,6 +186,27 @@ async function route(request, env) {
     } catch (err) {
       console.error('Refund failed:', err);
       return new Response(JSON.stringify({ error: 'Refund failed.' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+  }
+
+  if (url.pathname === '/api/admin/payment-diagnostics' && request.method === 'GET') {
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    const { allowed, retryAfterSeconds } = await checkRateLimit(env, `payment-diagnostics:${ip}`, { limit: 10, windowSeconds: 600 });
+    if (!allowed) {
+      return new Response(JSON.stringify({ error: 'Too many requests.' }), {
+        status: 429,
+        headers: { 'Content-Type': 'application/json', 'Retry-After': String(retryAfterSeconds) }
+      });
+    }
+
+    try {
+      return await handlePaymentDiagnostics(request, env);
+    } catch (err) {
+      console.error('Payment diagnostics failed:', err);
+      return new Response(JSON.stringify({ error: 'Diagnostics failed.' }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' }
       });

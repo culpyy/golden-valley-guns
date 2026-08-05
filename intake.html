@@ -24,6 +24,77 @@
       margin-top: 20px;
     }
 
+    /* ── HOW-TO STEPS ── */
+    .howto-steps {
+      max-width: 900px;
+      margin: 0 auto 8px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+    .howto-step {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 20px 18px;
+      position: relative;
+    }
+    .howto-step-num {
+      font-family: 'Big Shoulders Display', sans-serif;
+      font-weight: 800;
+      font-size: 28px;
+      color: var(--gold-light);
+      line-height: 1;
+      margin-bottom: 10px;
+    }
+    .howto-step h5 {
+      font-size: 13px;
+      letter-spacing: 1px;
+      color: var(--text);
+      margin: 0 0 6px;
+    }
+    .howto-step p {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.6;
+      margin: 0;
+    }
+    @media (max-width: 760px) {
+      .howto-steps { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 480px) {
+      .howto-steps { grid-template-columns: 1fr; }
+    }
+
+    /* ── REFERENCE CODE (on-screen + slip) ── */
+    .ref-code-box {
+      background: var(--bg);
+      border: 2px solid var(--gold);
+      padding: 18px 20px;
+      text-align: center;
+      margin: 20px 0;
+    }
+    .ref-code-label {
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .ref-code-value {
+      font-family: 'Courier New', monospace;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      color: var(--gold-light);
+    }
+    .ref-code-instruction {
+      font-size: 12px;
+      color: var(--text);
+      margin-top: 10px;
+      line-height: 1.6;
+    }
+    .ref-code-instruction strong { color: var(--gold-light); }
+
     /* ── SLIP / CONFIRMATION ── */
     .intake-slip {
       display: none;
@@ -60,7 +131,7 @@
          boundary and printed it split across two pages with a border
          re-drawn on each half. `display: none` removes that height
          entirely so the slip is the only thing left in the page flow. */
-      #ageGate, nav, .page-header, .contact-info, footer { display: none !important; }
+      #ageGate, nav, .page-header, .contact-info, footer, .howto-steps { display: none !important; }
       section, .contact-grid, .fade-in { padding: 0 !important; margin: 0 !important; gap: 0 !important; }
       .contact-grid { grid-template-columns: 1fr !important; }
 
@@ -83,6 +154,8 @@
       .intake-slip, .intake-slip * { color: #000 !important; }
       .slip-row { padding: 6px 0; }
       .slip-actions { display: none !important; }
+      .ref-code-box { border: 2px solid #000 !important; background: none !important; }
+      .ref-code-value { color: #000 !important; }
     }
 
     @media (max-width: 580px) {
@@ -127,6 +200,7 @@
       <li><a href="inshop.html">In Shop</a></li>
       <li><a href="gallery.html">Gallery</a></li>
       <li><a href="shop.html">Shop</a></li>
+      <li><a href="intake.html" class="active">Ship to Us</a></li>
       <li><a href="contact.html">Contact</a></li>
     </ul>
     <a href="cart.html" class="nav-cart-icon" aria-label="Cart">
@@ -143,8 +217,34 @@
   <div class="page-header">
     <div class="section-label">Before You Ship</div>
     <h1>Ship Something to Us</h1>
-    <p>Fill this out and print it &mdash; include it in the box so whatever shows up here is self-identifying, and we know exactly what to do with it.</p>
+    <p>Boxes that show up with no name, no note, and nothing identifying them are a real problem &mdash; it's happened. Follow the 4 steps below and yours won't be one of them.</p>
   </div>
+
+  <!-- HOW TO SHIP IT -->
+  <section style="padding-top:0;">
+    <div class="howto-steps">
+      <div class="howto-step">
+        <div class="howto-step-num">1</div>
+        <h5>CALL OR TEXT FIRST</h5>
+        <p>Especially for NFA items (suppressors, SBRs, SBSs) or anything you're not sure about. (928) 727-0893.</p>
+      </div>
+      <div class="howto-step">
+        <div class="howto-step-num">2</div>
+        <h5>FILL OUT THE FORM BELOW</h5>
+        <p>Takes under a minute. You'll get a reference code &mdash; you need it for the next step.</p>
+      </div>
+      <div class="howto-step">
+        <div class="howto-step-num">3</div>
+        <h5>PRINT IT, PUT IT IN THE BOX</h5>
+        <p>The printed page goes inside the box with whatever you're sending.</p>
+      </div>
+      <div class="howto-step">
+        <div class="howto-step-num">4</div>
+        <h5>LABEL THE OUTSIDE, THEN SHIP</h5>
+        <p>Write your name and the reference code on the outside of the box before you tape it shut.</p>
+      </div>
+    </div>
+  </section>
 
   <!-- INTAKE SECTION -->
   <section>
@@ -238,6 +338,12 @@
           <div class="slip-brand">Golden Valley Guns LLC</div>
           <div class="slip-address">7088 W Jupiter Dr, Golden Valley, AZ 86413 &middot; (928) 727-0893</div>
           <div class="slip-title">Shipment Intake Form &mdash; <span id="slipDate">&mdash;</span></div>
+          <div class="ref-code-box">
+            <div class="ref-code-label">Your Reference Code</div>
+            <div class="ref-code-value" id="slipCode">&mdash;</div>
+            <div class="ref-code-instruction"><strong>1.</strong> Print this page &amp; put it inside the box. <strong>2.</strong> Write your name and this code on the <strong>outside</strong> of the box before you ship it.</div>
+          </div>
+          <p class="form-note" id="slipOfflineNote" style="display:none;color:#c0392b;margin-top:-8px;margin-bottom:16px;">We couldn't save this online just now. Please also call or text us at (928) 727-0893 to let us know it's coming.</p>
           <div class="slip-row" style="border-top:none;padding-top:0;"><span>Name</span><span id="slipName">&mdash;</span></div>
           <div class="slip-row"><span>Phone</span><span id="slipPhone">&mdash;</span></div>
           <div class="slip-row"><span>Email</span><span id="slipEmail">&mdash;</span></div>
@@ -275,6 +381,7 @@
           <li><a href="inshop.html">In Shop</a></li>
           <li><a href="gallery.html">Gallery</a></li>
           <li><a href="shop.html">Shop</a></li>
+      <li><a href="intake.html" class="active">Ship to Us</a></li>
           <li><a href="contact.html">Contact</a></li>
         </ul>
       </div>
@@ -342,15 +449,25 @@
     typeSelect.addEventListener('change', syncNfaFromType);
     syncNfaFromType();
 
-    // Generates a printable slip for the box either way (that's what
-    // actually matters for shipping), and also saves the same info to
-    // intake_submissions via /api/intake so Shawn sees it coming in the
-    // admin dashboard before the package physically arrives, instead of
-    // only finding out when he opens the box and re-typing everything off
-    // the printed slip by hand. The save is best-effort/fire-and-forget -
-    // a network hiccup there shouldn't block the customer from getting
-    // their printable form.
-    intakeForm.addEventListener('submit', e => {
+    // Excludes 0/O/1/I, same reasoning as src/api/intake.js's server-side
+    // generator - this one only fires as a fallback (see catch below) when
+    // the real save fails, so it's clearly marked OFFLINE- rather than
+    // risking collision with a real SHIP- code that made it to the server.
+    const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    function fallbackCode() {
+      let code = '';
+      for (let i = 0; i < 6; i++) code += CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)];
+      return `OFFLINE-${code}`;
+    }
+
+    // The reference code has to come from the server (src/api/intake.js
+    // generates and stores it) for Shawn to actually be able to look it up
+    // later - so unlike the old fire-and-forget save, this now awaits the
+    // request. A short timeout plus a clearly-marked fallback code keeps a
+    // flaky connection from blocking the customer entirely: they still get
+    // a printable slip and instructions either way, just with a prompt to
+    // also call/text if the online save didn't go through.
+    intakeForm.addEventListener('submit', async e => {
       e.preventDefault();
       errorEl.style.display = 'none';
 
@@ -370,13 +487,37 @@
         return;
       }
 
-      fetch('/api/intake', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ _gotcha: gotcha, name, email, phone, service, firearmType: type, caliber, isNfa, notes })
-      }).catch(err => console.error('Intake save failed (slip still generated):', err));
+      const submitBtn = document.getElementById('intakeSubmitBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Generating…';
+
+      let intakeCode;
+      let offline = false;
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 6000);
+        const res = await fetch('/api/intake', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ _gotcha: gotcha, name, email, phone, service, firearmType: type, caliber, isNfa, notes }),
+          signal: controller.signal
+        });
+        clearTimeout(timeout);
+        const data = await res.json();
+        if (!res.ok || !data.intakeCode) throw new Error(data.error || 'Save failed');
+        intakeCode = data.intakeCode;
+      } catch (err) {
+        console.error('Intake save failed - using an offline reference code instead:', err);
+        intakeCode = fallbackCode();
+        offline = true;
+      }
+
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Generate My Shipping Form →';
 
       document.getElementById('slipDate').textContent = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      document.getElementById('slipCode').textContent = intakeCode;
+      document.getElementById('slipOfflineNote').style.display = offline ? 'block' : 'none';
       document.getElementById('slipName').textContent = name;
       document.getElementById('slipPhone').textContent = phone || '—';
       document.getElementById('slipEmail').textContent = email || '—';

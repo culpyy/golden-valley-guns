@@ -470,6 +470,10 @@
             <input type="text" id="b-caliber" placeholder="7.62x39mm" />
           </div>
           <div class="form-field">
+            <label>Price ($, optional until you're ready to invoice)</label>
+            <input type="number" id="b-price" min="0" step="0.01" placeholder="0.00" />
+          </div>
+          <div class="form-field">
             <label>Status</label>
             <select id="b-status">
               <option value="intake">Intake</option>
@@ -569,7 +573,8 @@
       </div>
 
       <div class="form-card" id="specialOrderForm">
-        <h3>New Special Order</h3>
+        <h3 id="specialOrderFormTitle">New Special Order</h3>
+        <input type="hidden" id="so-build-id" />
         <div style="font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:20px;max-width:640px;">
           For a "Request This Item" lead or anything you've confirmed availability/price on with a distributor. This sends the customer a secure link to pay online - it does not touch your own product inventory or stock counts.
         </div>
@@ -881,6 +886,7 @@
       document.getElementById('b-title').value = build ? build.title : '';
       document.getElementById('b-type').value = build ? build.type : 'Rifle';
       document.getElementById('b-caliber').value = build ? build.caliber : '';
+      document.getElementById('b-price').value = build && build.price != null ? build.price : '';
       document.getElementById('b-status').value = build ? build.status : 'intake';
       document.getElementById('b-is-nfa').checked = build ? !!build.is_nfa : false;
       toggleAtfFields();
@@ -979,6 +985,7 @@
         title,
         type:           document.getElementById('b-type').value,
         caliber:        document.getElementById('b-caliber').value,
+        price:          document.getElementById('b-price').value ? parseFloat(document.getElementById('b-price').value) : null,
         status:         document.getElementById('b-status').value,
         is_nfa:         document.getElementById('b-is-nfa').checked,
         progress:       calcProgress(document.getElementById('b-status').value, document.getElementById('b-is-nfa').checked),
@@ -1058,8 +1065,11 @@
       }
     });
 
+    let buildsAllRows = [];
+
     async function loadBuilds() {
       const { data, error } = await supabase.from('builds').select('*').order('received', { ascending: false });
+      buildsAllRows = error ? [] : (data || []);
       const container = document.getElementById('buildsTable');
       if (error || !data || data.length === 0) {
         container.innerHTML = '<div class="empty-state">No builds yet. Click "+ Add Build" to get started.</div>';
@@ -1074,6 +1084,7 @@
               <th>Customer</th>
               <th>Status</th>
               <th>Progress</th>
+              <th>Payment</th>
               <th></th>
             </tr>
           </thead>
@@ -1085,6 +1096,7 @@
                 <td style="font-size:12px;">${escapeHtml(b.customer_name) || '—'}</td>
                 <td><span class="status-pill ${b.status}">${escapeHtml(b.status)}</span></td>
                 <td>${calcProgress(b.status, b.is_nfa)}%</td>
+                <td>${buildPaymentCell(b)}</td>
                 <td>
                   <div class="row-actions">
                     <button class="btn-edit" onclick="editBuild('${b.id}')">Edit</button>
@@ -1108,6 +1120,120 @@
       if (error) { showToast('Error: ' + error.message); return; }
       showToast('Build deleted.');
       loadBuilds();
+    }
+
+    // Payment only becomes actionable once a build is actually Ready - before
+    // that there's nothing finished to charge for. Every build is a real
+    // firearm, so "Get Paid" always goes through the special-order/pay-link
+    // system with isFirearm force-checked (src/api/specialOrder.js re-asserts
+    // this server-side too) - a build can never be invoiced with direct
+    // ship-to-customer, only pickup or FFL-to-FFL transfer, same legal gate
+    // pay.html already enforces for every other firearm sale on the site.
+    function buildPaymentCell(b) {
+      if (b.status !== 'ready') return '<span style="font-size:11px;color:var(--muted);">—</span>';
+      const priceLabel = b.price != null ? `$${Number(b.price).toFixed(2)}` : '';
+      if (b.payment_status === 'paid') {
+        return `
+          <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-start;">
+            <span class="status-pill paid">Paid${priceLabel ? ' · ' + priceLabel : ''}</span>
+            ${b.order_id ? `<button class="btn-delete" style="padding:4px 10px;font-size:10px;" onclick="refundBuildPayment('${b.id}')">Refund</button>` : ''}
+          </div>`;
+      }
+      if (b.payment_status === 'invoiced') {
+        return `
+          <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-start;">
+            <span class="status-pill" style="color:var(--gold-light);border:1px solid var(--gold);">Invoiced${priceLabel ? ' · ' + priceLabel : ''}</span>
+            <div style="display:flex;gap:6px;">
+              <button class="btn-edit" style="padding:4px 10px;font-size:10px;" onclick="copyBuildPayLink('${b.id}')">Copy Link</button>
+              <button class="btn-edit" style="padding:4px 10px;font-size:10px;" onclick="markBuildPaidOffline('${b.id}')">Mark Paid</button>
+            </div>
+          </div>`;
+      }
+      // 'unpaid' or 'refunded' - either way, nothing collectible on file yet.
+      return `
+        <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-start;">
+          ${b.payment_status === 'refunded' ? '<span style="font-size:11px;color:var(--muted);">Refunded</span>' : ''}
+          <button class="btn-save" style="padding:4px 10px;font-size:10px;" onclick="getPaidForBuild('${b.id}')">Get Paid</button>
+          <button class="btn-edit" style="padding:4px 10px;font-size:10px;" onclick="markBuildPaidOffline('${b.id}')">Mark Paid (cash/other)</button>
+        </div>`;
+    }
+
+    // Jumps to the Orders tab and pre-fills the special-order form from the
+    // build - customer info, item description (the build's own title), and
+    // price if one was set. isFirearm is force-checked AND disabled here
+    // (every build is a firearm - see buildPaymentCell above), not just
+    // pre-checked, so there's no way to accidentally uncheck it before
+    // sending. so-build-id carries the link back; src/api/specialOrder.js
+    // uses it to set builds.order_id/payment_status/pay_url on success.
+    function getPaidForBuild(id) {
+      const build = buildsAllRows.find(b => b.id === id);
+      if (!build) return;
+
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.querySelector('.tab-btn[data-tab="orders"]').classList.add('active');
+      document.getElementById('tab-orders').classList.add('active');
+
+      document.getElementById('specialOrderFormTitle').textContent = `Get Paid — ${build.title}`;
+      document.getElementById('so-build-id').value = build.id;
+      document.getElementById('so-customer-name').value = build.customer_name || '';
+      document.getElementById('so-customer-email').value = build.customer_email || '';
+      document.getElementById('so-customer-phone').value = build.customer_phone || '';
+      document.getElementById('so-item-name').value = build.title;
+      document.getElementById('so-price').value = build.price != null ? build.price : '';
+      document.getElementById('so-is-firearm').checked = true;
+      document.getElementById('so-is-firearm').disabled = true;
+      document.getElementById('so-is-ammo').checked = false;
+      document.getElementById('so-is-ammo').disabled = true;
+
+      const form = document.getElementById('specialOrderForm');
+      form.classList.add('open');
+      form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // For cash/check/in-person-card sales that never went through the online
+    // pay-link - no order_id gets attached since there's no real Authorize.net
+    // transaction behind it, just a record that this build is settled.
+    async function markBuildPaidOffline(id) {
+      if (!confirm('Mark this build as paid? This only updates the record here - it does not charge anything.')) return;
+      const { error } = await supabase.from('builds').update({ payment_status: 'paid' }).eq('id', id);
+      if (error) { showToast('Error: ' + error.message); return; }
+      showToast('Marked paid.');
+      loadBuilds();
+    }
+
+    function copyBuildPayLink(id) {
+      const build = buildsAllRows.find(b => b.id === id);
+      if (!build || !build.pay_url) return;
+      navigator.clipboard.writeText(build.pay_url).then(() => showToast('Payment link copied.'));
+    }
+
+    // Reuses the exact same /api/admin/refund-order endpoint the Orders tab
+    // uses (src/api/refundOrder.js) - that route already syncs this build's
+    // payment_status back to 'refunded' once the real Authorize.net refund
+    // succeeds, so no build-specific refund logic is needed here at all.
+    async function refundBuildPayment(id) {
+      const build = buildsAllRows.find(b => b.id === id);
+      if (!build || !build.order_id) return;
+      if (!confirm(`Refund the payment for "${build.title}" in full? This returns the full amount to the customer's card through Authorize.net.`)) return;
+
+      const { data: { session } } = await supabase.auth.getSession();
+      try {
+        const res = await fetch('/api/admin/refund-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token || ''}` },
+          body: JSON.stringify({ orderId: build.order_id })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          showToast('Refund failed: ' + (data.error || 'Unknown error.'));
+          return;
+        }
+        showToast('Refunded.');
+        loadBuilds();
+      } catch (err) {
+        showToast('Refund failed: could not reach the server.');
+      }
     }
 
     // ── ORDERS ──
@@ -1238,14 +1364,29 @@
 
     // ── SPECIAL ORDERS ──
     document.getElementById('addSpecialOrderBtn').addEventListener('click', () => {
+      resetSpecialOrderForm();
       document.getElementById('specialOrderForm').classList.add('open');
       document.getElementById('specialOrderForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
-    document.getElementById('cancelSpecialOrderBtn').addEventListener('click', () => {
+    function resetSpecialOrderForm() {
       document.getElementById('specialOrderForm').classList.remove('open');
-    });
+      document.getElementById('specialOrderFormTitle').textContent = 'New Special Order';
+      document.getElementById('so-build-id').value = '';
+      document.getElementById('so-customer-name').value = '';
+      document.getElementById('so-customer-email').value = '';
+      document.getElementById('so-customer-phone').value = '';
+      document.getElementById('so-item-name').value = '';
+      document.getElementById('so-price').value = '';
+      document.getElementById('so-is-firearm').checked = false;
+      document.getElementById('so-is-firearm').disabled = false;
+      document.getElementById('so-is-ammo').checked = false;
+      document.getElementById('so-is-ammo').disabled = false;
+    }
+
+    document.getElementById('cancelSpecialOrderBtn').addEventListener('click', resetSpecialOrderForm);
 
     document.getElementById('saveSpecialOrderBtn').addEventListener('click', async () => {
+      const buildId = document.getElementById('so-build-id').value || null;
       const customerName = document.getElementById('so-customer-name').value.trim();
       const customerEmail = document.getElementById('so-customer-email').value.trim();
       const customerPhone = document.getElementById('so-customer-phone').value.trim();
@@ -1271,7 +1412,7 @@
             'Content-Type': 'application/json',
             Authorization: `Bearer ${session?.access_token || ''}`
           },
-          body: JSON.stringify({ customerName, customerEmail, customerPhone, itemName, price, isFirearm, isAmmo })
+          body: JSON.stringify({ customerName, customerEmail, customerPhone, itemName, price, isFirearm, isAmmo, buildId })
         });
         const data = await res.json();
         if (!res.ok) {
@@ -1279,18 +1420,12 @@
           return;
         }
 
-        document.getElementById('specialOrderForm').classList.remove('open');
-        document.getElementById('so-customer-name').value = '';
-        document.getElementById('so-customer-email').value = '';
-        document.getElementById('so-customer-phone').value = '';
-        document.getElementById('so-item-name').value = '';
-        document.getElementById('so-price').value = '';
-        document.getElementById('so-is-firearm').checked = false;
-        document.getElementById('so-is-ammo').checked = false;
+        resetSpecialOrderForm();
 
         document.getElementById('payLinkDisplay').textContent = data.payUrl;
         document.getElementById('payLinkModalOverlay').classList.add('open');
         loadOrders();
+        if (buildId) loadBuilds();
       } catch (err) {
         showToast('Error: could not reach the server.');
       } finally {
@@ -1448,12 +1583,10 @@
       document.querySelector('.tab-btn[data-tab="orders"]').classList.add('active');
       document.getElementById('tab-orders').classList.add('active');
 
+      resetSpecialOrderForm();
       document.getElementById('so-customer-name').value = `${msg.first_name} ${msg.last_name}`;
       document.getElementById('so-customer-email').value = msg.email;
       document.getElementById('so-customer-phone').value = msg.phone || '';
-      document.getElementById('so-item-name').value = '';
-      document.getElementById('so-price').value = '';
-      document.getElementById('so-is-firearm').checked = false;
 
       const form = document.getElementById('specialOrderForm');
       form.classList.add('open');
@@ -1495,6 +1628,7 @@
           <thead>
             <tr>
               <th>Date</th>
+              <th>Code</th>
               <th>Name</th>
               <th>Service</th>
               <th>Type / Caliber</th>
@@ -1506,6 +1640,7 @@
             ${intakeAllRows.map(i => `
               <tr class="${i.is_read ? '' : 'msg-row-unread'}">
                 <td style="font-size:12px;">${new Date(i.created_at).toLocaleString()}</td>
+                <td style="font-family:'Courier New',monospace;font-size:12px;color:var(--gold-light);letter-spacing:1px;">${escapeHtml(i.intake_code) || '—'}</td>
                 <td class="title">${i.is_read ? '' : '<span class="unread-dot"></span>'}${escapeHtml(i.name)}${i.is_nfa ? ' <span class="part-badge-pill" style="position:static;display:inline-block;">NFA</span>' : ''}</td>
                 <td>${escapeHtml(INTAKE_SERVICE_LABELS[i.service] || i.service)}</td>
                 <td style="font-size:12px;">${escapeHtml(i.firearm_type || '—')}${i.caliber ? ' · ' + escapeHtml(i.caliber) : ''}</td>
@@ -1520,7 +1655,7 @@
                 </td>
               </tr>
               <tr class="msg-full-row" id="intake-${i.id}" style="display:none;">
-                <td colspan="6">${i.notes ? escapeHtml(i.notes) : '(No notes provided.)'}</td>
+                <td colspan="7">${i.notes ? escapeHtml(i.notes) : '(No notes provided.)'}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -1585,7 +1720,11 @@
         is_nfa: intake.is_nfa,
         customer_name: intake.name,
         customer_email: intake.email || '',
-        customer_phone: intake.phone || ''
+        customer_phone: intake.phone || '',
+        // Just the reference code, not the customer's free-text notes (see
+        // comment above) - lets Shawn cross-check this build against
+        // whatever code is actually written on the box that showed up.
+        notes: intake.intake_code ? `Ref: ${intake.intake_code}` : ''
       });
 
       if (intake.notes) showToast('Pre-filled from intake - check the notes below for what they sent before saving.');

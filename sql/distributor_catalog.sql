@@ -227,3 +227,65 @@ alter table distributor_products add column if not exists image_source_name text
 -- anon-key REST query (6,957 rows readable) before writing this. Re-running
 -- the grant here is a no-op if already granted.
 grant select on distributor_products_public to anon;
+
+-- 11) DEDUP: collapse same-UPC listings across distributors (2026-08-03)
+-- Found 5,068 UPCs carried by both Lipsey's and Orion (10,136 of 29,447
+-- distributor rows, ~34%) showing up as two separate listings for the same
+-- physical product under each distributor's own name formatting - e.g. the
+-- same Browning shotgun as both "CITORI HUNTER DELUXE 16/28   #" (Lipsey's)
+-- and "BRWNG CITORI HUNT DX,16GA SHTGN 2.75,28 INV GLOSS WALNT" (Orion).
+-- Ranks duplicates by: in-stock first, then lowest price, then has-an-image,
+-- tie-broken by id, and keeps only the top-ranked row per UPC. Rows with a
+-- null/empty UPC are never grouped together (each is its own singleton via
+-- the id fallback in the partition key), so non-UPC items are unaffected.
+create or replace view distributor_products_public as
+with markup as (
+  select coalesce(
+    (select value::numeric from site_content where key = 'catalog_markup_pct'),
+    0
+  ) as pct
+),
+priced as (
+  select
+    dp.*,
+    greatest(
+      round(dp.dealer_cost * (1 + markup.pct / 100.0), 2),
+      coalesce(dp.retail_map, 0)
+    ) as computed_price
+  from distributor_products dp
+  cross join markup
+  where dp.is_hidden = false
+),
+ranked as (
+  select
+    p.*,
+    row_number() over (
+      partition by coalesce(nullif(trim(p.upc), ''), p.id::text)
+      order by
+        (p.quantity_available > 0) desc,
+        p.computed_price asc,
+        (p.image_url is not null) desc,
+        p.id
+    ) as rn
+  from priced p
+)
+select
+  id,
+  distributor,
+  name,
+  manufacturer,
+  category,
+  caliber,
+  description,
+  computed_price as price,
+  case
+    when quantity_available > 5 then 'in_stock'
+    when quantity_available > 0 then 'limited'
+    else 'out'
+  end as stock,
+  image_url,
+  is_firearm,
+  last_synced_at,
+  firearm_type
+from ranked
+where rn = 1;
