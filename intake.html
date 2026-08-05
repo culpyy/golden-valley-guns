@@ -5,15 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <title>Ship Something to Us | Golden Valley Guns LLC | Golden Valley, AZ</title>
-  <meta name="description" content="Shipping a parts kit or firearm to Golden Valley Guns LLC? Fill out the intake form and print it to include in your box." />
+  <meta name="description" content="Shipping a parts kit or firearm to Golden Valley Guns LLC? Get a reference code in under a minute and know exactly how to box it up." />
   <meta name="robots" content="index, follow" />
   <meta property="og:title" content="Ship Something to Us | Golden Valley Guns LLC" />
-  <meta property="og:description" content="Print a filled-out intake form to include in your box before you ship a parts kit or firearm to Golden Valley Guns LLC." />
+  <meta property="og:description" content="Get a reference code before you ship a parts kit or firearm to Golden Valley Guns LLC, and know exactly how to label the box." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://goldenvalleygunsllc.com/intake.html" />
   <meta property="og:image" content="https://goldenvalleygunsllc.com/images/logo.png" />
   <link rel="stylesheet" href="css/style.css" />
   <style>
+    /* ── TOP NOTICES ── */
     .intake-note {
       font-size: 13px;
       color: var(--muted);
@@ -21,57 +22,81 @@
       background: var(--surface);
       border-left: 3px solid var(--gold);
       padding: 16px 20px;
-      margin-top: 20px;
+    }
+    .intake-notices {
+      max-width: 560px;
+      margin: 0 auto 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
     }
 
-    /* ── HOW-TO STEPS ── */
-    .howto-steps {
-      max-width: 1100px;
-      margin-bottom: 8px;
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 16px;
+    /* ── WIZARD ── */
+    .wizard-wrap { max-width: 560px; margin: 0 auto; }
+    .wizard-progress {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 22px;
     }
-    .howto-step {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      padding: 20px 18px;
+    .wizard-progress-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--gold-light);
+      white-space: nowrap;
+    }
+    .wizard-progress-bar {
+      flex: 1;
+      height: 3px;
+      background: var(--border);
       position: relative;
     }
-    .howto-step-num {
-      font-family: 'Big Shoulders Display', sans-serif;
-      font-weight: 800;
-      font-size: 28px;
-      color: var(--gold-light);
-      line-height: 1;
-      margin-bottom: 10px;
+    .wizard-progress-fill {
+      height: 100%;
+      background: var(--gold-light);
+      transition: width 0.3s ease;
     }
-    .howto-step h5 {
-      font-size: 13px;
+    .wizard-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 32px;
+    }
+    .wizard-step { display: none; }
+    .wizard-step.active { display: block; }
+    .wizard-step h2 {
+      font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
+      font-size: 24px;
       letter-spacing: 1px;
       color: var(--text);
-      margin: 0 0 6px;
+      margin: 0 0 4px;
     }
-    .howto-step p {
-      font-size: 12px;
+    .wizard-step-desc {
+      font-size: 13px;
       color: var(--muted);
+      margin-bottom: 22px;
       line-height: 1.6;
-      margin: 0;
     }
-    @media (max-width: 760px) {
-      .howto-steps { grid-template-columns: 1fr 1fr; }
+    .wizard-nav {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
     }
-    @media (max-width: 480px) {
-      .howto-steps { grid-template-columns: 1fr; }
+    .wizard-nav .btn-primary,
+    .wizard-nav .btn-secondary { flex: 1; justify-content: center; }
+
+    @media (max-width: 580px) {
+      .wizard-card { padding: 24px 20px; }
     }
 
-    /* ── REFERENCE CODE (on-screen + slip) ── */
+    /* ── REFERENCE CODE + RESULT ── */
     .ref-code-box {
       background: var(--bg);
       border: 2px solid var(--gold);
       padding: 18px 20px;
       text-align: center;
-      margin: 20px 0;
+      margin-bottom: 20px;
     }
     .ref-code-label {
       font-size: 11px;
@@ -86,80 +111,86 @@
       font-weight: 700;
       letter-spacing: 3px;
       color: var(--gold-light);
+      word-break: break-all;
     }
-    .ref-code-instruction {
-      font-size: 12px;
+    .result-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .result-step {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      font-size: 13px;
       color: var(--text);
-      margin-top: 10px;
       line-height: 1.6;
     }
-    .ref-code-instruction strong { color: var(--gold-light); }
-
-    /* ── SLIP / CONFIRMATION ── */
-    .intake-slip {
-      display: none;
-      max-width: 560px;
-      background: var(--surface);
-      border: 1px solid var(--gold);
-      padding: 40px;
-    }
-    .intake-slip.show { display: block; }
-    .slip-brand {
+    .result-step-num {
+      flex-shrink: 0;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--gold-light);
+      color: #000;
       font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
-      font-size: 20px;
-      letter-spacing: 1.5px;
-      color: var(--text);
-      margin-bottom: 2px;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
-    .slip-address { font-size: 12px; color: var(--muted); margin-bottom: 24px; }
-    .slip-title {
+    .result-address {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+    .result-address strong {
+      display: block;
       font-size: 11px;
       letter-spacing: 2px;
       text-transform: uppercase;
       color: var(--gold-light);
-      margin-bottom: 16px;
+      margin-bottom: 6px;
     }
+    .slip-details { margin-top: 4px; }
     .slip-row { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-top: 1px solid var(--border); font-size: 13px; }
     .slip-row span:first-child { color: var(--muted); }
     .slip-row span:last-child { color: var(--text); text-align: right; }
-    .slip-actions { display: flex; gap: 12px; margin-top: 28px; flex-wrap: wrap; }
 
     @media print {
       /* `visibility: hidden` alone leaves every hidden element's layout
          height in place (nav, hero padding, footer, etc. easily add up to
-         more than one page), which pushed the slip itself past a page
+         more than one page), which pushed the printed card past a page
          boundary and printed it split across two pages with a border
          re-drawn on each half. `display: none` removes that height
-         entirely so the slip is the only thing left in the page flow. */
-      #ageGate, nav, .page-header, .contact-info, footer, .howto-steps { display: none !important; }
-      section, .contact-grid, .fade-in { padding: 0 !important; margin: 0 !important; gap: 0 !important; }
-      .contact-grid { grid-template-columns: 1fr !important; }
+         entirely so the result card is the only thing left in the page flow. */
+      #ageGate, nav, .page-header, .intake-notices, .wizard-progress, footer { display: none !important; }
+      section { padding: 0 !important; margin: 0 !important; }
 
       @page { margin: 0.5in; }
 
-      .intake-slip {
-        display: block !important;
-        position: static;
+      .wizard-card {
         border: 1px solid #000;
         width: 100%;
         max-width: none;
         padding: 24px;
         break-inside: avoid;
       }
-      /* Every text color on the slip is a light-on-dark theme value
+      /* Every text color on the site is a light-on-dark theme value
          (--text/--silver/--muted are all near-white to mid-gray) - fine on
-         the site's dark background, but printed on plain white paper that
-         leaves the actual customer/build info almost invisible, defeating
-         the point of a slip meant to go in the box. Force real black. */
-      .intake-slip, .intake-slip * { color: #000 !important; }
+         the dark background, but printed on plain white paper that leaves
+         the actual customer/build info almost invisible, defeating the
+         point of a slip meant to go in the box. Force real black. */
+      .wizard-card, .wizard-card * { color: #000 !important; }
       .slip-row { padding: 6px 0; }
-      .slip-actions { display: none !important; }
+      .wizard-nav, #printSlipBtn, #startOverBtn { display: none !important; }
       .ref-code-box { border: 2px solid #000 !important; background: none !important; }
       .ref-code-value { color: #000 !important; }
-    }
-
-    @media (max-width: 580px) {
-      .intake-slip { padding: 24px; }
+      .result-step-num { background: #000 !important; color: #fff !important; }
     }
   </style>
 </head>
@@ -197,7 +228,7 @@
     <ul class="nav-links">
       <li><a href="index.html">Home</a></li>
       <li><a href="services.html">Services</a></li>
-      <li><a href="intake.html">Ship to Us</a></li>
+      <li><a href="intake.html" class="active">Ship to Us</a></li>
       <li><a href="inshop.html">In Shop</a></li>
       <li><a href="gallery.html">Gallery</a></li>
       <li><a href="shop.html">Shop</a></li>
@@ -217,150 +248,157 @@
   <div class="page-header">
     <div class="section-label">Before You Ship</div>
     <h1>Ship Something to Us</h1>
-    <p>Boxes that show up with no name, no note, and nothing identifying them are a real problem. It's happened. Follow the 4 steps below and yours won't be one of them.</p>
+    <p>Two short steps and you'll have a reference code. Write it on the box and we'll know exactly what showed up and who it's from.</p>
   </div>
 
-  <!-- HOW TO SHIP IT -->
-  <section style="padding-top:0;">
-    <div class="howto-steps">
-      <div class="howto-step">
-        <div class="howto-step-num">1</div>
-        <h5>CALL OR TEXT FIRST</h5>
-        <p>Especially for NFA items (suppressors, SBRs, SBSs) or anything you're not sure about. (928) 727-0893.</p>
+  <!-- WIZARD -->
+  <section>
+    <div class="intake-notices">
+      <div class="intake-note">
+        <strong style="color:var(--text);">Shipping an NFA item (suppressor, SBR, SBS), or not sure what applies?</strong> Call or text us first at <a href="tel:9287270893" class="tel-link">(928) 727-0893</a> before you send anything.
       </div>
-      <div class="howto-step">
-        <div class="howto-step-num">2</div>
-        <h5>FILL OUT THE FORM BELOW</h5>
-        <p>Takes under a minute. You'll get a reference code, and you'll need it for the next step.</p>
-      </div>
-      <div class="howto-step">
-        <div class="howto-step-num">3</div>
-        <h5>PRINT IT, PUT IT IN THE BOX</h5>
-        <p>The printed page goes inside the box with whatever you're sending.</p>
-      </div>
-      <div class="howto-step">
-        <div class="howto-step-num">4</div>
-        <h5>LABEL THE OUTSIDE, THEN SHIP</h5>
-        <p>Write your name and the reference code on the outside of the box before you tape it shut.</p>
+      <div class="legal-notice">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <p><strong>Firearm sales restriction:</strong> We do not sell, ship, transfer, or source firearms for customers in California, New York, New Jersey, Massachusetts, Connecticut, Illinois, Maryland, Hawaii, Rhode Island, or Washington D.C. due to state and local law.</p>
       </div>
     </div>
-  </section>
 
-  <!-- INTAKE SECTION -->
-  <section>
-    <div class="contact-grid">
-
-      <!-- INFO -->
-      <div class="contact-info fade-in">
-        <div class="info-block">
-          <h4>Ship To</h4>
-          <p>Golden Valley Guns LLC<br>7088 W Jupiter Dr<br>Golden Valley, AZ 86413</p>
-        </div>
-        <div class="info-block">
-          <h4>Phone</h4>
-          <p><a href="tel:9287270893">(928) 727-0893</a></p>
-        </div>
-        <div class="intake-note">
-          This form doesn't replace calling ahead. For anything involving NFA items or FFL transfer specifics, call us first at (928) 727-0893. Otherwise, it just gets your shipment matched to your info the moment it lands.
-        </div>
-        <div class="legal-notice" style="margin-top: 20px;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          <p><strong>Firearm sales restriction:</strong> We do not sell, ship, transfer, or source firearms for customers in California, New York, New Jersey, Massachusetts, Connecticut, Illinois, Maryland, Hawaii, Rhode Island, or Washington D.C. due to state and local law.</p>
-        </div>
+    <div class="wizard-wrap">
+      <div class="wizard-progress" id="wizardProgress">
+        <span class="wizard-progress-label" id="wizardProgressLabel">Step 1 of 2</span>
+        <div class="wizard-progress-bar"><div class="wizard-progress-fill" id="wizardProgressFill" style="width:50%;"></div></div>
       </div>
 
-      <!-- FORM -->
-      <div class="fade-in">
-        <form id="intakeForm" class="contact-form" novalidate>
+      <div class="wizard-card">
+        <form id="intakeForm" novalidate>
           <p style="position:absolute;left:-9999px;">
             <label>Leave this field blank: <input name="_gotcha" id="i-gotcha" /></label>
           </p>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="i-name">Full Name</label>
-              <input type="text" id="i-name" placeholder="John Smith" required />
+
+          <!-- STEP 1: CONTACT INFO -->
+          <div class="wizard-step active" id="wizardStep1">
+            <h2>Your Info</h2>
+            <p class="wizard-step-desc">So we can match your shipment to you and send a confirmation.</p>
+            <div class="contact-form">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="i-name">Full Name</label>
+                  <input type="text" id="i-name" placeholder="John Smith" required />
+                </div>
+                <div class="form-group">
+                  <label for="i-phone">Phone</label>
+                  <input type="tel" id="i-phone" placeholder="(928) 555-0100" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="i-email">Email</label>
+                <input type="email" id="i-email" placeholder="you@example.com" />
+              </div>
+              <p class="form-note" style="margin-top:-8px;">Give us at least one: email or phone. Add an email and we'll send your reference code there too.</p>
             </div>
-            <div class="form-group">
-              <label for="i-phone">Phone</label>
-              <input type="tel" id="i-phone" placeholder="(928) 555-0100" />
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="i-email">Email</label>
-            <input type="email" id="i-email" placeholder="you@example.com" />
-          </div>
-          <p class="form-note" style="margin-top:-8px;">Give us at least one: email or phone.</p>
-          <div class="form-group">
-            <label for="i-service">What's This For?</label>
-            <select id="i-service" required>
-              <option value="" disabled selected>Select a service</option>
-              <option value="custom_build">Custom Build</option>
-              <option value="parts_kit">Parts Kit Build</option>
-              <option value="gunsmithing">Gunsmithing / Repair</option>
-              <option value="transfer">FFL Transfer</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="i-type">Firearm Type</label>
-              <select id="i-type">
-                <option>Rifle</option>
-                <option>Pistol</option>
-                <option>Shotgun</option>
-                <option>Short-Barreled Rifle</option>
-                <option>Short-Barreled Shotgun</option>
-                <option>Suppressor</option>
-                <option>Other</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="i-caliber">Caliber (optional)</label>
-              <input type="text" id="i-caliber" placeholder="7.62x39mm" />
+            <div class="wizard-nav">
+              <button type="button" id="toStep2Btn" class="btn-primary">Next: What You're Sending &#8594;</button>
             </div>
           </div>
-          <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
-            <input type="checkbox" id="i-nfa" style="width:16px;height:16px;accent-color:var(--gold-light);cursor:pointer;" />
-            <label for="i-nfa" style="text-transform:none;letter-spacing:normal;font-size:13px;cursor:pointer;">This is an NFA item (suppressor, SBR, SBS)</label>
+
+          <!-- STEP 2: SHIPMENT DETAILS -->
+          <div class="wizard-step" id="wizardStep2">
+            <h2>What You're Sending</h2>
+            <p class="wizard-step-desc">Takes a few seconds. This is what lets us know what to expect before it arrives.</p>
+            <div class="contact-form">
+              <div class="form-group">
+                <label for="i-service">What's This For?</label>
+                <select id="i-service" required>
+                  <option value="" disabled selected>Select a service</option>
+                  <option value="custom_build">Custom Build</option>
+                  <option value="parts_kit">Parts Kit Build</option>
+                  <option value="gunsmithing">Gunsmithing / Repair</option>
+                  <option value="transfer">FFL Transfer</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="i-type">Firearm Type</label>
+                  <select id="i-type">
+                    <option>Rifle</option>
+                    <option>Pistol</option>
+                    <option>Shotgun</option>
+                    <option>Short-Barreled Rifle</option>
+                    <option>Short-Barreled Shotgun</option>
+                    <option>Suppressor</option>
+                    <option>Other</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="i-caliber">Caliber (optional)</label>
+                  <input type="text" id="i-caliber" placeholder="7.62x39mm" />
+                </div>
+              </div>
+              <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
+                <input type="checkbox" id="i-nfa" style="width:16px;height:16px;accent-color:var(--gold-light);cursor:pointer;" />
+                <label for="i-nfa" style="text-transform:none;letter-spacing:normal;font-size:13px;cursor:pointer;">This is an NFA item (suppressor, SBR, SBS)</label>
+              </div>
+              <p class="form-note" id="i-nfa-locked-note" style="display:none;margin-top:-8px;">Locked on: the firearm type you selected is an NFA item.</p>
+              <div class="form-group">
+                <label for="i-notes">Notes</label>
+                <textarea id="i-notes" placeholder="What's in the box, what you want done..."></textarea>
+              </div>
+            </div>
+            <p class="form-note" id="intakeError" style="display:none;color:#c0392b;"></p>
+            <div class="wizard-nav">
+              <button type="button" id="backToStep1Btn" class="btn-secondary">&#8592; Back</button>
+              <button type="submit" id="intakeSubmitBtn" class="btn-primary">Get My Reference Code &#8594;</button>
+            </div>
           </div>
-          <p class="form-note" id="i-nfa-locked-note" style="display:none;margin-top:-8px;">Locked on: the firearm type you selected is an NFA item.</p>
-          <div class="form-group">
-            <label for="i-notes">Notes</label>
-            <textarea id="i-notes" placeholder="What's in the box, what you want done..."></textarea>
-          </div>
-          <button type="submit" id="intakeSubmitBtn" class="btn-primary" style="margin-top: 8px; width: 100%; justify-content: center;">
-            Generate My Shipping Form &#8594;
-          </button>
         </form>
 
-        <!-- SLIP (shown after generating the form) -->
-        <div class="intake-slip" id="intakeSlip">
-          <div class="slip-brand">Golden Valley Guns LLC</div>
-          <div class="slip-address">7088 W Jupiter Dr, Golden Valley, AZ 86413 &middot; (928) 727-0893</div>
-          <div class="slip-title">Shipment Intake Form: <span id="slipDate">&mdash;</span></div>
+        <!-- STEP 3: RESULT -->
+        <div class="wizard-step" id="wizardStep3">
+          <h2>You're Set</h2>
+          <p class="wizard-step-desc" id="resultIntro">Here's your reference code and what to do next.</p>
+
           <div class="ref-code-box">
             <div class="ref-code-label">Your Reference Code</div>
             <div class="ref-code-value" id="slipCode">&mdash;</div>
-            <div class="ref-code-instruction"><strong>1.</strong> Print this page &amp; put it inside the box. <strong>2.</strong> Write your name and this code on the <strong>outside</strong> of the box before you ship it.</div>
           </div>
+
+          <div class="result-steps">
+            <div class="result-step"><span class="result-step-num">1</span><span>Print this page (or write the code down) and put it <strong>inside</strong> the box.</span></div>
+            <div class="result-step"><span class="result-step-num">2</span><span>Write your name and this code on the <strong>outside</strong> of the box before you tape it shut.</span></div>
+            <div class="result-step"><span class="result-step-num">3</span><span>Ship it to the address below.</span></div>
+          </div>
+
+          <div class="result-address">
+            <strong>Ship To</strong>
+            Golden Valley Guns LLC<br>
+            7088 W Jupiter Dr<br>
+            Golden Valley, AZ 86413<br>
+            (928) 727-0893
+          </div>
+
+          <p class="form-note" id="slipEmailNote" style="display:none;margin-top:-8px;margin-bottom:16px;"></p>
           <p class="form-note" id="slipOfflineNote" style="display:none;color:#c0392b;margin-top:-8px;margin-bottom:16px;">We couldn't save this online just now. Please also call or text us at (928) 727-0893 to let us know it's coming.</p>
-          <div class="slip-row" style="border-top:none;padding-top:0;"><span>Name</span><span id="slipName">&mdash;</span></div>
-          <div class="slip-row"><span>Phone</span><span id="slipPhone">&mdash;</span></div>
-          <div class="slip-row"><span>Email</span><span id="slipEmail">&mdash;</span></div>
-          <div class="slip-row"><span>Service</span><span id="slipService">&mdash;</span></div>
-          <div class="slip-row"><span>Firearm Type</span><span id="slipType">&mdash;</span></div>
-          <div class="slip-row"><span>Caliber</span><span id="slipCaliber">&mdash;</span></div>
-          <div class="slip-row"><span>NFA Item</span><span id="slipNfa">&mdash;</span></div>
-          <div class="slip-row" id="slipNotesRow" style="display:none;flex-direction:column;align-items:flex-start;gap:6px;">
-            <span>Notes</span><span id="slipNotes" style="text-align:left;"></span>
+
+          <div class="slip-details">
+            <div class="slip-row" style="border-top:none;padding-top:0;"><span>Name</span><span id="slipName">&mdash;</span></div>
+            <div class="slip-row"><span>Phone</span><span id="slipPhone">&mdash;</span></div>
+            <div class="slip-row"><span>Email</span><span id="slipEmail">&mdash;</span></div>
+            <div class="slip-row"><span>Service</span><span id="slipService">&mdash;</span></div>
+            <div class="slip-row"><span>Firearm Type</span><span id="slipType">&mdash;</span></div>
+            <div class="slip-row"><span>Caliber</span><span id="slipCaliber">&mdash;</span></div>
+            <div class="slip-row"><span>NFA Item</span><span id="slipNfa">&mdash;</span></div>
+            <div class="slip-row" id="slipNotesRow" style="display:none;flex-direction:column;align-items:flex-start;gap:6px;">
+              <span>Notes</span><span id="slipNotes" style="text-align:left;"></span>
+            </div>
           </div>
-          <div class="slip-actions">
-            <button type="button" id="printSlipBtn" class="btn-primary">Print This Form</button>
+
+          <div class="wizard-nav">
+            <button type="button" id="printSlipBtn" class="btn-primary">Print This Page</button>
+            <button type="button" id="startOverBtn" class="btn-secondary">Ship Something Else</button>
           </div>
         </div>
-        <p class="form-note" id="intakeError" style="display:none;color:#c0392b;"></p>
       </div>
-
     </div>
   </section>
 
@@ -423,6 +461,46 @@
     const intakeForm = document.getElementById('intakeForm');
     const errorEl = document.getElementById('intakeError');
 
+    // ── WIZARD STEP NAVIGATION ──
+    const steps = [
+      document.getElementById('wizardStep1'),
+      document.getElementById('wizardStep2'),
+      document.getElementById('wizardStep3')
+    ];
+    const progressLabel = document.getElementById('wizardProgressLabel');
+    const progressFill = document.getElementById('wizardProgressFill');
+    const progressWrap = document.getElementById('wizardProgress');
+
+    function goToStep(n) {
+      steps.forEach((s, i) => s.classList.toggle('active', i === n - 1));
+      if (n <= 2) {
+        progressWrap.style.display = '';
+        progressLabel.textContent = `Step ${n} of 2`;
+        progressFill.style.width = n === 1 ? '50%' : '100%';
+      } else {
+        progressWrap.style.display = 'none';
+      }
+      window.scrollTo({ top: document.querySelector('.wizard-wrap').getBoundingClientRect().top + window.scrollY - 90, behavior: 'smooth' });
+    }
+
+    document.getElementById('toStep2Btn').addEventListener('click', () => {
+      const name = document.getElementById('i-name').value.trim();
+      const email = document.getElementById('i-email').value.trim();
+      const phone = document.getElementById('i-phone').value.trim();
+      if (!name || (!email && !phone)) {
+        errorEl.textContent = 'Please add your name, and at least an email or phone number.';
+        errorEl.style.display = 'block';
+        return;
+      }
+      errorEl.style.display = 'none';
+      goToStep(2);
+    });
+
+    document.getElementById('backToStep1Btn').addEventListener('click', () => {
+      errorEl.style.display = 'none';
+      goToStep(1);
+    });
+
     // A customer picking "Short-Barreled Rifle" etc. but leaving the NFA
     // checkbox unchecked would let Shawn's intake record understate a
     // regulated item - lock it on (and disable unchecking) whenever the
@@ -462,10 +540,10 @@
 
     // The reference code has to come from the server (src/api/intake.js
     // generates and stores it) for Shawn to actually be able to look it up
-    // later - so unlike the old fire-and-forget save, this now awaits the
-    // request. A short timeout plus a clearly-marked fallback code keeps a
-    // flaky connection from blocking the customer entirely: they still get
-    // a printable slip and instructions either way, just with a prompt to
+    // later - so this awaits the request rather than firing and forgetting.
+    // A short timeout plus a clearly-marked fallback code keeps a flaky
+    // connection from blocking the customer entirely: they still get a
+    // printable result and instructions either way, just with a prompt to
     // also call/text if the online save didn't go through.
     intakeForm.addEventListener('submit', async e => {
       e.preventDefault();
@@ -481,8 +559,8 @@
       const notes   = document.getElementById('i-notes').value.trim();
       const gotcha  = document.getElementById('i-gotcha').value;
 
-      if (!name || !service || (!email && !phone)) {
-        errorEl.textContent = 'Please add your name, a service type, and at least an email or phone number.';
+      if (!service) {
+        errorEl.textContent = 'Please pick what this is for.';
         errorEl.style.display = 'block';
         return;
       }
@@ -493,6 +571,7 @@
 
       let intakeCode;
       let offline = false;
+      let emailSent = false;
       try {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 6000);
@@ -506,6 +585,7 @@
         const data = await res.json();
         if (!res.ok || !data.intakeCode) throw new Error(data.error || 'Save failed');
         intakeCode = data.intakeCode;
+        emailSent = !!data.emailSent;
       } catch (err) {
         console.error('Intake save failed - using an offline reference code instead:', err);
         intakeCode = fallbackCode();
@@ -513,11 +593,19 @@
       }
 
       submitBtn.disabled = false;
-      submitBtn.textContent = 'Generate My Shipping Form →';
+      submitBtn.textContent = "Get My Reference Code →";
 
-      document.getElementById('slipDate').textContent = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
       document.getElementById('slipCode').textContent = intakeCode;
       document.getElementById('slipOfflineNote').style.display = offline ? 'block' : 'none';
+
+      const emailNoteEl = document.getElementById('slipEmailNote');
+      if (!offline && emailSent) {
+        emailNoteEl.textContent = `We also emailed a copy of this to ${email}.`;
+        emailNoteEl.style.display = 'block';
+      } else {
+        emailNoteEl.style.display = 'none';
+      }
+
       document.getElementById('slipName').textContent = name;
       document.getElementById('slipPhone').textContent = phone || '—';
       document.getElementById('slipEmail').textContent = email || '—';
@@ -534,11 +622,17 @@
         notesRow.style.display = 'none';
       }
 
-      intakeForm.style.display = 'none';
-      document.getElementById('intakeSlip').classList.add('show');
+      goToStep(3);
     });
 
     document.getElementById('printSlipBtn').addEventListener('click', () => window.print());
+
+    document.getElementById('startOverBtn').addEventListener('click', () => {
+      intakeForm.reset();
+      syncNfaFromType();
+      errorEl.style.display = 'none';
+      goToStep(1);
+    });
   </script>
 </body>
 </html>

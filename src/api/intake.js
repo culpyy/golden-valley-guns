@@ -111,5 +111,51 @@ export async function handleIntake(request, env) {
     console.error('Intake notification email failed (submission was still saved):', err);
   }
 
-  return jsonResponse({ success: true, intakeCode });
+  // Customer confirmation - only sent if they gave an email, since some
+  // customers only leave a phone number. This is the backup copy of the
+  // reference code and shipping instructions in case the printed slip gets
+  // lost or they never printed it at all. Same best-effort posture as
+  // Shawn's notification above - independent try/catch so one email
+  // failing never blocks the other, and neither blocks the saved submission.
+  let emailSent = false;
+  if (email) {
+    try {
+      await sendEmail(env, {
+        to: email,
+        subject: `Your shipping reference code: ${intakeCode} - Golden Valley Guns`,
+        text: [
+          `Hi ${name.split(' ')[0]},`,
+          ``,
+          `Thanks for letting us know something's headed our way. Here's your reference code:`,
+          ``,
+          intakeCode,
+          ``,
+          `Before you ship it:`,
+          `1. Print this email (or just write the code down) and put it inside the box.`,
+          `2. Write your name and this code on the outside of the box before you tape it shut.`,
+          ``,
+          `Ship to:`,
+          `Golden Valley Guns LLC`,
+          `7088 W Jupiter Dr`,
+          `Golden Valley, AZ 86413`,
+          ``,
+          `What you told us:`,
+          `Service: ${serviceLabel}`,
+          firearmType ? `Firearm Type: ${firearmType}` : '',
+          caliber ? `Caliber: ${caliber}` : '',
+          isNfa ? `NFA item: yes` : '',
+          notes ? `Notes: ${notes}` : '',
+          ``,
+          `Questions, or shipping an NFA item? Call or text us first at (928) 727-0893.`,
+          ``,
+          `- Golden Valley Guns`
+        ].filter(Boolean).join('\n')
+      });
+      emailSent = true;
+    } catch (err) {
+      console.error('Intake customer confirmation email failed (submission was still saved):', err);
+    }
+  }
+
+  return jsonResponse({ success: true, intakeCode, emailSent });
 }
