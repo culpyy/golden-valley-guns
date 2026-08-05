@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <title>In Shop | Active Builds | Golden Valley Guns LLC | Golden Valley, AZ</title>
-  <meta name="description" content="Live build board for Golden Valley Guns LLC — see what's currently in progress, from intake through ATF transfer. FFL 07 manufacturer in Golden Valley, Arizona." />
+  <meta name="description" content="Live build board for Golden Valley Guns LLC. See what's currently in progress, from intake through ATF transfer. FFL 07 manufacturer in Golden Valley, Arizona." />
   <meta name="keywords" content="gunsmith Golden Valley AZ, build status Arizona, FFL 07 Arizona, NFA build tracking" />
   <meta name="robots" content="index, follow" />
   <meta property="og:title" content="In Shop | Golden Valley Guns LLC | Golden Valley, AZ" />
-  <meta property="og:description" content="Live build board for Golden Valley Guns LLC — see what's currently in progress, from intake through ATF transfer." />
+  <meta property="og:description" content="Live build board for Golden Valley Guns LLC. See what's currently in progress, from intake through ATF transfer." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://goldenvalleygunsllc.com/inshop.html" />
   <meta property="og:image" content="https://goldenvalleygunsllc.com/images/logo.png" />
@@ -522,7 +522,7 @@
       <h2>Age Verification Required</h2>
       <p>You must be <strong>18 years of age or older</strong> to enter this site. Golden Valley Guns LLC is an FFL 07 licensed firearms manufacturer and dealer. By continuing, you confirm you meet the minimum age requirement under federal and Arizona law.</p>
       <div class="age-gate-actions">
-        <button id="ageGateEnter" class="btn-primary">I Am 18 or Older &mdash; Enter</button>
+        <button id="ageGateEnter" class="btn-primary">I'm 18 or Older</button>
         <a href="https://www.google.com" class="btn-secondary">Exit</a>
       </div>
     </div>
@@ -546,10 +546,10 @@
     <ul class="nav-links">
       <li><a href="index.html">Home</a></li>
       <li><a href="services.html">Services</a></li>
+      <li><a href="intake.html">Ship to Us</a></li>
       <li><a href="inshop.html" class="active">In Shop</a></li>
       <li><a href="gallery.html">Gallery</a></li>
       <li><a href="shop.html">Shop</a></li>
-      <li><a href="intake.html">Ship to Us</a></li>
       <li><a href="contact.html">Contact</a></li>
     </ul>
     <a href="cart.html" class="nav-cart-icon" aria-label="Cart">
@@ -588,7 +588,7 @@
   <div class="page-header">
     <div class="section-label">Active Work</div>
     <h1>In Shop</h1>
-    <p>Live build board, updated as work progresses. Looking to start something new? See <a href="services.html" class="tel-link">what we work on</a>.</p>
+    <p>Live build board, updated as work progresses. Looking to start something new? See <a href="services.html" class="tel-link">what we work on</a>, or <a href="intake.html" class="tel-link">ship us your kit</a> if you already have one.</p>
   </div>
 
   <!-- ACTIVE BUILDS -->
@@ -623,10 +623,10 @@
         <ul>
           <li><a href="index.html">Home</a></li>
           <li><a href="services.html">Services</a></li>
+          <li><a href="intake.html">Ship to Us</a></li>
           <li><a href="inshop.html">In Shop</a></li>
           <li><a href="gallery.html">Gallery</a></li>
           <li><a href="shop.html">Shop</a></li>
-      <li><a href="intake.html">Ship to Us</a></li>
           <li><a href="contact.html">Contact</a></li>
         </ul>
       </div>
@@ -741,7 +741,7 @@
             ${b.atf_form ? `<div class="atf-item"><div class="atf-lbl">ATF Form</div><div class="atf-val form-ref">${escapeHtml(b.atf_form)}</div></div>` : ''}
             <div class="atf-item"><div class="atf-lbl">Filed</div><div class="atf-val">${formatDate(b.atf_filed)}</div></div>
             ${daysAgo(b.atf_filed) !== null ? `<div class="atf-item"><div class="atf-lbl">Days Pending</div><div class="atf-val ${daysAgo(b.atf_filed) > 60 ? 'days-long' : ''}">${daysAgo(b.atf_filed)}</div></div>` : ''}
-            ${b.status === 'atf-approved' ? `<div style="width:100%;"><div class="atf-approved-tag">ATF Approved — Ready to Transfer</div></div>` : ''}
+            ${b.status === 'atf-approved' ? `<div style="width:100%;"><div class="atf-approved-tag">ATF Approved, Ready to Transfer</div></div>` : ''}
           </div>` : '';
 
         const notesBlock = b.notes ? `<div class="build-notes">${escapeHtml(b.notes)}</div>` : '';

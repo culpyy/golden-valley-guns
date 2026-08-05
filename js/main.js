@@ -39,7 +39,7 @@ const STATUS_LABELS = {
 };
 
 const STATUS_DESCRIPTIONS = {
-  'intake':        'Checked in — being assessed',
+  'intake':        'Checked in, being assessed',
   'parts-ordered': 'Waiting on parts',
   'in-progress':   'On the bench',
   'weld':          'Welding',
@@ -48,8 +48,8 @@ const STATUS_DESCRIPTIONS = {
   'refinishing':   'Coating/refinishing',
   'testing':       'Function check',
   'atf-filed':     'ATF pending approval',
-  'atf-approved':  'ATF approved — ready to transfer',
-  'ready':         'Done — ready for pickup'
+  'atf-approved':  'ATF approved, ready to transfer',
+  'ready':         'Done, ready for pickup'
 };
 
 function calcProgress(status, isNfa) {
@@ -130,23 +130,6 @@ if (filterBtns.length) {
   });
 }
 
-// Fade-in on scroll
-const observer = new IntersectionObserver(entries => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      entry.target.style.opacity = '1';
-      entry.target.style.transform = 'translateY(0)';
-    }
-  });
-}, { threshold: 0.08 });
-
-document.querySelectorAll('.fade-in').forEach(el => {
-  el.style.opacity = '0';
-  el.style.transform = 'translateY(24px)';
-  el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-  observer.observe(el);
-});
-
 // Contact form - submits to our own /api/contact (Cloudflare Worker + Email
 // Routing), not a third-party form service. Replaced Formspree 2026-07-19 -
 // it was still pointed at a placeholder form ID that was never swapped for
@@ -180,7 +163,7 @@ if (form) {
         }, 3000);
       })
       .catch(() => {
-        btn.textContent = 'Something went wrong — call us instead';
+        btn.textContent = 'Something went wrong, call us instead';
         btn.style.background = '#8a1a1a';
         btn.style.borderColor = '#8a1a1a';
         setTimeout(() => {
