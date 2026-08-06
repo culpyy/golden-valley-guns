@@ -563,6 +563,12 @@
         <div style="font-size:12px;color:var(--muted);letter-spacing:0.5px;">Builds missing a tracking code won't show up on customer lookups.</div>
         <button id="backfillCodesBtn" style="font-family:'Big Shoulders Display',sans-serif;font-weight:800;font-size:13px;letter-spacing:2px;padding:8px 18px;background:none;border:1px solid var(--border);color:var(--muted);cursor:pointer;transition:border-color 0.2s,color 0.2s;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold-light)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">Assign Missing Codes</button>
       </div>
+
+      <div class="section-hd" style="margin-top:40px;">
+        <h2>Completed Builds <span id="completedCount" style="color:var(--muted);font-size:15px;font-weight:400;letter-spacing:0;"></span></h2>
+        <button class="btn-edit" id="toggleCompletedBtn">Show</button>
+      </div>
+      <div id="completedBuildsTable" style="display:none;"></div>
     </div>
 
     <!-- ── ORDERS TAB ── -->
@@ -1066,13 +1072,35 @@
     });
 
     let buildsAllRows = [];
+    let completedExpanded = false;
 
     async function loadBuilds() {
       const { data, error } = await supabase.from('builds').select('*').order('received', { ascending: false });
       buildsAllRows = error ? [] : (data || []);
+
+      const active = buildsAllRows.filter(b => !b.completed_at);
+      const completed = buildsAllRows.filter(b => b.completed_at)
+        .sort((a, b) => new Date(b.completed_at) - new Date(a.completed_at));
+
+      renderActiveBuildsTable(active);
+      renderCompletedBuildsTable(completed);
+    }
+
+    function buildRowActions(b) {
+      const actions = [`<button class="btn-edit" onclick="editBuild('${b.id}')">Edit</button>`];
+      if (b.completed_at) {
+        actions.push(`<button class="btn-edit" onclick="reopenBuild('${b.id}')">Reopen</button>`);
+      } else if (b.status === 'ready') {
+        actions.push(`<button class="btn-save" onclick="markBuildComplete('${b.id}')">Mark Complete</button>`);
+      }
+      actions.push(`<button class="btn-delete" onclick="deleteBuild('${b.id}')">Delete</button>`);
+      return actions.join('');
+    }
+
+    function renderActiveBuildsTable(rows) {
       const container = document.getElementById('buildsTable');
-      if (error || !data || data.length === 0) {
-        container.innerHTML = '<div class="empty-state">No builds yet. Click "+ Add Build" to get started.</div>';
+      if (rows.length === 0) {
+        container.innerHTML = '<div class="empty-state">No active builds. Click "+ Add Build" to get started.</div>';
         return;
       }
       container.innerHTML = `
@@ -1089,7 +1117,7 @@
             </tr>
           </thead>
           <tbody>
-            ${data.map(b => `
+            ${rows.map(b => `
               <tr>
                 <td style="font-family:'Courier New',monospace;font-size:12px;color:var(--gold-light);letter-spacing:1.5px;">${escapeHtml(b.tracking_code) || '—'}</td>
                 <td class="title">${escapeHtml(b.title)}</td>
@@ -1098,15 +1126,76 @@
                 <td>${calcProgress(b.status, b.is_nfa)}%</td>
                 <td>${buildPaymentCell(b)}</td>
                 <td>
-                  <div class="row-actions">
-                    <button class="btn-edit" onclick="editBuild('${b.id}')">Edit</button>
-                    <button class="btn-delete" onclick="deleteBuild('${b.id}')">Delete</button>
-                  </div>
+                  <div class="row-actions">${buildRowActions(b)}</div>
                 </td>
               </tr>
             `).join('')}
           </tbody>
         </table>`;
+    }
+
+    // Separate from Active Builds so the working list doesn't fill up with
+    // guns that are already out the door - completed_at is set the moment
+    // Shawn clicks Mark Complete (only offered once a build is Ready), and
+    // never automatically. The count here is the actual running total of
+    // finished builds, not a guess from counting "Ready" rows (which mixes
+    // in builds that are done but haven't been picked up yet).
+    function renderCompletedBuildsTable(rows) {
+      document.getElementById('completedCount').textContent = rows.length ? `(${rows.length})` : '';
+      const container = document.getElementById('completedBuildsTable');
+      if (rows.length === 0) {
+        container.innerHTML = '<div class="empty-state">No completed builds yet.</div>';
+        return;
+      }
+      container.innerHTML = `
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Tracking Code</th>
+              <th>Title</th>
+              <th>Customer</th>
+              <th>Completed</th>
+              <th>Payment</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(b => `
+              <tr>
+                <td style="font-family:'Courier New',monospace;font-size:12px;color:var(--gold-light);letter-spacing:1.5px;">${escapeHtml(b.tracking_code) || '—'}</td>
+                <td class="title">${escapeHtml(b.title)}</td>
+                <td style="font-size:12px;">${escapeHtml(b.customer_name) || '—'}</td>
+                <td style="font-size:12px;">${new Date(b.completed_at).toLocaleDateString()}</td>
+                <td>${buildPaymentCell(b)}</td>
+                <td>
+                  <div class="row-actions">${buildRowActions(b)}</div>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>`;
+    }
+
+    document.getElementById('toggleCompletedBtn').addEventListener('click', () => {
+      completedExpanded = !completedExpanded;
+      document.getElementById('completedBuildsTable').style.display = completedExpanded ? '' : 'none';
+      document.getElementById('toggleCompletedBtn').textContent = completedExpanded ? 'Hide' : 'Show';
+    });
+
+    async function markBuildComplete(id) {
+      const build = buildsAllRows.find(b => b.id === id);
+      if (build && build.payment_status !== 'paid' && !confirm(`"${build.title}" isn't marked Paid yet. Mark it complete anyway?`)) return;
+      const { error } = await supabase.from('builds').update({ completed_at: new Date().toISOString() }).eq('id', id);
+      if (error) { showToast('Error: ' + error.message); return; }
+      showToast('Marked complete.');
+      loadBuilds();
+    }
+
+    async function reopenBuild(id) {
+      const { error } = await supabase.from('builds').update({ completed_at: null }).eq('id', id);
+      if (error) { showToast('Error: ' + error.message); return; }
+      showToast('Moved back to active builds.');
+      loadBuilds();
     }
 
     async function editBuild(id) {
