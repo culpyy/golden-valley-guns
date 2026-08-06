@@ -181,9 +181,10 @@
   </div>
 
   <!-- COMPLETED COUNT -->
-  <div id="galleryStat" style="display:none;padding:28px 48px;border-bottom:1px solid var(--border);align-items:baseline;gap:14px;">
-    <span style="font-family:'Big Shoulders Display',sans-serif;font-weight:800;font-size:clamp(36px,6vw,52px);color:var(--gold-light);line-height:1;" id="galleryStatCount"></span>
-    <span style="font-size:13px;letter-spacing:1px;color:var(--muted);" id="galleryStatLabel"></span>
+  <div id="galleryStat" style="display:none;padding:64px 48px;text-align:center;border-bottom:1px solid var(--border);background:radial-gradient(ellipse 60% 100% at 50% 0%, rgba(198,138,46,0.1) 0%, transparent 65%), var(--bg);">
+    <div style="font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--gold-light);margin-bottom:12px;">Proven Track Record</div>
+    <div style="font-family:'Big Shoulders Display',sans-serif;font-weight:800;font-size:clamp(64px,11vw,104px);color:var(--gold-light);line-height:1;" id="galleryStatCount"></div>
+    <div style="font-size:14px;letter-spacing:0.5px;color:var(--muted);margin-top:10px;" id="galleryStatLabel"></div>
   </div>
 
   <!-- GALLERY -->
@@ -283,7 +284,7 @@
       if (count > 0) {
         document.getElementById('galleryStatCount').textContent = count;
         document.getElementById('galleryStatLabel').textContent = count === 1 ? 'build completed and out the door' : 'builds completed and out the door';
-        document.getElementById('galleryStat').style.display = 'flex';
+        document.getElementById('galleryStat').style.display = 'block';
       }
     })();
 
