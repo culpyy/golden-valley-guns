@@ -180,6 +180,12 @@
     <p>Custom builds, parts work, and gunsmithing out of Golden Valley, AZ.</p>
   </div>
 
+  <!-- COMPLETED COUNT -->
+  <div id="galleryStat" style="display:none;padding:28px 48px;border-bottom:1px solid var(--border);align-items:baseline;gap:14px;">
+    <span style="font-family:'Big Shoulders Display',sans-serif;font-weight:800;font-size:clamp(36px,6vw,52px);color:var(--gold-light);line-height:1;" id="galleryStatCount"></span>
+    <span style="font-size:13px;letter-spacing:1px;color:var(--muted);" id="galleryStatLabel"></span>
+  </div>
+
   <!-- GALLERY -->
   <section>
 
@@ -269,6 +275,18 @@
   <script src="js/main.js"></script>
   <script src="js/cart.js"></script>
   <script>
+    // Real completed-build count, not a made-up number - hidden entirely
+    // if it's still 0 rather than showing a credibility stat that
+    // undermines itself. Same query/pattern as index.html's cred-strip.
+    (async () => {
+      const { count } = await supabase.from('builds_public').select('id', { count: 'exact', head: true }).not('completed_at', 'is', null);
+      if (count > 0) {
+        document.getElementById('galleryStatCount').textContent = count;
+        document.getElementById('galleryStatLabel').textContent = count === 1 ? 'build completed and out the door' : 'builds completed and out the door';
+        document.getElementById('galleryStat').style.display = 'flex';
+      }
+    })();
+
     // Always-shown builds (is_showcase) plus this many of the most recently
     // completed ones - rotation is just "top N by date," so an older build
     // naturally drops off the moment a newer one pushes past this limit.

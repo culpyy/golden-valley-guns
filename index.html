@@ -148,7 +148,11 @@
   </section>
 
   <!-- CREDENTIALS STRIP -->
-  <div class="cred-strip">
+  <div class="cred-strip" id="credStrip">
+    <div class="cred-item" id="completedStat" style="display:none;">
+      <div class="cred-label">Track Record</div>
+      <div class="cred-val" id="completedCount"></div>
+    </div>
     <div class="cred-item">
       <div class="cred-label">License</div>
       <div class="cred-val">FFL 07 Manufacturer</div>
@@ -325,6 +329,18 @@
   <script src="js/main.js"></script>
   <script src="js/cart.js"></script>
   <script>
+    // Real completed-build count, not a made-up number - hidden entirely
+    // if it's still 0 (a brand new shop, or before any builds have been
+    // marked Complete in the admin dashboard) rather than showing a
+    // credibility stat that undermines itself.
+    (async () => {
+      const { count } = await supabase.from('builds_public').select('id', { count: 'exact', head: true }).not('completed_at', 'is', null);
+      if (count > 0) {
+        document.getElementById('completedCount').textContent = `${count} Build${count === 1 ? '' : 's'} Completed`;
+        document.getElementById('completedStat').style.display = '';
+      }
+    })();
+
     document.querySelectorAll('.faq-item').forEach(item => {
       const toggle = () => {
         const isOpen = item.classList.toggle('open');
