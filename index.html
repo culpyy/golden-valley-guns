@@ -333,10 +333,21 @@
     // if it's still 0 (a brand new shop, or before any builds have been
     // marked Complete in the admin dashboard) rather than showing a
     // credibility stat that undermines itself.
+    //
+    // COMPLETED_BUILDS_BASE is real finished work from before this
+    // tracking feature existed - Shawn's own count as of 2026-08-06, not
+    // something the database has a row for. Everything marked Complete in
+    // the admin dashboard from here on stacks on top of it. If this ever
+    // needs to change, it's a plain code edit here and in gallery.html -
+    // same pattern as index.html's other static content, which per
+    // admin-dashboard.html's CONTENT_LABELS comment already goes through
+    // Braeden directly rather than an admin-editable field.
+    const COMPLETED_BUILDS_BASE = 24;
     (async () => {
       const { count } = await supabase.from('builds_public').select('id', { count: 'exact', head: true }).not('completed_at', 'is', null);
-      if (count > 0) {
-        document.getElementById('completedCount').textContent = `${count} Build${count === 1 ? '' : 's'} Completed`;
+      const total = COMPLETED_BUILDS_BASE + (count || 0);
+      if (total > 0) {
+        document.getElementById('completedCount').textContent = `${total} Build${total === 1 ? '' : 's'} Completed`;
         document.getElementById('completedStat').style.display = '';
       }
     })();

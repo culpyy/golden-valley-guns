@@ -279,11 +279,17 @@
     // Real completed-build count, not a made-up number - hidden entirely
     // if it's still 0 rather than showing a credibility stat that
     // undermines itself. Same query/pattern as index.html's cred-strip.
+    //
+    // COMPLETED_BUILDS_BASE is real finished work from before this
+    // tracking feature existed (see index.html for the full note) -
+    // keep this in sync with the same constant there if it ever changes.
+    const COMPLETED_BUILDS_BASE = 24;
     (async () => {
       const { count } = await supabase.from('builds_public').select('id', { count: 'exact', head: true }).not('completed_at', 'is', null);
-      if (count > 0) {
-        document.getElementById('galleryStatCount').textContent = count;
-        document.getElementById('galleryStatLabel').textContent = count === 1 ? 'build completed and out the door' : 'builds completed and out the door';
+      const total = COMPLETED_BUILDS_BASE + (count || 0);
+      if (total > 0) {
+        document.getElementById('galleryStatCount').textContent = total;
+        document.getElementById('galleryStatLabel').textContent = total === 1 ? 'build completed and out the door' : 'builds completed and out the door';
         document.getElementById('galleryStat').style.display = 'block';
       }
     })();
