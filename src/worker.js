@@ -21,12 +21,12 @@ import { addSecurityHeaders } from './lib/securityHeaders.js';
 // our own R2 bucket, see src/lib/imageCache.js) - both compliance blockers
 // from the 2026-07-17 pause are now cleared, sync is back on.
 //
-// Orion is NOT in this list - see ORION_SYNC_CRON below for why it runs on
-// its own separate trigger instead of bundled in here with the others.
+// Orion and Davidson's are NOT in this list - see ORION_SYNC_CRON and
+// DAVIDSONS_SYNC_CRON below for why they run on their own separate triggers
+// instead of bundled in here with the others.
 const SYNC_JOBS = [
   ['lipseys', runLipseys],
   ['rsr', runRsr],
-  ['davidsons', runDavidsons],
 ];
 
 // Must match one entry in wrangler.jsonc's triggers.crons exactly - image
@@ -61,6 +61,19 @@ const IMAGE_BACKFILL_CRON = '*/10 * * * *';
 // distributor-specific review step. Re-enabling now means Orion matches
 // against the full widened brand list (src/lib/catalogSync.js), by design.
 const ORION_SYNC_CRON = '15 */4 * * *';
+
+// Davidson's moved off the shared SYNC_JOBS cron 2026-08-07, same reasoning
+// as Orion above (see sync/davidsons.js's commit history for the actual
+// "Too many subrequests" incident this caused once it joined that shared
+// invocation). Unlike Orion, Davidson's per-run work is cheap once a cycle's
+// raw CSV is cached (see CATALOG_CACHE_KEY in sync/davidsons.js) - each
+// chunked run is just a Supabase read + parse/normalize ~1500 CSV lines +
+// upsert, no external distributor request at all except on the run that
+// starts a new cycle. That cheapness is why this runs far more often than
+// ORION_SYNC_CRON's 4-hour cadence: at CHUNK_SIZE=1500 against a ~10,550-row
+// catalog (~7 runs/cycle), 20 minutes means a full cycle finishes in ~2.3
+// hours instead of the ~28 hours it took sharing the 4-hour SYNC_JOBS cron.
+const DAVIDSONS_SYNC_CRON = '*/20 * * * *';
 
 async function route(request, env) {
   const url = new URL(request.url);
@@ -362,6 +375,15 @@ export default {
         runOrion(env)
           .then(count => console.log(`orion sync complete: ${count ?? 0} items upserted.`))
           .catch(err => console.error('orion sync failed:', err))
+      );
+      return;
+    }
+
+    if (event.cron === DAVIDSONS_SYNC_CRON) {
+      ctx.waitUntil(
+        runDavidsons(env)
+          .then(count => console.log(`davidsons sync complete: ${count ?? 0} items upserted.`))
+          .catch(err => console.error('davidsons sync failed:', err))
       );
       return;
     }

@@ -16,13 +16,15 @@
     "run_worker_first": true
   },
   "triggers": {
-    // "0 */4 * * *"  - full distributor catalog sync (all SYNC_JOBS), 6x/day.
-    //                  Widened from once daily 2026-07-20: at 1500 raw items/run
-    //                  (CHUNK_SIZE in sync/lipseys.js - see that file for why),
-    //                  once daily meant ~13 days to walk the full ~19,000-item
-    //                  catalog and unlock every row's image_source_name for
-    //                  backfillLipseysImages to act on. 6x/day cuts that to ~2
-    //                  days without changing the safe per-run chunk size.
+    // "0 */4 * * *"  - full distributor catalog sync (all SYNC_JOBS: Lipsey's,
+    //                  RSR), 6x/day. Widened from once daily 2026-07-20: at
+    //                  1500 raw items/run (CHUNK_SIZE in sync/lipseys.js - see
+    //                  that file for why), once daily meant ~13 days to walk
+    //                  the full ~19,000-item catalog and unlock every row's
+    //                  image_source_name for backfillLipseysImages to act on.
+    //                  6x/day cuts that to ~2 days without changing the safe
+    //                  per-run chunk size. Davidson's moved off this shared
+    //                  cron 2026-08-07 - see "*/20 * * * *" below.
     // "*/10 * * * *" - Lipsey's + Orion image backfill only, see
     //                  IMAGE_BACKFILL_CRON in src/worker.js for why this
     //                  needs its own frequent schedule instead of waiting
@@ -41,7 +43,22 @@
     //                  now match against the full widened brand list (see
     //                  src/lib/catalogSync.js), not just the handful it
     //                  happened to share with Lipsey's during testing.
-    "crons": ["0 */4 * * *", "*/10 * * * *", "15 */4 * * *"]
+    // "*/20 * * * *"  - Davidson's catalog sync (src/worker.js
+    //                  DAVIDSONS_SYNC_CRON), split off the shared 0 */4 * * *
+    //                  cron 2026-08-07 after adding Davidson's there pushed
+    //                  that invocation's combined subrequest count over
+    //                  Cloudflare's per-invocation limit (see
+    //                  src/lib/imageCache.js/src/sync/lipseys.js history for
+    //                  the incident). Runs far more often than Orion's 4-hour
+    //                  cadence because Davidson's per-chunk work is cheap
+    //                  once a cycle's raw CSV is cached - no external
+    //                  distributor request at all except on the run that
+    //                  starts a new cycle (see CATALOG_CACHE_KEY in
+    //                  sync/davidsons.js). At CHUNK_SIZE=1500 against a
+    //                  ~10,550-row catalog (~7 runs/cycle), 20 minutes means
+    //                  a full cycle finishes in ~2.3 hours instead of the
+    //                  ~28 hours it took sharing the 4-hour cron.
+    "crons": ["0 */4 * * *", "*/10 * * * *", "15 */4 * * *", "*/20 * * * *"]
   },
   "r2_buckets": [
     {
