@@ -183,10 +183,22 @@
     .btn-cancel:hover { border-color: var(--muted); color: var(--text); }
 
     /* ── DATA TABLE ── */
-    #buildsTable, #completedBuildsTable, #productsTable, #ordersTable, #messagesTable, #intakeTable, #catalogTable { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    /* overflow-x:auto moved into the mobile media query below - it's only
+       ever needed there (these tables fit fine at desktop width). Applying
+       it unconditionally here was breaking position:sticky on the <th>
+       elements: per the CSS overflow spec, setting overflow-x to anything
+       but visible forces the computed overflow-y to auto too, which turns
+       this wrapper into its own scroll container - sticky's "top" then
+       resolves against the wrapper's scrollport instead of the page,
+       pinning the header at the wrong place entirely. */
     .data-table {
       width: 100%;
-      border-collapse: collapse;
+      /* separate + zero spacing looks identical to collapse (no double
+         borders, no gaps) but collapse breaks position:sticky on <th> in
+         Chrome - cells render detached from the table's layout and can
+         overlap body rows instead of pinning cleanly above them. */
+      border-collapse: separate;
+      border-spacing: 0;
       background: var(--surface);
     }
     .data-table th {
@@ -198,6 +210,14 @@
       padding: 12px 16px;
       border-bottom: 1px solid var(--border);
       font-weight: 500;
+      /* Sticks right below the fixed header (64px) + tab bar (48px) so the
+         column labels (Tracking Code, Status, etc.) stay visible once a
+         list gets long enough to scroll - without this, Shawn loses track
+         of which column is which a few rows in. */
+      position: sticky;
+      top: 112px;
+      z-index: 10;
+      background: var(--surface);
     }
     .data-table td {
       padding: 14px 16px;
@@ -422,6 +442,20 @@
       .tab-nav { padding: 0 16px; }
       .tab-btn { padding: 12px 14px; font-size: 12px; }
 
+      /* Horizontal scroll wrapper only turns on here (see the comment by
+         .data-table above for why) - and since that overflow-x:auto makes
+         this wrapper its own scroll container, sticky headers can't resolve
+         against the page anymore inside it. Turning sticky off on mobile
+         instead of leaving it to silently misbehave; horizontal scroll room
+         matters more here anyway, and mobile shows fewer rows per screen so
+         losing track of a column is less of a problem than on desktop.
+         Full-detail columns are already trimmed further below too. */
+      #buildsTable, #completedBuildsTable, #productsTable, #ordersTable, #messagesTable, #intakeTable, #catalogTable {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      .data-table th { position: static; }
+
       /* Every table here fits fine on a desktop-width screen but is
          genuinely too wide for a phone even with the overflow-x scroll
          wrapper - that just moves the problem to "swipe through 7 columns
@@ -468,7 +502,12 @@
     <button class="tab-btn" data-tab="intake" id="intakeTabBtn">Intake</button>
     <button class="tab-btn" data-tab="products">Products</button>
     <button class="tab-btn" data-tab="catalog">Distributor Catalog</button>
-    <button class="tab-btn" data-tab="content">Catalog Settings</button>
+    <!-- No nav button for Catalog Settings (data-tab="content") - markup %
+         and the manufacturer allow-list directly control what customers see
+         and pay across the whole distributor catalog with no undo, and
+         nothing here explains that consequence inline. Kept reachable at
+         admin-dashboard.html#catalog-settings (see the TABS script below)
+         for Braeden, just not one click away for Shawn's day-to-day use. -->
   </div>
 
   <div class="admin-main">
@@ -883,14 +922,19 @@
     }
 
     // ── TABS ──
+    function activateTab(tabName) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      const btn = document.querySelector(`.tab-btn[data-tab="${tabName}"]`);
+      if (btn) btn.classList.add('active');
+      document.getElementById('tab-' + tabName).classList.add('active');
+    }
     document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-        btn.classList.add('active');
-        document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
-      });
+      btn.addEventListener('click', () => activateTab(btn.dataset.tab));
     });
+    // Catalog Settings has no nav button (see above) but stays reachable
+    // this way for Braeden without needing a redeploy to get to it.
+    if (location.hash === '#catalog-settings') activateTab('content');
 
     // ── TRACKING CODE ──
     // Derived from the highest code already issued this year, not a row
