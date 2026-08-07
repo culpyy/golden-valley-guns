@@ -839,8 +839,7 @@
     // placeholder account IDs that were never actually filled in, so it
     // silently sent nothing on every status change. Now goes through
     // POST /api/notify-build-status (src/api/notifyBuildStatus.js), which
-    // sends via the same Cloudflare Email Routing path as the contact form
-    // and order confirmations - no separate third-party account needed.
+    // sends via Resend, same as the contact form and order confirmations.
     async function sendStatusChangeEmail(build) {
       if (!build.customer_email) return;
       try {
@@ -1101,7 +1100,10 @@
 
       const statusChanged = !isNew && editingBuildOriginalStatus !== null && editingBuildOriginalStatus !== payload.status;
       const willEmail = statusChanged && !!payload.customer_email;
-      if (statusChanged) sendStatusChangeEmail(payload);
+      // payload deliberately has no `id` field (it's the Supabase update
+      // body, and `id` isn't a column to write) - has to be added back here
+      // or notify-build-status gets a bodyless request and 400s silently.
+      if (statusChanged) sendStatusChangeEmail({ ...payload, id });
 
       closeBuildForm();
       loadBuilds();
