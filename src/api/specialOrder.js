@@ -30,12 +30,35 @@ import { getSupabaseAdmin } from '../lib/supabaseAdmin.js';
 import { insertOrderWithNumber } from '../lib/orderNumber.js';
 import { sendEmail } from '../lib/email.js';
 import { isAdminToken } from '../lib/adminAuth.js';
+import { emailShell, emailGreeting, emailParagraph, emailInfoBox, emailButton, emailFooterNote } from '../lib/emailTemplate.js';
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Backstop for a build-linked special order forces isFirearm server-side
+// (see orderIsFirearm below), but a freeform special order - the actual
+// "Request This Item" path this endpoint exists for - has no equivalent:
+// isFirearm there is entirely Shawn's own checkbox, and a forgotten
+// checkbox on a real firearm is the one way this system could legally ship
+// a gun straight to an unlicensed customer. This is a deliberately
+// over-inclusive keyword net, not a firearm classifier - false positives
+// just cost Shawn one extra confirmation click, so there's no reason to be
+// narrow about what's in it.
+const FIREARM_KEYWORDS = [
+  'rifle', 'pistol', 'revolver', 'shotgun', 'firearm', 'handgun', 'carbine', 'sbr', 'sbs',
+  'ar-15', 'ar15', 'ak-47', 'ak47', 'kalashnikov', 'glock', 'sig sauer', 'smith & wesson',
+  's&w', 'colt', 'beretta', 'mossberg', 'savage', 'ruger', 'remington', 'springfield',
+  'cz-', 'fn ', 'hk ', 'heckler', 'walther', 'taurus', 'kimber', 'uzi', 'mac-10', 'mac10',
+  'mp5', 'm4 ', 'm16', '1911', 'ppsh', 'dp-27', 'dp27', 'sten', 'pm-12', 'pm12', 'fal',
+  ' g3', 'wasr', 'receiver', 'class 3', 'nfa', 'suppressor', 'silencer', 'sbg', 'gun'
+];
+function looksLikeFirearm(name) {
+  const lower = ` ${name.toLowerCase()} `;
+  return FIREARM_KEYWORDS.some(kw => lower.includes(kw));
+}
 
 export async function handleCreateSpecialOrder(request, env) {
   const accessToken = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
@@ -89,6 +112,21 @@ export async function handleCreateSpecialOrder(request, env) {
   // same "never trust the client" posture as checkout.js/pay.js.
   const orderIsFirearm = buildId ? true : isFirearm;
 
+  // A build-linked order is already forced firearm above, so this only ever
+  // fires on a freeform special order Shawn typed isFirearm=false for. If
+  // the description reads like an actual gun, refuse to create a directly-
+  // shippable order until he explicitly confirms it isn't one - closes off
+  // the "forgot to check the box" failure mode instead of just hoping he
+  // didn't. confirmNotFirearm is a deliberate second action, not something
+  // that can be pre-set once and forgotten (the admin form resets it with
+  // everything else after every submission).
+  if (!orderIsFirearm && looksLikeFirearm(itemName) && !payload?.confirmNotFirearm) {
+    return jsonResponse({
+      error: `"${itemName}" looks like it might be a firearm. If it is, check "This is a firearm" - it can never ship directly to a customer, only pickup or FFL transfer. If it's genuinely not a firearm, confirm and create it again.`,
+      needsFirearmConfirmation: true
+    }, 400);
+  }
+
   // crypto.randomUUID() (128 bits) is the entire access control for
   // pay.html/api/pay - unguessable is the whole point, there's no login.
   const payToken = crypto.randomUUID();
@@ -129,14 +167,16 @@ export async function handleCreateSpecialOrder(request, env) {
   // way (see admin-dashboard.html), so an email failure here doesn't strand
   // him without a way to reach the customer.
   try {
+    const firstName = customerName.split(' ')[0];
     await sendEmail(env, {
       to: customerEmail,
       subject: `Payment link for your order - Golden Valley Guns`,
       text: [
-        `Hi ${customerName.split(' ')[0]},`,
+        `Hi ${firstName},`,
         ``,
-        `Here's the payment link for the item you requested:`,
+        `Here's the payment link for your order:`,
         ``,
+        `Order #${orderNumber}`,
         itemName,
         `$${total.toFixed(2)}`,
         ``,
@@ -149,7 +189,17 @@ export async function handleCreateSpecialOrder(request, env) {
         `Questions? Call or text us at (928) 727-0893.`,
         ``,
         `- Golden Valley Guns`
-      ].filter(Boolean).join('\n')
+      ].filter(Boolean).join('\n'),
+      html: emailShell([
+        emailGreeting(firstName),
+        emailParagraph(`Here's the payment link for your order <strong>#${orderNumber}</strong>:`),
+        emailInfoBox([[itemName, `$${total.toFixed(2)}`]]),
+        emailButton(payUrl, 'Pay Now'),
+        orderIsFirearm
+          ? emailParagraph(`This is a firearm, so it can't ship directly to you - when you pay, you'll choose to either pick it up in person here or have it transferred to your own local FFL dealer. Either way, a NICS background check and ATF Form 4473 are required before it's yours.`)
+          : '',
+        emailFooterNote()
+      ].join(''))
     });
   } catch (err) {
     console.error(`Special order ${orderNumber} created, but the payment-link email failed to send:`, err);

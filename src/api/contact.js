@@ -1,7 +1,7 @@
 // POST /api/contact - replaces Formspree (see sql/contact_submissions.sql
 // for why). Writes the submission to Supabase and emails it to Shawn via
-// Cloudflare Email Routing, in that order - the DB write is the durable
-// record, email is the notification. If the email send fails, the
+// Resend, in that order - the DB write is the durable record, email is the
+// notification. If the email send fails, the
 // submission is still saved and visible to whoever checks the table/admin
 // dashboard, rather than being lost the way a Formspree-only flow would be.
 

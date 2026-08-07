@@ -39,6 +39,8 @@ import { chargeCreditCard } from '../lib/authorizeNet.js';
 import { sendEmail } from '../lib/email.js';
 import { insertOrderWithNumber } from '../lib/orderNumber.js';
 import { reserveStock, releaseStock } from '../lib/stock.js';
+import { emailShell, emailGreeting, emailParagraph, emailOrderSummary, emailInfoBox, emailFooterNote } from '../lib/emailTemplate.js';
+import { buildInvoicePdf, bytesToBase64 } from '../lib/pdf.js';
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -319,14 +321,36 @@ export async function handleCheckout(request, env) {
 async function sendOrderEmails(env, { orderNumber, customer, items, subtotal, taxAmount, total, hasFirearm, fulfillmentMethod, transferFfl, shippingMethod, shippingAddress }) {
   const itemLines = items.map(i => `  ${i.qty} x ${i.name} - $${i.price.toFixed(2)} each`).join('\n');
   let firearmNote = '';
+  let firearmNoteHtml = '';
   if (hasFirearm && fulfillmentMethod === 'ffl_transfer') {
-    firearmNote = `\n\nThis order includes a firearm, transferring to your dealer (${transferFfl.businessName}) rather than shipping to you directly - required by federal law. We'll verify their FFL is current before anything ships; they'll handle your NICS background check and ATF Form 4473 in person. If your background check is denied, you'll receive a full refund.`;
+    firearmNote = `\n\nThis order includes a firearm, transferring to your dealer (${transferFfl.businessName}, ${transferFfl.address}) rather than shipping to you directly - required by federal law. We'll verify their FFL is current before anything ships; they'll handle your NICS background check and ATF Form 4473 in person. If your background check is denied, you'll receive a full refund.`;
+    firearmNoteHtml = emailParagraph(`This order includes a firearm, transferring to your dealer rather than shipping to you directly - required by federal law. We'll verify their FFL is current before anything ships; they'll handle your NICS background check and ATF Form 4473 in person. If your background check is denied, you'll receive a full refund.`) +
+      emailInfoBox([['Dealer', transferFfl.businessName], ['Address', transferFfl.address]]);
   } else if (hasFirearm) {
     firearmNote = `\n\nThis order includes a firearm - it's reserved for you but nothing ships. You'll complete a NICS background check and ATF Form 4473 in person when you pick it up. If your background check is denied, you'll receive a full refund.`;
+    firearmNoteHtml = emailParagraph(`This order includes a firearm - it's reserved for you but nothing ships. You'll complete a NICS background check and ATF Form 4473 in person when you pick it up. If your background check is denied, you'll receive a full refund.`);
   } else if (shippingMethod === 'ship') {
     firearmNote = `\n\nWe'll ship this order to:\n${shippingAddress.line1}${shippingAddress.line2 ? '\n' + shippingAddress.line2 : ''}\n${shippingAddress.city}, ${shippingAddress.state} ${shippingAddress.zip}\n\nWe'll email you when it's on its way.`;
+    firearmNoteHtml = emailParagraph(`We'll ship this order to the address below, and email you when it's on its way.`) +
+      emailInfoBox([['Address', [shippingAddress.line1, shippingAddress.line2, `${shippingAddress.city}, ${shippingAddress.state} ${shippingAddress.zip}`].filter(Boolean).join(', ')]]);
   } else {
     firearmNote = `\n\nThis order is ready for pickup at our shop whenever works for you.`;
+    firearmNoteHtml = emailParagraph(`This order is ready for pickup at our shop whenever works for you.`);
+  }
+
+  // Best-effort - a PDF generation bug should never take down the emails
+  // themselves (customer and admin both still need to go out either way).
+  let invoiceAttachment;
+  try {
+    const pdfBytes = await buildInvoicePdf({
+      orderNumber, date: new Date(),
+      customerName: `${customer.firstName} ${customer.lastName}`, customerEmail: customer.email, customerPhone: customer.phone,
+      items, subtotal, taxAmount, total,
+      isFirearm: hasFirearm, fulfillmentMethod, transferFfl, shippingMethod, shippingAddress
+    });
+    invoiceAttachment = [{ filename: `invoice-${orderNumber}.pdf`, content: bytesToBase64(pdfBytes) }];
+  } catch (err) {
+    console.error(`Order ${orderNumber} invoice PDF generation failed (email will still send without it):`, err);
   }
 
   await sendEmail(env, {
@@ -346,10 +370,25 @@ async function sendOrderEmails(env, { orderNumber, customer, items, subtotal, ta
       `Total: $${total.toFixed(2)}`,
       firearmNote,
       ``,
+      `Your invoice is attached to this email.`,
+      ``,
       `We'll be in touch if there's anything else needed to get your order ready. Questions? Call us at (928) 727-0893.`,
       ``,
       `- Golden Valley Guns`
-    ].filter(line => line !== null).join('\n')
+    ].filter(line => line !== null).join('\n'),
+    html: emailShell([
+      emailGreeting(customer.firstName),
+      emailParagraph(`Thanks for your order! Here's your confirmation for <strong>Order #${orderNumber}</strong>:`),
+      emailOrderSummary(items, [
+        ['Subtotal', subtotal],
+        taxAmount > 0 ? ['AZ Sales Tax (5.6%)', taxAmount] : null,
+        ['Total', total]
+      ].filter(Boolean)),
+      firearmNoteHtml,
+      emailParagraph(`Your invoice is attached to this email.`),
+      emailFooterNote()
+    ].join('')),
+    attachments: invoiceAttachment
   });
 
   let firearmAdminNote = '';

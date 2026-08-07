@@ -58,6 +58,12 @@
       text-transform: uppercase;
       color: var(--gold-light);
     }
+    @media (max-width: 580px) {
+      /* A 32px heading and a 12px label sharing one baseline-aligned row
+         with no wrap left both squeezed into whatever space was left over,
+         wrapping each into two cramped lines on a phone. Stacked instead. */
+      .build-header { flex-direction: column; align-items: flex-start; gap: 6px; }
+    }
     .video-item {
       position: relative;
       overflow: hidden;
@@ -285,8 +291,15 @@
     // keep this in sync with the same constant there if it ever changes.
     const COMPLETED_BUILDS_BASE = 24;
     (async () => {
-      const { count } = await supabase.from('builds_public').select('id', { count: 'exact', head: true }).not('completed_at', 'is', null);
-      const total = COMPLETED_BUILDS_BASE + (count || 0);
+      // Retry once - the count query occasionally hits a transient 503 from
+      // Supabase on a cold page load. A retry clears it almost every time,
+      // rather than silently under-reporting the stacked total to that visitor.
+      let count = 0;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const result = await supabase.from('builds_public').select('id', { count: 'exact', head: true }).not('completed_at', 'is', null);
+        if (!result.error) { count = result.count || 0; break; }
+      }
+      const total = COMPLETED_BUILDS_BASE + count;
       if (total > 0) {
         document.getElementById('galleryStatCount').textContent = total;
         document.getElementById('galleryStatLabel').textContent = total === 1 ? 'build completed and out the door' : 'builds completed and out the door';

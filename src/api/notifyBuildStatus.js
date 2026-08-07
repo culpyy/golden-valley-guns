@@ -2,8 +2,8 @@
 // EmailJS integration, which pointed at placeholder account IDs
 // (YOUR_EMAILJS_PUBLIC_KEY etc.) that were never actually filled in, so it
 // silently did nothing on every build status change. Now sends through the
-// same Cloudflare Email Routing path as the contact form and order
-// confirmations (src/lib/email.js).
+// same Resend-based email path as the contact form and order confirmations
+// (src/lib/email.js).
 //
 // The dashboard already trusts Supabase RLS (is_admin()) to gate who can
 // edit a build in the first place - this endpoint re-checks that same
@@ -15,6 +15,7 @@
 import { getSupabaseAdmin } from '../lib/supabaseAdmin.js';
 import { sendEmail } from '../lib/email.js';
 import { isAdminToken } from '../lib/adminAuth.js';
+import { emailShell, emailGreeting, emailParagraph, emailInfoBox, emailFooterNote, escapeHtml } from '../lib/emailTemplate.js';
 
 const STATUS_LABELS = {
   'intake': 'Intake', 'parts-ordered': 'Parts Ordered', 'in-progress': 'In Progress',
@@ -59,6 +60,7 @@ export async function handleNotifyBuildStatus(request, env) {
   const statusLabel = STATUS_LABELS[build.status] || build.status;
   const statusDesc = STATUS_DESCRIPTIONS[build.status] || '';
 
+  const firstName = (build.customer_name || 'there').split(' ')[0];
   await sendEmail(env, {
     to: build.customer_email,
     subject: `Update on your build: ${build.title} - ${statusLabel}`,
@@ -75,7 +77,14 @@ export async function handleNotifyBuildStatus(request, env) {
       `Questions? Call us at (928) 727-0893.`,
       ``,
       `- Golden Valley Guns`
-    ].filter(Boolean).join('\n')
+    ].filter(Boolean).join('\n'),
+    html: emailShell([
+      emailGreeting(firstName),
+      emailParagraph(`Your build <strong>"${escapeHtml(build.title)}"</strong> has an update:`),
+      emailInfoBox([['Status', statusLabel], [statusDesc ? 'Details' : null, statusDesc]]),
+      emailParagraph(`Track your build anytime at <a href="https://goldenvalleygunsllc.com/track.html" style="color:#8B6914;">goldenvalleygunsllc.com/track.html</a> using code <strong>${escapeHtml(build.tracking_code)}</strong>.`),
+      emailFooterNote()
+    ].join(''))
   });
 
   return jsonResponse({ success: true });

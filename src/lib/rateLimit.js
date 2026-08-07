@@ -21,7 +21,11 @@ export async function checkRateLimit(env, key, { limit, windowSeconds }) {
     return { allowed: false, retryAfterSeconds: Math.ceil((existing.resetAt - Date.now()) / 1000) };
   }
 
-  const remainingTtl = Math.max(1, Math.ceil((existing.resetAt - Date.now()) / 1000));
+  // KV enforces a 60-second minimum on expirationTtl - a raw "time left in
+  // the window" calculation can undershoot that near the end of the window
+  // and make the PUT itself throw, failing the whole request instead of
+  // just rate-limiting it.
+  const remainingTtl = Math.max(60, Math.ceil((existing.resetAt - Date.now()) / 1000));
   await env.RATE_LIMIT.put(kvKey, JSON.stringify({ count: existing.count + 1, resetAt: existing.resetAt }), { expirationTtl: remainingTtl });
   return { allowed: true };
 }

@@ -11,6 +11,8 @@
 import { getSupabaseAdmin } from '../lib/supabaseAdmin.js';
 import { chargeCreditCard } from '../lib/authorizeNet.js';
 import { sendEmail } from '../lib/email.js';
+import { emailShell, emailGreeting, emailParagraph, emailInfoBox, emailFooterNote } from '../lib/emailTemplate.js';
+import { buildInvoicePdf, bytesToBase64 } from '../lib/pdf.js';
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
@@ -226,14 +228,35 @@ export async function handlePayOrder(request, env) {
 async function sendPaymentConfirmationEmails(env, { order, customer, customerName, fulfillmentMethod, transferFfl, shippingMethod, shippingAddress }) {
   const itemName = order.items?.[0]?.name || 'Order';
   let firearmNote = '';
+  let firearmNoteHtml = '';
   if (order.is_firearm && fulfillmentMethod === 'ffl_transfer') {
-    firearmNote = `\n\nThis includes a firearm, transferring to your dealer (${transferFfl.businessName}) rather than shipping to you directly - required by federal law. We'll verify their FFL is current before anything ships; they'll handle your NICS background check and ATF Form 4473 in person. Nothing transfers until that's done.`;
+    firearmNote = `\n\nThis includes a firearm, transferring to your dealer (${transferFfl.businessName}, ${transferFfl.address}) rather than shipping to you directly - required by federal law. We'll verify their FFL is current before anything ships; they'll handle your NICS background check and ATF Form 4473 in person. Nothing transfers until that's done.`;
+    firearmNoteHtml = emailParagraph(`This includes a firearm, transferring to your dealer rather than shipping to you directly - required by federal law. We'll verify their FFL is current before anything ships; they'll handle your NICS background check and ATF Form 4473 in person. Nothing transfers until that's done.`) +
+      emailInfoBox([['Dealer', transferFfl.businessName], ['Address', transferFfl.address]]);
   } else if (order.is_firearm) {
     firearmNote = `\n\nThis includes a firearm - you'll complete a NICS background check and ATF Form 4473 in person when you pick it up. Nothing transfers until that's done.`;
+    firearmNoteHtml = emailParagraph(`This includes a firearm - you'll complete a NICS background check and ATF Form 4473 in person when you pick it up. Nothing transfers until that's done.`);
   } else if (shippingMethod === 'ship') {
     firearmNote = `\n\nWe'll ship this to:\n${shippingAddress.line1}${shippingAddress.line2 ? '\n' + shippingAddress.line2 : ''}\n${shippingAddress.city}, ${shippingAddress.state} ${shippingAddress.zip}\n\nWe'll email you when it's on its way.`;
+    firearmNoteHtml = emailParagraph(`We'll ship this to the address below, and email you when it's on its way.`) +
+      emailInfoBox([['Address', [shippingAddress.line1, shippingAddress.line2, `${shippingAddress.city}, ${shippingAddress.state} ${shippingAddress.zip}`].filter(Boolean).join(', ')]]);
   } else {
     firearmNote = `\n\nThis is ready for pickup at our shop whenever works for you.`;
+    firearmNoteHtml = emailParagraph(`This is ready for pickup at our shop whenever works for you.`);
+  }
+
+  let invoiceAttachment;
+  try {
+    const pdfBytes = await buildInvoicePdf({
+      orderNumber: order.order_number, date: new Date(),
+      customerName, customerEmail: customer.email, customerPhone: customer.phone || order.customer_phone,
+      items: order.items || [{ name: itemName, price: order.total, qty: 1 }],
+      subtotal: order.subtotal ?? order.total, taxAmount: order.tax_amount || 0, total: order.total,
+      isFirearm: order.is_firearm, fulfillmentMethod, transferFfl, shippingMethod, shippingAddress
+    });
+    invoiceAttachment = [{ filename: `invoice-${order.order_number}.pdf`, content: bytesToBase64(pdfBytes) }];
+  } catch (err) {
+    console.error(`Order ${order.order_number} invoice PDF generation failed (email will still send without it):`, err);
   }
 
   await sendEmail(env, {
@@ -248,10 +271,21 @@ async function sendPaymentConfirmationEmails(env, { order, customer, customerNam
       `$${order.total.toFixed(2)}`,
       firearmNote,
       ``,
+      `Your invoice is attached to this email.`,
+      ``,
       `We'll be in touch about pickup. Questions? Call or text us at (928) 727-0893.`,
       ``,
       `- Golden Valley Guns`
-    ].join('\n')
+    ].join('\n'),
+    html: emailShell([
+      emailGreeting(customer.firstName),
+      emailParagraph(`Your payment for order <strong>${order.order_number}</strong> is confirmed:`),
+      emailInfoBox([[itemName, `$${order.total.toFixed(2)}`]]),
+      firearmNoteHtml,
+      emailParagraph(`Your invoice is attached to this email.`),
+      emailFooterNote()
+    ].join('')),
+    attachments: invoiceAttachment
   });
 
   let firearmAdminNote = '';

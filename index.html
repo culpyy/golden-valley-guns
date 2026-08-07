@@ -165,10 +165,6 @@
       <div class="cred-label">Capability</div>
       <div class="cred-val">NFA / Class III</div>
     </div>
-    <div class="cred-item">
-      <div class="cred-label">Standard</div>
-      <div class="cred-val">Function Check Every Build</div>
-    </div>
   </div>
 
   <!-- LIVE BUILD BOARD PREVIEW -->
@@ -208,7 +204,7 @@
         <h2 class="section-title">Small Shop,<br>Serious Work</h2>
         <div class="divider"></div>
         <p>
-          We're not a big-box dealer. Golden Valley Guns LLC is a licensed FFL 07 Manufacturer out of Golden Valley, Arizona, built around the builds most shops won't touch: AK and FAL parts kits, G3 and HK-pattern rifles, and other military surplus work that takes real experience to get right.
+          We're not a big-box dealer. Golden Valley Guns LLC is a licensed FFL 07 Manufacturer out of Golden Valley, Arizona, and we take on the work most shops pass on - parts-kit rebuilds, military surplus refurbishment, and anything else that takes real hands-on experience to get right.
         </p>
         <p>
           From full parts-kit builds to NFA/Class III transfers, gunsmithing, and repairs, we handle all of it out of our Golden Valley shop. If it doesn't run right, it doesn't leave.
@@ -344,8 +340,15 @@
     // Braeden directly rather than an admin-editable field.
     const COMPLETED_BUILDS_BASE = 24;
     (async () => {
-      const { count } = await supabase.from('builds_public').select('id', { count: 'exact', head: true }).not('completed_at', 'is', null);
-      const total = COMPLETED_BUILDS_BASE + (count || 0);
+      // Retry once - the count query occasionally hits a transient 503 from
+      // Supabase on a cold page load. A retry clears it almost every time,
+      // rather than silently under-reporting the stacked total to that visitor.
+      let count = 0;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const result = await supabase.from('builds_public').select('id', { count: 'exact', head: true }).not('completed_at', 'is', null);
+        if (!result.error) { count = result.count || 0; break; }
+      }
+      const total = COMPLETED_BUILDS_BASE + count;
       if (total > 0) {
         document.getElementById('completedCount').textContent = `${total} Build${total === 1 ? '' : 's'} Completed`;
         document.getElementById('completedStat').style.display = '';

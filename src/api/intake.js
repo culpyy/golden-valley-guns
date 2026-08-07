@@ -8,6 +8,8 @@
 import { getSupabaseAdmin } from '../lib/supabaseAdmin.js';
 import { sendEmail } from '../lib/email.js';
 import { checkRateLimit } from '../lib/rateLimit.js';
+import { buildIntakeSlipPdf, bytesToBase64 } from '../lib/pdf.js';
+import { escapeHtml, emailShell, emailGreeting, emailParagraph, emailHighlight, emailFooterNote } from '../lib/emailTemplate.js';
 
 const SERVICE_LABELS = {
   custom_build: 'Custom Build',
@@ -25,6 +27,20 @@ function generateIntakeCode() {
   let code = '';
   for (const b of bytes) code += CODE_CHARS[b % CODE_CHARS.length];
   return `SHIP-${code}`;
+}
+
+// Kept deliberately light - a single flat card, not a stack of nested
+// boxes - since the attached PDF is the actual document of record now and
+// carries the full shipping detail. This is just the friendly heads-up
+// pointing to it.
+function intakeConfirmationHtml({ firstName, intakeCode }) {
+  return emailShell([
+    emailGreeting(firstName),
+    emailParagraph(`Thanks for letting us know something's headed our way. Your reference code is:`),
+    emailHighlight(intakeCode),
+    emailParagraph(`Your printable shipping slip is attached to this email - print it, put it inside the box, and ship it to us.`),
+    emailFooterNote('Shipping an NFA item? ')
+  ].join(''));
 }
 
 function jsonResponse(body, status = 200, extraHeaders = {}) {
@@ -120,34 +136,28 @@ export async function handleIntake(request, env) {
   let emailSent = false;
   if (email) {
     try {
+      const firstName = name.split(' ')[0];
+      const pdfBytes = await buildIntakeSlipPdf({ name, phone, email, intakeCode, serviceLabel, firearmType, caliber, isNfa, notes });
       await sendEmail(env, {
         to: email,
         subject: `Your shipping reference code: ${intakeCode} - Golden Valley Guns`,
         text: [
-          `Hi ${name.split(' ')[0]},`,
+          `Hi ${firstName},`,
           ``,
           `Thanks for letting us know something's headed our way. Here's your reference code:`,
           ``,
           intakeCode,
           ``,
-          `Before you ship it, print this email (or just write the code down) and put it inside the box.`,
-          ``,
-          `Ship to:`,
-          `Golden Valley Guns LLC`,
-          `7088 W Jupiter Dr`,
-          `Golden Valley, AZ 86413`,
-          ``,
-          `What you told us:`,
-          `Service: ${serviceLabel}`,
-          firearmType ? `Firearm Type: ${firearmType}` : '',
-          caliber ? `Caliber: ${caliber}` : '',
-          isNfa ? `NFA item: yes` : '',
-          notes ? `Notes: ${notes}` : '',
+          `Your printable shipping slip is attached to this email - print it, put it inside the box, and ship it to us.`,
           ``,
           `Questions, or shipping an NFA item? Call or text us first at (928) 727-0893.`,
           ``,
           `- Golden Valley Guns`
-        ].filter(Boolean).join('\n')
+        ].join('\n'),
+        html: intakeConfirmationHtml({ firstName, intakeCode }),
+        attachments: [
+          { filename: `shipping-slip-${intakeCode}.pdf`, content: bytesToBase64(pdfBytes) }
+        ]
       });
       emailSent = true;
     } catch (err) {

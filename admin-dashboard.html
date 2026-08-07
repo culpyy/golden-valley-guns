@@ -58,8 +58,15 @@
       display: flex;
       padding: 0 32px;
       gap: 0;
+      /* 7 tabs (some long, like "Distributor Catalog") have no room to fit
+         a real phone width. Scrolling the bar itself beats wrapping or
+         truncating - Catalog Settings stays reachable instead of getting
+         pushed off-screen with no way back to it. */
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
     }
     .tab-btn {
+      flex-shrink: 0;
       background: transparent;
       border: none;
       border-bottom: 2px solid transparent;
@@ -176,7 +183,7 @@
     .btn-cancel:hover { border-color: var(--muted); color: var(--text); }
 
     /* ── DATA TABLE ── */
-    #buildsTable, #productsTable { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    #buildsTable, #completedBuildsTable, #productsTable, #ordersTable, #messagesTable, #intakeTable, #catalogTable { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     .data-table {
       width: 100%;
       border-collapse: collapse;
@@ -414,6 +421,34 @@
       .admin-header { padding: 0 16px; }
       .tab-nav { padding: 0 16px; }
       .tab-btn { padding: 12px 14px; font-size: 12px; }
+
+      /* Every table here fits fine on a desktop-width screen but is
+         genuinely too wide for a phone even with the overflow-x scroll
+         wrapper - that just moves the problem to "swipe through 7 columns
+         to find the one you need" instead of fixing it. Dropping the
+         columns that are least useful for a quick glance (already
+         redundant with something else on-screen, or just not what Shawn's
+         actually scanning for on mobile) cuts real scrolling distance
+         instead of only making the scroll itself smoother. Full detail is
+         still one tap away via Edit. */
+      #buildsTable .data-table th:nth-child(1),
+      #buildsTable .data-table td:nth-child(1),
+      #buildsTable .data-table th:nth-child(5),
+      #buildsTable .data-table td:nth-child(5) { display: none; }
+
+      #completedBuildsTable .data-table th:nth-child(1),
+      #completedBuildsTable .data-table td:nth-child(1) { display: none; }
+
+      #ordersTable .data-table th:nth-child(5),
+      #ordersTable .data-table td:nth-child(5) { display: none; }
+
+      #productsTable .data-table th:nth-child(2),
+      #productsTable .data-table td:nth-child(2) { display: none; }
+
+      #catalogTable .data-table th:nth-child(2),
+      #catalogTable .data-table td:nth-child(2),
+      #catalogTable .data-table th:nth-child(3),
+      #catalogTable .data-table td:nth-child(3) { display: none; }
     }
   </style>
 </head>
@@ -612,6 +647,13 @@
           <div class="form-field full" style="display:flex;align-items:center;gap:10px;">
             <input type="checkbox" id="so-is-ammo" style="width:16px;height:16px;accent-color:var(--gold-light);cursor:pointer;" />
             <label for="so-is-ammo" style="cursor:pointer;font-size:12px;">This is ammunition (applies our ammo shipping restrictions if the customer chooses to ship it)</label>
+          </div>
+          <div class="form-field full" id="so-firearm-confirm-wrap" style="display:none;background:#3a1a1a;border:1px solid #7a3030;border-radius:6px;padding:12px 14px;">
+            <div style="font-size:12px;color:#ffb4b4;margin-bottom:8px;line-height:1.5;" id="so-firearm-confirm-text"></div>
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:12px;">
+              <input type="checkbox" id="so-confirm-not-firearm" style="width:16px;height:16px;accent-color:var(--gold-light);cursor:pointer;" />
+              This is genuinely not a firearm - allow it to ship directly to the customer
+            </label>
           </div>
         </div>
         <div class="form-actions">
@@ -1470,9 +1512,22 @@
       document.getElementById('so-is-firearm').disabled = false;
       document.getElementById('so-is-ammo').checked = false;
       document.getElementById('so-is-ammo').disabled = false;
+      document.getElementById('so-confirm-not-firearm').checked = false;
+      document.getElementById('so-firearm-confirm-wrap').style.display = 'none';
     }
 
     document.getElementById('cancelSpecialOrderBtn').addEventListener('click', resetSpecialOrderForm);
+
+    // A confirmation only ever applies to the exact description it was
+    // shown for - editing the description or checking "This is a firearm"
+    // afterward must re-arm the gate rather than silently carry the old
+    // confirmation forward onto different text.
+    ['so-item-name', 'so-is-firearm'].forEach(id => {
+      document.getElementById(id).addEventListener('input', () => {
+        document.getElementById('so-confirm-not-firearm').checked = false;
+        document.getElementById('so-firearm-confirm-wrap').style.display = 'none';
+      });
+    });
 
     document.getElementById('saveSpecialOrderBtn').addEventListener('click', async () => {
       const buildId = document.getElementById('so-build-id').value || null;
@@ -1483,6 +1538,7 @@
       const price = document.getElementById('so-price').value;
       const isFirearm = document.getElementById('so-is-firearm').checked;
       const isAmmo = document.getElementById('so-is-ammo').checked;
+      const confirmNotFirearm = document.getElementById('so-confirm-not-firearm').checked;
 
       if (!customerName || !customerEmail || !itemName || !price) {
         showToast('Customer name, email, item description, and price are all required.');
@@ -1501,11 +1557,16 @@
             'Content-Type': 'application/json',
             Authorization: `Bearer ${session?.access_token || ''}`
           },
-          body: JSON.stringify({ customerName, customerEmail, customerPhone, itemName, price, isFirearm, isAmmo, buildId })
+          body: JSON.stringify({ customerName, customerEmail, customerPhone, itemName, price, isFirearm, isAmmo, buildId, confirmNotFirearm })
         });
         const data = await res.json();
         if (!res.ok) {
-          showToast('Error: ' + (data.error || 'Failed to create special order.'));
+          if (data.needsFirearmConfirmation) {
+            document.getElementById('so-firearm-confirm-text').textContent = data.error;
+            document.getElementById('so-firearm-confirm-wrap').style.display = 'block';
+          } else {
+            showToast('Error: ' + (data.error || 'Failed to create special order.'));
+          }
           return;
         }
 

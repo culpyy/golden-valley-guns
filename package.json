@@ -4,6 +4,7 @@
   "description": "Static site for Golden Valley Guns LLC",
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4",
-    "mimetext": "^3.0.28"
+    "mimetext": "^3.0.28",
+    "pdf-lib": "^1.17.1"
   }
 }
