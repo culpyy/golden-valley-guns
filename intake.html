@@ -634,7 +634,7 @@
 
       const emailNoteEl = document.getElementById('slipEmailNote');
       if (!offline && emailSent) {
-        emailNoteEl.textContent = `We also emailed a copy of this to ${email}.`;
+        emailNoteEl.textContent = `We also emailed a copy of this to ${email}. Don't see it in a few minutes? Check your spam or junk folder - it can land there the first time.`;
         emailNoteEl.style.display = 'block';
       } else {
         emailNoteEl.style.display = 'none';
