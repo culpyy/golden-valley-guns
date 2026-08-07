@@ -55,24 +55,12 @@
       "id": "7dd7a106dd81433cbd73dcbebb3727e5"
     }
   ],
-  // Contact form submissions send here directly - no third-party form
-  // service (Formspree's placeholder ID was never replaced, meaning the
-  // entire site's lead-generation path silently/visibly failed until this).
-  // Cloudflare Email Routing enabled on the zone 2026-07-18, destination
-  // already verified since it's the same email used to log into Cloudflare.
-  //
-  // 2026-07-20: dropped the destination_address restriction (was locked to
-  // just goldenvalleyguns@gmail.com) so this binding can also send order
-  // confirmations and build-status updates to arbitrary customer addresses,
-  // not just Shawn's inbox - see src/lib/email.js. Requires the domain to be
-  // onboarded for sending under Compute > Email Service > Email Sending in
-  // the dashboard (adds SPF/DKIM/DMARC records); without that, sends to any
-  // address other than a verified one in the account will fail.
-  "send_email": [
-    {
-      "name": "CONTACT_EMAIL"
-    }
-  ],
+  // No send_email binding here anymore - all outbound mail (contact form,
+  // order/build/intake confirmations) switched to Resend's HTTP API
+  // 2026-08-06 (see src/lib/email.js) because Cloudflare Email Routing's
+  // send_email binding could only deliver to a destination address already
+  // verified in the Cloudflare account, meaning it could never actually
+  // reach real customers. RESEND_API_KEY is set via `wrangler secret put`.
   "vars": {
     "SUPABASE_URL": "https://tyqgvpiunplgqzkygnii.supabase.co",
     "SITE_HOSTNAME": "goldenvalleygunsllc.com",

@@ -100,30 +100,9 @@ export async function chargeCreditCard(env, { opaqueData, amount, orderNumber, i
 }
 
 // Refunds a transaction by ID - no card number required (we never store
-// one, by design, to keep PCI scope small - see the file header).
-//
-// Authorize.net normally rejects refundTransaction on a transaction that
-// hasn't settled yet (settlement runs once daily) with "does not meet the
-// criteria for issuing a credit" - the standard workaround is to attempt a
-// void first and fall back to a credit if that fails. That fallback is
-// deliberately NOT implemented here: Authorize.net's own documented
-// behavior is that when the refund amount is the ENTIRE original amount
-// (never partial - src/api/refundOrder.js only ever offers full refunds),
-// it automatically converts an unsettled refund into a void internally.
-// Since amount is always the full original total here, that auto-handling
-// covers both the settled and unsettled case with no extra logic needed -
-// this is a direct consequence of full-refund-only being the only mode
-// this function is ever called in, not an oversight. If partial refunds
-// are ever added, this reasoning no longer holds and a void-first fallback
-// would need to be added.
-//
-// NOT YET TESTED against a live account, same caveat as chargeCreditCard
-// above - Shawn's Authorize.net merchant account has Transaction Processing
-// Mode "Not enabled" as of 2026-07-18, so there's no way to exercise this
-// against a real transaction yet. Verify against a real response the same
-// way lipseys.js's fields were corrected after its first live call, once
-// that's possible - in particular, confirm the auto-void-on-unsettled
-// behavior described above actually holds for a same-day refund attempt.
+// one, by design, to keep PCI scope small - see the file header). See the
+// refundTransaction function below for how the unsettled-transaction case
+// (error code 54) is actually handled - confirmed live 2026-08-05.
 // --- Diagnostics only, below this line --------------------------------
 // Used exclusively by src/api/paymentDiagnostics.js (an admin-gated route)
 // to verify the live integration is actually working after Shawn's

@@ -1,0 +1,11 @@
+-- Shop-only notes on a build (e.g. "customer wants blued not parkerized",
+-- "waiting on a callback about the stock swap") that Shawn needs to jot down
+-- but that should never show up anywhere a customer can see - separate from
+-- the existing `notes` column, which IS customer-facing (rendered on
+-- track.html/index.html/inshop.html via builds_public, see sql/build_gallery.sql
+-- and sql/security_hardening.sql).
+--
+-- Not added to builds_public - that view uses an explicit column list (not
+-- select *), so this is private by default with no further RLS work needed,
+-- same reasoning as price/payment_status/order_id in sql/build_payment.sql.
+alter table builds add column if not exists internal_notes text;

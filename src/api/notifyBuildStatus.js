@@ -17,8 +17,16 @@ import { sendEmail } from '../lib/email.js';
 import { isAdminToken } from '../lib/adminAuth.js';
 import { emailShell, emailGreeting, emailParagraph, emailInfoBox, emailFooterNote, escapeHtml } from '../lib/emailTemplate.js';
 
+// Kept in sync with js/main.js's STATUS_LABELS/STATUS_DESCRIPTIONS by hand -
+// that file is browser-only (no shared module system with the Worker), so
+// there's no single import both sides can use. 'in-progress' stays here for
+// the same reason main.js keeps it: no longer a selectable pipeline stage
+// (replaced 2026-07-21 by weld/machining/blasting/refinishing), but a pre-
+// migration build could theoretically still carry it, and this is only a
+// display fallback either way.
 const STATUS_LABELS = {
   'intake': 'Intake', 'parts-ordered': 'Parts Ordered', 'in-progress': 'In Progress',
+  'weld': 'Weld', 'machining': 'Machining', 'blasting': 'Blasting', 'refinishing': 'Refinishing',
   'testing': 'Testing', 'atf-filed': 'ATF Filed', 'atf-approved': 'ATF Approved', 'ready': 'Ready'
 };
 
@@ -26,6 +34,10 @@ const STATUS_DESCRIPTIONS = {
   'intake':        'Checked in - being assessed',
   'parts-ordered': 'Waiting on parts',
   'in-progress':   'On the bench',
+  'weld':          'Welding',
+  'machining':     'On the mill/lathe',
+  'blasting':      'Media blasting',
+  'refinishing':   'Coating/refinishing',
   'testing':       'Function check',
   'atf-filed':     'ATF pending approval',
   'atf-approved':  'ATF approved - ready to transfer',

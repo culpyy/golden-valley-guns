@@ -57,6 +57,23 @@ export async function handleRefundOrder(request, env) {
     return jsonResponse({ error: 'No card number on file for this order - cannot issue an Authorize.net refund.' }, 400);
   }
 
+  // Atomic claim, same pattern as pay.js's pending->processing lock - without
+  // this, two near-simultaneous requests (a double-click before the button
+  // disables, or two admin tabs open on the same order) could both pass the
+  // plain read-check above and both call Authorize.net for the same charge.
+  // This conditional update is the actual lock: a losing request gets 0 rows
+  // back and is rejected before ever attempting a second refund.
+  const { data: claimed, error: claimError } = await supabase
+    .from('orders')
+    .update({ status: 'refunded' })
+    .eq('id', orderId)
+    .eq('status', 'paid')
+    .select()
+    .single();
+  if (claimError || !claimed) {
+    return jsonResponse({ error: 'This order was already refunded (or its status changed) by another request.' }, 409);
+  }
+
   const result = await refundTransaction(env, {
     transactionId: order.authorize_net_transaction_id,
     amount: parseFloat(order.total),
@@ -64,17 +81,10 @@ export async function handleRefundOrder(request, env) {
   });
 
   if (!result.approved) {
+    // Nothing was actually refunded - revert the claim so the order isn't
+    // stuck showing 'refunded' with no money having moved.
+    await supabase.from('orders').update({ status: 'paid' }).eq('id', order.id);
     return jsonResponse({ error: result.errorText || 'Refund failed.' }, 402);
-  }
-
-  const { error: updateError } = await supabase.from('orders').update({
-    status: 'refunded'
-  }).eq('id', order.id);
-  if (updateError) {
-    // The refund itself already succeeded at Authorize.net by this point -
-    // don't report failure to Shawn (that would risk him trying again and
-    // double-refunding), just log the mismatch for manual reconciliation.
-    console.error(`Order ${order.order_number} refunded at Authorize.net but status update failed:`, updateError);
   }
 
   // Put reserved stock back now that the sale is undone - checkout.js

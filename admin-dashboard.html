@@ -553,6 +553,10 @@
             <label>Notes (public-facing)</label>
             <textarea id="b-notes" placeholder="Short note visible to customers..."></textarea>
           </div>
+          <div class="form-field full">
+            <label style="color:var(--gold-light);">Internal Notes (shop only - never shown to the customer)</label>
+            <textarea id="b-internal-notes" placeholder="e.g. customer wants blued not parkerized, waiting on a callback about the stock swap..."></textarea>
+          </div>
           <div class="form-field full" style="display:flex;gap:16px;align-items:flex-start;">
             <img id="b-image-preview" style="display:none;width:80px;height:80px;object-fit:cover;background:var(--bg);border:1px solid var(--border);" />
             <div style="flex:1;">
@@ -771,7 +775,7 @@
         <h2>Distributor Catalog</h2>
       </div>
       <div style="font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:20px;max-width:640px;">
-        Items pulled in automatically from Lipsey's, RSR Group, Davidson's, and Orion Wholesale. Prices shown to customers are dealer cost plus the markup set below. Hide anything you don't want listed on the Shop page &mdash; it stays hidden until you unhide it.
+        Items pulled in automatically from Lipsey's and Orion Wholesale. RSR Group and Davidson's aren't hooked up yet &mdash; they'll always show "Not synced yet" below until that's built. Prices shown to customers are dealer cost plus the markup set below. Hide anything you don't want listed on the Shop page &mdash; it stays hidden until you unhide it.
       </div>
 
       <div class="form-card open" style="border-left-color: var(--gold-light); margin-bottom: 24px;">
@@ -942,6 +946,7 @@
       document.getElementById('b-atf-form').value = build ? (build.atf_form || '') : '';
       document.getElementById('b-atf-filed').value = build ? (build.atf_filed || '') : '';
       document.getElementById('b-notes').value = build ? (build.notes || '') : '';
+      document.getElementById('b-internal-notes').value = build ? (build.internal_notes || '') : '';
       document.getElementById('b-customer-name').value = build ? (build.customer_name || '') : '';
       document.getElementById('b-customer-email').value = build ? (build.customer_email || '') : '';
       document.getElementById('b-customer-phone').value = build ? (build.customer_phone || '') : '';
@@ -1041,6 +1046,7 @@
         atf_form:       document.getElementById('b-atf-form').value || '',
         atf_filed:      document.getElementById('b-atf-filed').value || null,
         notes:          document.getElementById('b-notes').value || '',
+        internal_notes: document.getElementById('b-internal-notes').value || '',
         customer_name:  document.getElementById('b-customer-name').value || '',
         customer_email: document.getElementById('b-customer-email').value || '',
         customer_phone: document.getElementById('b-customer-phone').value || '',
@@ -1318,6 +1324,12 @@
       document.getElementById('so-is-firearm').disabled = true;
       document.getElementById('so-is-ammo').checked = false;
       document.getElementById('so-is-ammo').disabled = true;
+      // Leftover from a previous freeform special order's rejected attempt
+      // would otherwise sit visible here too - harmless (isFirearm is
+      // force-true for a build, so the server never reads this either way),
+      // but confusing to see next to a disabled, checked "This is a firearm".
+      document.getElementById('so-confirm-not-firearm').checked = false;
+      document.getElementById('so-firearm-confirm-wrap').style.display = 'none';
 
       const form = document.getElementById('specialOrderForm');
       form.classList.add('open');
@@ -2281,25 +2293,30 @@
         return;
       }
 
-      const year = new Date().getFullYear();
-      const { count: total } = await supabase
-        .from('builds')
-        .select('*', { count: 'exact', head: true });
-
+      // Same collision-safe scheme as the "Add Build" form (generateTrackingCode
+      // above), not a row count - a count-based scheme collides forever once
+      // any build is ever deleted, since the count drops but codes already in
+      // use don't. Assigned one at a time (not in parallel) so each call's
+      // fresh query sees the codes just assigned earlier in this same loop.
       let assigned = 0;
-      let counter = (total || 0) - missing.length;
-
+      let failed = 0;
       for (const build of missing) {
-        counter++;
-        const code = `GVG-${year}-${String(counter).padStart(3, '0')}`;
-        const { error } = await supabase
-          .from('builds')
-          .update({ tracking_code: code })
-          .eq('id', build.id);
-        if (!error) assigned++;
+        let saved = false;
+        for (let attempt = 0; attempt < 3 && !saved; attempt++) {
+          const code = await generateTrackingCode(attempt);
+          const { error } = await supabase
+            .from('builds')
+            .update({ tracking_code: code })
+            .eq('id', build.id);
+          if (!error) { saved = true; assigned++; }
+          else if (error.code !== '23505') break;
+        }
+        if (!saved) failed++;
       }
 
-      showToast(`${assigned} code${assigned !== 1 ? 's' : ''} assigned.`);
+      showToast(failed
+        ? `${assigned} code${assigned !== 1 ? 's' : ''} assigned, ${failed} failed - click again to retry.`
+        : `${assigned} code${assigned !== 1 ? 's' : ''} assigned.`);
       btn.textContent = 'Assign Missing Codes';
       btn.disabled = false;
       loadBuilds();

@@ -402,8 +402,8 @@
       </div>
 
       <div id="trackError">
-        <div class="err-title">No Build Found</div>
-        <p>Check your code. It should look like <code>GVG-2026-001</code>. If you need help, <a href="tel:9287270893" class="tel-link">give us a call</a>.</p>
+        <div class="err-title" id="trackErrorTitle">No Build Found</div>
+        <p id="trackErrorBody">Check your code. It should look like <code>GVG-2026-001</code>. If you need help, <a href="tel:9287270893" class="tel-link">give us a call</a>.</p>
       </div>
 
       <div id="trackResult">
@@ -561,9 +561,23 @@
       }
     }
 
-    function showError() {
+    // A real backend problem (network blip, RLS misconfig, Supabase down)
+    // must not look identical to "that code doesn't exist" - a customer
+    // with a genuinely correct code during a transient outage deserves "try
+    // again," not "check your code," and Shawn has no other way to tell the
+    // two apart from a complaint alone.
+    function showError(kind) {
       document.getElementById('trackResult').style.display = 'none';
       document.getElementById('trackError').style.display  = 'block';
+      const title = document.getElementById('trackErrorTitle');
+      const body = document.getElementById('trackErrorBody');
+      if (kind === 'server') {
+        title.textContent = 'Something Went Wrong';
+        body.innerHTML = `We couldn't complete that lookup just now. Please try again in a moment, or <a href="tel:9287270893" class="tel-link">give us a call</a>.`;
+      } else {
+        title.textContent = 'No Build Found';
+        body.innerHTML = `Check your code. It should look like <code>GVG-2026-001</code>. If you need help, <a href="tel:9287270893" class="tel-link">give us a call</a>.`;
+      }
     }
 
     let searchToken = 0;
@@ -572,17 +586,27 @@
       const raw = document.getElementById('codeInput').value.trim().toUpperCase();
       if (!raw) return;
       const thisSearch = ++searchToken;
-      const { data, error } = await supabase
-        .from('builds_public').select('*').eq('tracking_code', raw).single();
-      // If the user fired off another lookup while this one was in flight,
-      // ignore this response so a slow/stale request can't overwrite a
-      // faster, more recent one.
-      if (thisSearch !== searchToken) return;
-      if (error || !data) {
-        showError();
-      } else {
-        showResult(data);
-        window.history.replaceState(null, '', '?code=' + encodeURIComponent(raw));
+      try {
+        const { data, error } = await supabase
+          .from('builds_public').select('*').eq('tracking_code', raw).single();
+        // If the user fired off another lookup while this one was in flight,
+        // ignore this response so a slow/stale request can't overwrite a
+        // faster, more recent one.
+        if (thisSearch !== searchToken) return;
+        // PGRST116 is PostgREST's "zero rows matched .single()" code - the
+        // only case that actually means "no such code." Anything else is a
+        // real failure, not a bad lookup.
+        if (error && error.code !== 'PGRST116') {
+          showError('server');
+        } else if (error || !data) {
+          showError('notfound');
+        } else {
+          showResult(data);
+          window.history.replaceState(null, '', '?code=' + encodeURIComponent(raw));
+        }
+      } catch (err) {
+        if (thisSearch !== searchToken) return;
+        showError('server');
       }
     }
 

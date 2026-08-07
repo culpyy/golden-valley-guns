@@ -818,7 +818,7 @@
     function imageHtml(url, alt) {
       if (!url) return '<div class="part-img-wrap"><div class="part-img-placeholder">No Image</div></div>';
       return `<div class="part-img-wrap">
-        <img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}" loading="lazy" onerror="this.remove(); this.parentElement.classList.add('img-error');">
+        <img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}" loading="lazy" onerror="this.parentElement.classList.add('img-error'); this.remove();">
         <div class="part-img-placeholder">No Image</div>
       </div>`;
     }

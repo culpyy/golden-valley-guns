@@ -60,8 +60,17 @@ export async function getAllowedManufacturers(supabase) {
     .single();
   // A failed lookup here must not be silently treated the same as a real
   // empty allow-list - see the guard in upsertDistributorProducts, which
-  // relies on the empty case really meaning "nothing configured yet."
-  if (error) throw error;
+  // relies on the empty case really meaning "nothing configured yet." So
+  // this still throws rather than falling back to maybeSingle()+empty-string
+  // - but a plain Supabase "no rows returned" error is cryptic in the sync
+  // logs (the only place this failure is ever visible - see worker.js's
+  // catch-and-log around every sync job), so it's rethrown with a message
+  // that actually says what's wrong and how to fix it: this row got deleted
+  // from `site_content` and both Lipsey's and Orion sync are dead until it's
+  // restored via the Catalog Settings tab.
+  if (error) {
+    throw new Error(`catalog_manufacturers row missing from site_content (re-add it in Catalog Settings to restore syncing): ${error.message}`);
+  }
   const raw = data?.value || '';
   return raw.split(',').map(s => s.trim()).filter(Boolean);
 }

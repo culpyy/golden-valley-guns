@@ -124,7 +124,7 @@ export async function buildInvoicePdf({
   isFirearm, fulfillmentMethod, transferFfl, shippingMethod, shippingAddress
 }) {
   const doc = await PDFDocument.create();
-  const page = doc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
+  let page = doc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
   const black = rgb(0, 0, 0);
@@ -139,6 +139,17 @@ export async function buildInvoicePdf({
   const label = (text, yPos) => page.drawText(text, { x: left, y: yPos, size: 8, font: bold, color: gray });
   const rightText = (text, yPos, size, f, color) => {
     page.drawText(text, { x: right - f.widthOfTextAtSize(text, size), y: yPos, size, font: f, color });
+  };
+  // A long cart (many line items, or long item names that wrap) can run
+  // past the bottom of a single page - pdf-lib doesn't clip or warn, it
+  // just draws at whatever y coordinate it's given, silently losing
+  // content off the visible page. This starts a fresh page whenever the
+  // next block wouldn't fit above the margin.
+  const ensureSpace = (needed) => {
+    if (y - needed < MARGIN) {
+      page = doc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
+      y = PAGE_HEIGHT - MARGIN - 10;
+    }
   };
 
   page.drawText('GOLDEN VALLEY GUNS LLC', { x: left, y, size: 18, font: bold, color: black });
@@ -173,6 +184,7 @@ export async function buildInvoicePdf({
   const nameMaxWidth = qtyColX - left - 10;
   for (const item of items) {
     const nameLines = wrapText(item.name, font, 10, nameMaxWidth);
+    ensureSpace(13 * nameLines.length + 3);
     const lineTotal = item.price * item.qty;
     page.drawText(nameLines[0] || '', { x: left, y, size: 10, font, color: black });
     page.drawText(String(item.qty), { x: qtyColX, y, size: 10, font, color: black });
@@ -186,6 +198,7 @@ export async function buildInvoicePdf({
     y -= 3;
   }
 
+  ensureSpace(60);
   y -= 6;
   hairline(y);
   y -= 20;
@@ -199,6 +212,7 @@ export async function buildInvoicePdf({
   if (taxAmount > 0) totalsRow('AZ Sales Tax (5.6%)', taxAmount, false);
   totalsRow('Total', total, true);
 
+  ensureSpace(130);
   y -= 8;
   hairline(y);
   y -= 22;
@@ -236,6 +250,7 @@ export async function buildInvoicePdf({
     y -= 14;
   }
 
+  ensureSpace(50);
   y -= 14;
   hairline(y);
   y -= 20;
