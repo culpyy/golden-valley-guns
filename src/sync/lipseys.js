@@ -226,26 +226,31 @@ export async function run(env) {
   await upsertDistributorProducts(supabase, 'lipseys', filtered, syncTime, cycleComplete ? cycleStart : null);
   await setSyncCursor(supabase, 'lipseys', cycleComplete ? 0 : nextCursor);
 
-  await backfillLipseysImages(env, supabase);
-
   return filtered.length;
 }
 
-// Split out from run() so this can also be called on its own, much more
-// frequent cron schedule (see IMAGE_BACKFILL_CRON in src/worker.js) -
-// caching images doesn't need Lipsey's login/catalog fetch at all, it only
-// needs image_source_name values already sitting in distributor_products
-// from a previous catalog sync, plus a fetch to lipseyscloud.com's public
-// CDN. At only 20/day from the once-daily full sync alone, a backlog in
-// the thousands (the norm right after enabling several manufacturers)
-// would take the better part of a year to clear - running this on its own
-// 10-minute cron instead clears it in a couple of days.
+// Only called from IMAGE_BACKFILL_CRON's own 10-minute schedule (see
+// src/worker.js) now, never inline from run() - caching images doesn't need
+// Lipsey's login/catalog fetch at all, it only needs image_source_name
+// values already sitting in distributor_products from a previous catalog
+// sync, plus a fetch to lipseyscloud.com's public CDN. At only 20/day from a
+// once-daily full sync alone, a backlog in the thousands (the norm right
+// after enabling several manufacturers) would take the better part of a
+// year to clear - its own 10-minute cron instead clears it in a couple of
+// days.
 // 28 empirically confirmed safe, 35 reliably hits "Too many subrequests by
 // single Worker invocation" (2026-07-20 - the Free plan's 50-subrequest-per-
 // invocation ceiling; each row costs an R2 head + fetch + R2 put + Supabase
 // update). Was 20 - bumped once actual headroom was measured rather than
 // guessed, since the original inline-image-fetch incident that necessitated
 // this whole backfill design in the first place was this exact same limit.
+// run() used to also call this inline as a second, smaller top-up beyond
+// the dedicated cron - removed 2026-08-07 after adding davidsons.js to the
+// same shared 4-hour SYNC_JOBS invocation pushed the combined subrequest
+// count (RSR + Davidson's login/download/Supabase calls + Lipsey's own
+// catalog/Supabase calls + up to 28 inline image backfills) over the limit
+// again, this time for real (not just close to it like 2026-07-20). The
+// dedicated cron already covers the same backfill work on its own budget.
 const BACKFILL_LIMIT = 28;
 
 export async function backfillLipseysImages(env, supabase = getSupabaseAdmin(env)) {

@@ -27,7 +27,16 @@ export async function cacheImage(env, { sourceUrl, prefix, filename }) {
     const res = await fetch(sourceUrl);
     if (!res.ok) return null; // skip this item's image, don't fail the whole sync over one bad photo
     const contentType = res.headers.get('content-type') || 'image/jpeg';
-    await env.DISTRIBUTOR_IMAGES.put(key, res.body, {
+    // R2's put() needs a body with a known length up front - passing
+    // res.body (a raw ReadableStream) straight through throws "Provided
+    // readable stream must have a known length" whenever the source serves
+    // the image with chunked transfer-encoding and no Content-Length
+    // (confirmed live 2026-08-07 against lipseyscloud.com). Buffering into
+    // an ArrayBuffer always has a definite byteLength regardless of how the
+    // source sent it - images here are small enough that buffering one at a
+    // time costs nothing meaningful.
+    const body = await res.arrayBuffer();
+    await env.DISTRIBUTOR_IMAGES.put(key, body, {
       httpMetadata: { contentType }
     });
   }

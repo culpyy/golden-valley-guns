@@ -78,5 +78,6 @@
   //   LIPSEYS_RELAY_URL / LIPSEYS_RELAY_SECRET - already set (relay/ - see src/sync/lipseys.js)
   //   AUTHORIZENET_API_LOGIN_ID     - set 2026-07-18
   //   AUTHORIZENET_TRANSACTION_KEY  - set 2026-07-18
+  //   DAVIDSONS_USERNAME / DAVIDSONS_PASSWORD - set 2026-08-07 (dealer portal login, no separate API key - see src/sync/davidsons.js)
   // See src/lib/authorizeNet.js and js/checkout-config.js for how these are used.
 }
