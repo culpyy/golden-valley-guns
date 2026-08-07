@@ -24,9 +24,14 @@
 //     without a form_key silently 302'd back to /inventory-download/ with no
 //     error and no file).
 //   - The "Download Item Inventory" CSV (name=davidsons_inventory) is
-//     firearms-only (10,550 rows checked live, every sampled row across the
-//     file was a gun) - Davidson's ammo/parts/optics catalog isn't exposed
-//     through this feed at all, only Gallery of Guns firearms. Columns:
+//     mostly firearms (10,550 rows checked live, sampled rows across the
+//     file were guns), but not exclusively - real magazine/accessory rows
+//     ride along too, only distinguishable by an empty Gun Type column (see
+//     isMagazineAccessory below, added 2026-08-08 after the first ~7,000
+//     rows synced with every magazine wrongly marked is_firearm: true).
+//     Davidson's ammo/optics catalog isn't exposed through this feed at all,
+//     only Gallery of Guns firearms (plus the magazines that ride along).
+//     Columns:
 //     Item #, Item Description, MSP, Retail Price, Dealer Price, Sale Price,
 //     Sale Ends, Quantity, UPC Code, Manufacturer, Gun Type, Model Series,
 //     Caliber, Action, Capacity, Finish, Stock, Sights, Barrel Length,
@@ -225,14 +230,47 @@ function parseMoney(value) {
 // shop page's firearm-type filter behaves consistently regardless of which
 // distributor an item came from. Davidson's "Gun Type" column is a
 // colon-separated pair (e.g. "Shotgun: Side by Side", "Pistol: Semi-Auto") -
-// only the broad first half matters here.
-function mapFirearmType(gunType) {
+// only the broad first half matters here. A row with no match at all (Gun
+// Type blank or not one of these five) falls to 'Other' - see
+// hasRealFirearmType/isMagazineAccessory below for why that fallback matters.
+function hasRealFirearmType(gunType) {
   const type = (gunType || '').toLowerCase();
+  return type.includes('pistol') || type.includes('revolver') || type.includes('rifle') ||
+    type.includes('shotgun') || type.includes('muzzleloader');
+}
+
+function mapFirearmType(gunType) {
+  if (!hasRealFirearmType(gunType)) return 'Other';
+  const type = gunType.toLowerCase();
   if (type.includes('pistol') || type.includes('revolver')) return 'Handgun';
   if (type.includes('rifle')) return 'Rifle';
   if (type.includes('shotgun')) return 'Shotgun';
-  if (type.includes('muzzleloader')) return 'Muzzleloader';
-  return 'Other';
+  return 'Muzzleloader';
+}
+
+// The feed isn't purely firearms despite the file header comment above -
+// confirmed live 2026-08-08: mag/accessory rows (replacement magazines,
+// scope rings/mounts, etc.) ride along in the same "Item Inventory" export,
+// distinguishable only by an empty/non-matching Gun Type. Magazines
+// specifically were getting upserted with is_firearm: true (wrong - routes
+// a $20 magazine through the FFL/special-order path instead of direct cart
+// checkout) and no way to tell them apart from real guns whose own name
+// happens to contain "MAG" (Savage's "B.MAG" rifle line, Charter Arms' "Mag
+// Pug" revolver, "SAV 110 MAG TRGT" for a Magnum chambering, Ruger PCC
+// carbines listed with/without a magazine) - those are real firearms and
+// must not be caught here. The Gun Type check is what makes this safe: all
+// 18 "MAG"-in-name rows that are genuinely firearms already resolved a real
+// Gun Type (Rifle/Handgun/etc, hasRealFirearmType is true for them), while
+// every one of the 588 confirmed-accessory rows had no Gun Type match at
+// all. Skipped entirely (returns null) rather than just recategorized, since
+// there's no reliable signal here to separate "definitely an accessory,
+// safe for direct cart checkout" from "Gun Type just didn't parse" for the
+// wider non-magazine 'Other' bucket (scope rings, bases, etc.) - only the
+// magazine case has a name pattern specific enough to trust.
+const MAGAZINE_NAME_PATTERN = /\bMAG(AZINE)?\b/i;
+
+function isMagazineAccessory(name, gunType) {
+  return MAGAZINE_NAME_PATTERN.test(name) && !hasRealFirearmType(gunType);
 }
 
 // Returns null to signal "skip this row" (malformed item shouldn't take down
@@ -241,6 +279,7 @@ function normalize(row, syncTime) {
   const itemNo = row['Item #'];
   const dealerCost = parseMoney(row['Dealer Price']);
   if (!itemNo || dealerCost === null) return null;
+  if (isMagazineAccessory(row['Item Description'], row['Gun Type'])) return null;
 
   const quantity = parseInt(row['Quantity'], 10);
   const upc = row['UPC Code'] ? row['UPC Code'].replace(/#/g, '').trim() : '';
@@ -251,9 +290,10 @@ function normalize(row, syncTime) {
     upc: upc || null,
     name: row['Item Description'] || 'Unnamed item',
     manufacturer: row['Manufacturer'] || null,
-    // The whole feed is firearms-only (see file header comment) - no
-    // category inference needed, unlike lipseys.js/orion.js which mix
-    // firearms/ammo/parts and have to branch on item type.
+    // The magazine/accessory rows that would need 'parts' get filtered out
+    // above (isMagazineAccessory) rather than categorized - everything that
+    // reaches this point is a real firearm, unlike lipseys.js/orion.js which
+    // keep their own ammo/parts items and have to branch on item type.
     category: 'firearms',
     caliber: row['Caliber'] || null,
     firearm_type: mapFirearmType(row['Gun Type']),
