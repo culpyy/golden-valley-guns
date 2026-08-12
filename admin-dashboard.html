@@ -655,27 +655,23 @@
     <!-- ── GALLERY TAB ── -->
     <!-- Fully separate from builds - these photos never touch the builds
          table, so adding one can't clutter Active Builds or inflate the
-         "X builds completed" count. Just a photo and a label. -->
+         "X builds completed" count. A project is a title plus any number of
+         photos (gallery_projects + gallery_project_photos) - lets a
+         before/after or multi-angle job show as one gallery card instead
+         of getting cut up into separate unrelated-looking uploads. -->
     <div class="tab-panel" id="tab-gallery">
       <div class="section-hd">
-        <h2>Gallery Photos</h2>
-        <button class="btn-add" id="addGalleryPhotoBtn">+ Add Photo</button>
+        <h2>Gallery Projects</h2>
+        <button class="btn-add" id="addGalleryPhotoBtn">+ Add Project</button>
       </div>
 
       <div class="form-card" id="quickGalleryForm">
-        <h3 id="quickGalleryFormTitle">Add Gallery Photo</h3>
+        <h3 id="quickGalleryFormTitle">Add Gallery Project</h3>
         <input type="hidden" id="qg-id" />
         <div class="form-grid">
-          <div class="form-field full" style="display:flex;gap:16px;align-items:flex-start;">
-            <img id="qg-image-preview" style="display:none;width:80px;height:80px;object-fit:cover;background:var(--bg);border:1px solid var(--border);" />
-            <div style="flex:1;">
-              <label>Photo</label>
-              <input type="file" id="qg-image-file" accept="image/jpeg,image/png,image/webp,image/gif" />
-            </div>
-          </div>
           <div class="form-field full">
-            <label>Label</label>
-            <input type="text" id="qg-title" placeholder="AR-15 Custom Build, 5.56" />
+            <label>Title</label>
+            <input type="text" id="qg-title" placeholder="AR-15 Cerakote Refinish" />
           </div>
           <div class="form-field">
             <label>Type (optional)</label>
@@ -698,9 +694,15 @@
             <input type="checkbox" id="qg-is-showcase" style="width:16px;height:16px;accent-color:var(--gold-light);cursor:pointer;" />
             <label for="qg-is-showcase" style="cursor:pointer;font-size:11px;letter-spacing:1.5px;">Always showcase in gallery (skips the normal rotation)</label>
           </div>
+          <div class="form-field full">
+            <label>Photos</label>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Add as many as this project needs - a single shot, or a full Before/After/During set. Drag order isn't supported yet; photos display in the order added. Label each one if it matters (e.g. "Before", "After").</div>
+            <div id="qg-photos-list" style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px;"></div>
+            <input type="file" id="qg-image-files" accept="image/jpeg,image/png,image/webp,image/gif" multiple />
+          </div>
         </div>
         <div class="form-actions">
-          <button class="btn-save" id="saveQuickGalleryBtn">Add Photo</button>
+          <button class="btn-save" id="saveQuickGalleryBtn">Add Project</button>
           <button class="btn-cancel" id="cancelQuickGalleryBtn">Cancel</button>
         </div>
       </div>
@@ -1105,37 +1107,67 @@
     // builds - see sql/gallery_photos.sql for why (the old flow inserted a
     // fake build row per photo, which cluttered Active Builds and could get
     // "Mark Complete"'d by accident, inflating the public completed count).
-    let editingGalleryPhotoId = null;
+    let editingGalleryProjectId = null;
+    // Each entry: { photoId: existing gallery_project_photos.id or null,
+    // file: File (new, unsaved) or null, photoUrl: existing URL or null,
+    // previewUrl: for <img src>, label: string }. Rendered in array order -
+    // that order becomes each photo's `position` on save.
+    let qgPhotos = [];
 
-    function openQuickGalleryForm(photo) {
-      editingGalleryPhotoId = photo ? photo.id : null;
-      document.getElementById('quickGalleryFormTitle').textContent = photo ? 'Edit Gallery Photo' : 'Add Gallery Photo';
-      document.getElementById('qg-id').value = photo ? photo.id : '';
-      document.getElementById('qg-title').value = photo ? (photo.title || '') : '';
-      document.getElementById('qg-type').value = photo ? (photo.type || '') : '';
-      document.getElementById('qg-caliber').value = photo ? (photo.caliber || '') : '';
-      document.getElementById('qg-is-showcase').checked = photo ? !!photo.is_showcase : false;
-      document.getElementById('qg-image-file').value = '';
-      const preview = document.getElementById('qg-image-preview');
-      if (photo && photo.photo_url) { preview.src = photo.photo_url; preview.style.display = ''; }
-      else { preview.style.display = 'none'; }
-      document.getElementById('saveQuickGalleryBtn').textContent = photo ? 'Save Photo' : 'Add Photo';
+    function renderQgPhotos() {
+      const list = document.getElementById('qg-photos-list');
+      if (qgPhotos.length === 0) {
+        list.innerHTML = '';
+        return;
+      }
+      list.innerHTML = qgPhotos.map((p, i) => `
+        <div style="display:flex;gap:12px;align-items:center;background:var(--bg);border:1px solid var(--border);padding:8px;">
+          <img src="${escapeHtml(p.previewUrl)}" style="width:56px;height:56px;object-fit:cover;flex-shrink:0;" />
+          <input type="text" placeholder="Label (optional) - Before, After..." value="${escapeHtml(p.label)}" oninput="qgPhotos[${i}].label = this.value" style="flex:1;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:8px 10px;font-size:13px;" />
+          <button type="button" class="btn-delete" onclick="removeQgPhoto(${i})">Remove</button>
+        </div>
+      `).join('');
+    }
+
+    function removeQgPhoto(i) {
+      qgPhotos.splice(i, 1);
+      renderQgPhotos();
+    }
+
+    function openQuickGalleryForm(project) {
+      editingGalleryProjectId = project ? project.id : null;
+      document.getElementById('quickGalleryFormTitle').textContent = project ? 'Edit Gallery Project' : 'Add Gallery Project';
+      document.getElementById('qg-id').value = project ? project.id : '';
+      document.getElementById('qg-title').value = project ? (project.title || '') : '';
+      document.getElementById('qg-type').value = project ? (project.type || '') : '';
+      document.getElementById('qg-caliber').value = project ? (project.caliber || '') : '';
+      document.getElementById('qg-is-showcase').checked = project ? !!project.is_showcase : false;
+      document.getElementById('qg-image-files').value = '';
+      qgPhotos = project && project.gallery_project_photos
+        ? project.gallery_project_photos
+            .slice()
+            .sort((a, b) => a.position - b.position)
+            .map(p => ({ photoId: p.id, file: null, photoUrl: p.photo_url, previewUrl: p.photo_url, label: p.label || '' }))
+        : [];
+      renderQgPhotos();
+      document.getElementById('saveQuickGalleryBtn').textContent = project ? 'Save Project' : 'Add Project';
       document.getElementById('quickGalleryForm').classList.add('open');
       document.getElementById('quickGalleryForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
     function closeQuickGalleryForm() {
-      editingGalleryPhotoId = null;
+      editingGalleryProjectId = null;
+      qgPhotos = [];
       document.getElementById('quickGalleryForm').classList.remove('open');
     }
     document.getElementById('addGalleryPhotoBtn').addEventListener('click', () => openQuickGalleryForm(null));
     document.getElementById('cancelQuickGalleryBtn').addEventListener('click', closeQuickGalleryForm);
 
-    document.getElementById('qg-image-file').addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      const preview = document.getElementById('qg-image-preview');
-      if (!file) return;
-      preview.src = URL.createObjectURL(file);
-      preview.style.display = '';
+    document.getElementById('qg-image-files').addEventListener('change', (e) => {
+      for (const file of e.target.files) {
+        qgPhotos.push({ photoId: null, file, photoUrl: null, previewUrl: URL.createObjectURL(file), label: '' });
+      }
+      e.target.value = '';
+      renderQgPhotos();
     });
 
     async function uploadGalleryImage(file) {
@@ -1152,89 +1184,112 @@
 
     document.getElementById('saveQuickGalleryBtn').addEventListener('click', async () => {
       const title = document.getElementById('qg-title').value.trim();
-      const imageFile = document.getElementById('qg-image-file').files[0];
-      if (!title) { showToast('A label is required.'); return; }
-      if (!editingGalleryPhotoId && !imageFile) { showToast('A photo is required.'); return; }
+      if (!title) { showToast('A title is required.'); return; }
+      if (qgPhotos.length === 0) { showToast('At least one photo is required.'); return; }
 
       const saveBtn = document.getElementById('saveQuickGalleryBtn');
       saveBtn.disabled = true;
 
-      const payload = {
+      // Upload only the ones that are new files - existing photos being
+      // kept as-is already have a photoUrl and skip straight through.
+      for (const p of qgPhotos) {
+        if (p.file && !p.photoUrl) {
+          try {
+            p.photoUrl = await uploadGalleryImage(p.file);
+          } catch (err) {
+            saveBtn.disabled = false;
+            showToast('Photo upload failed: ' + err.message);
+            return;
+          }
+        }
+      }
+
+      const projectPayload = {
         title,
         type: document.getElementById('qg-type').value,
         caliber: document.getElementById('qg-caliber').value,
         is_showcase: document.getElementById('qg-is-showcase').checked
       };
 
-      if (imageFile) {
-        try {
-          payload.photo_url = await uploadGalleryImage(imageFile);
-        } catch (err) {
-          saveBtn.disabled = false;
-          showToast('Photo upload failed: ' + err.message);
-          return;
-        }
+      let projectId = editingGalleryProjectId;
+      if (projectId) {
+        const { error } = await supabase.from('gallery_projects').update(projectPayload).eq('id', projectId);
+        if (error) { saveBtn.disabled = false; showToast('Error: ' + error.message); return; }
+        // Simplest correct approach: fully replace this project's photo
+        // rows rather than diffing adds/removes/reorders individually.
+        const { error: delErr } = await supabase.from('gallery_project_photos').delete().eq('project_id', projectId);
+        if (delErr) { saveBtn.disabled = false; showToast('Error: ' + delErr.message); return; }
+      } else {
+        const { data, error } = await supabase.from('gallery_projects').insert(projectPayload).select('id').single();
+        if (error) { saveBtn.disabled = false; showToast('Error: ' + error.message); return; }
+        projectId = data.id;
       }
 
-      const { error } = editingGalleryPhotoId
-        ? await supabase.from('gallery_photos').update(payload).eq('id', editingGalleryPhotoId)
-        : await supabase.from('gallery_photos').insert(payload);
+      const photoRows = qgPhotos.map((p, i) => ({ project_id: projectId, photo_url: p.photoUrl, label: p.label || null, position: i }));
+      const { error: photosErr } = await supabase.from('gallery_project_photos').insert(photoRows);
 
       saveBtn.disabled = false;
-      if (error) { showToast('Error: ' + error.message); return; }
+      if (photosErr) { showToast('Error saving photos: ' + photosErr.message); return; }
 
       closeQuickGalleryForm();
       loadGalleryPhotos();
-      showToast(editingGalleryPhotoId ? 'Photo updated.' : 'Added to gallery.');
+      showToast(editingGalleryProjectId ? 'Project updated.' : 'Added to gallery.');
     });
 
     async function loadGalleryPhotos() {
-      const { data, error } = await supabase.from('gallery_photos').select('*').order('created_at', { ascending: false });
+      const { data, error } = await supabase
+        .from('gallery_projects')
+        .select('*, gallery_project_photos(*)')
+        .order('created_at', { ascending: false });
       const container = document.getElementById('galleryPhotosTable');
       if (error || !data || data.length === 0) {
-        container.innerHTML = '<div class="empty-state">No gallery photos yet. Click "+ Add Photo" to get started.</div>';
+        container.innerHTML = '<div class="empty-state">No gallery projects yet. Click "+ Add Project" to get started.</div>';
         return;
       }
       container.innerHTML = `
         <table class="data-table">
           <thead>
             <tr>
-              <th></th>
-              <th>Label</th>
+              <th>Photos</th>
+              <th>Title</th>
               <th>Type / Caliber</th>
               <th>Showcase</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
-            ${data.map(p => `
+            ${data.map(proj => {
+              const photos = (proj.gallery_project_photos || []).slice().sort((a, b) => a.position - b.position);
+              const thumbs = photos.slice(0, 4).map(p => `<img src="${escapeHtml(p.photo_url)}" alt="" style="width:36px;height:36px;object-fit:cover;border:1px solid var(--border);margin-right:4px;" />`).join('');
+              const extra = photos.length > 4 ? `<span style="font-size:11px;color:var(--muted);">+${photos.length - 4}</span>` : '';
+              return `
               <tr>
-                <td><img src="${escapeHtml(p.photo_url)}" alt="" style="width:44px;height:44px;object-fit:cover;border:1px solid var(--border);" /></td>
-                <td class="title">${escapeHtml(p.title)}</td>
-                <td style="font-size:12px;">${[p.type, p.caliber].filter(Boolean).map(escapeHtml).join(' · ') || '—'}</td>
-                <td>${p.is_showcase ? '<span title="Showcase" style="color:var(--gold-light);">&#9733;</span>' : ''}</td>
+                <td style="white-space:nowrap;">${thumbs}${extra}</td>
+                <td class="title">${escapeHtml(proj.title)}</td>
+                <td style="font-size:12px;">${[proj.type, proj.caliber].filter(Boolean).map(escapeHtml).join(' · ') || '—'}</td>
+                <td>${proj.is_showcase ? '<span title="Showcase" style="color:var(--gold-light);">&#9733;</span>' : ''}</td>
                 <td>
                   <div class="row-actions">
-                    <button class="btn-edit" onclick="editGalleryPhoto('${p.id}')">Edit</button>
-                    <button class="btn-delete" onclick="deleteGalleryPhoto('${p.id}')">Delete</button>
+                    <button class="btn-edit" onclick="editGalleryPhoto('${proj.id}')">Edit</button>
+                    <button class="btn-delete" onclick="deleteGalleryPhoto('${proj.id}')">Delete</button>
                   </div>
                 </td>
               </tr>
-            `).join('')}
+            `; }).join('')}
           </tbody>
         </table>`;
     }
 
     async function editGalleryPhoto(id) {
-      const { data } = await supabase.from('gallery_photos').select('*').eq('id', id).single();
+      const { data } = await supabase.from('gallery_projects').select('*, gallery_project_photos(*)').eq('id', id).single();
       if (data) openQuickGalleryForm(data);
     }
 
     async function deleteGalleryPhoto(id) {
-      if (!confirm('Delete this gallery photo? This cannot be undone.')) return;
-      const { error } = await supabase.from('gallery_photos').delete().eq('id', id);
+      if (!confirm('Delete this gallery project and all its photos? This cannot be undone.')) return;
+      const { error } = await supabase.from('gallery_projects').delete().eq('id', id);
       if (error) { showToast('Error: ' + error.message); return; }
-      showToast('Photo deleted.');
+      showToast('Project deleted.');
       loadGalleryPhotos();
     }
 

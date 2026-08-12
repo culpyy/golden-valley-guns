@@ -23,7 +23,12 @@ const CSP = [
   "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://*.authorize.net",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com",
-  "img-src 'self' data: https:",
+  // blob: needed for admin-dashboard.html's pre-upload photo previews
+  // (URL.createObjectURL on a picked file, before it's actually uploaded) -
+  // without it the browser silently drops the preview <img> with no JS-
+  // catchable error, just a broken-image icon. Same origin either way,
+  // since blob: URLs are only ever created by our own inline scripts.
+  "img-src 'self' data: blob: https:",
   "connect-src 'self' https://tyqgvpiunplgqzkygnii.supabase.co https://*.authorize.net",
   "frame-src https://*.authorize.net",
   "object-src 'none'",

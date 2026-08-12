@@ -127,6 +127,49 @@
       border-radius: 1px;
       z-index: 1;
     }
+    .photo-count-badge {
+      position: absolute;
+      bottom: 12px;
+      right: 12px;
+      background: rgba(0,0,0,0.7);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      padding: 4px 9px;
+      border-radius: 1px;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .lightbox-nav {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 40px;
+      cursor: pointer;
+      padding: 12px 18px;
+      line-height: 1;
+      transition: color 0.2s;
+    }
+    .lightbox-nav:hover { color: var(--gold-light); }
+    .lightbox-nav.prev { left: 4px; }
+    .lightbox-nav.next { right: 4px; }
+    .lb-photo-label {
+      display: block;
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--gold-light);
+      margin-bottom: 6px;
+    }
+    @media (max-width: 580px) {
+      .lightbox-nav { font-size: 28px; padding: 8px 10px; }
+    }
   </style>
 </head>
 <body>
@@ -225,8 +268,11 @@
   <!-- LIGHTBOX -->
   <div class="lightbox" id="lightbox">
     <button class="lightbox-close" aria-label="Close">&times;</button>
+    <button class="lightbox-nav prev" id="lightboxPrev" aria-label="Previous photo">&#8249;</button>
     <img class="lb-img" src="" alt="" />
+    <button class="lightbox-nav next" id="lightboxNext" aria-label="Next photo">&#8250;</button>
     <div class="lightbox-caption">
+      <span class="lb-photo-label"></span>
       <h4 class="lb-title"></h4>
       <span class="lb-sub"></span>
     </div>
@@ -313,36 +359,85 @@
     // Nothing to manage by hand as new builds finish.
     const RECENT_LIMIT = 12;
 
-    function openGalleryLightbox(photoUrl, title, sub) {
+    // Active lightbox state - which project's photos are showing and which
+    // index, so prev/next can step through without re-querying anything.
+    let lbPhotos = [];
+    let lbIndex = 0;
+    let lbTitle = '';
+    let lbSub = '';
+
+    function renderLightboxPhoto() {
       const lb = document.getElementById('lightbox');
+      const photo = lbPhotos[lbIndex];
       const img = lb.querySelector('.lb-img');
-      img.src = photoUrl;
-      img.alt = title;
-      img.style.display = '';
-      lb.querySelector('.lb-title').textContent = title;
-      lb.querySelector('.lb-sub').textContent = sub;
+      img.src = photo.photo_url;
+      img.alt = lbTitle;
+      lb.querySelector('.lb-title').textContent = lbTitle;
+      lb.querySelector('.lb-sub').textContent = lbSub;
+      const labelEl = lb.querySelector('.lb-photo-label');
+      const countSuffix = lbPhotos.length > 1 ? ` (${lbIndex + 1}/${lbPhotos.length})` : '';
+      labelEl.textContent = (photo.label || '') + countSuffix;
+      labelEl.style.display = labelEl.textContent ? '' : 'none';
+      const multi = lbPhotos.length > 1;
+      document.getElementById('lightboxPrev').style.display = multi ? '' : 'none';
+      document.getElementById('lightboxNext').style.display = multi ? '' : 'none';
+    }
+
+    function openGalleryLightbox(photos, title, sub) {
+      lbPhotos = photos;
+      lbIndex = 0;
+      lbTitle = title;
+      lbSub = sub;
+      renderLightboxPhoto();
+      const lb = document.getElementById('lightbox');
       lb.classList.add('open');
       document.body.style.overflow = 'hidden';
     }
 
-    function buildGalleryItem(build) {
-      const sub = [build.type, build.caliber].filter(Boolean).join(' · ');
+    document.getElementById('lightboxPrev').addEventListener('click', (e) => {
+      e.stopPropagation();
+      lbIndex = (lbIndex - 1 + lbPhotos.length) % lbPhotos.length;
+      renderLightboxPhoto();
+    });
+    document.getElementById('lightboxNext').addEventListener('click', (e) => {
+      e.stopPropagation();
+      lbIndex = (lbIndex + 1) % lbPhotos.length;
+      renderLightboxPhoto();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (!document.getElementById('lightbox').classList.contains('open') || lbPhotos.length < 2) return;
+      if (e.key === 'ArrowLeft') document.getElementById('lightboxPrev').click();
+      if (e.key === 'ArrowRight') document.getElementById('lightboxNext').click();
+    });
+
+    // Unified item shape from either source: { title, type, caliber,
+    // is_showcase, updated_at, photos: [{ photo_url, label }] }.
+    function buildGalleryItem(entry) {
+      const sub = [entry.type, entry.caliber].filter(Boolean).join(' · ');
+      const cover = entry.photos[0];
 
       const item = document.createElement('div');
       item.className = 'gallery-item fade-in';
 
-      if (build.is_showcase) {
+      if (entry.is_showcase) {
         const badge = document.createElement('span');
         badge.className = 'showcase-badge';
         badge.textContent = 'Showcase';
         item.appendChild(badge);
       }
 
+      if (entry.photos.length > 1) {
+        const countBadge = document.createElement('span');
+        countBadge.className = 'photo-count-badge';
+        countBadge.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="14" height="14" rx="1"/><path d="M7 21h11a2 2 0 0 0 2-2V7"/></svg>${entry.photos.length}`;
+        item.appendChild(countBadge);
+      }
+
       const inner = document.createElement('div');
       inner.className = 'gallery-item-inner';
       const img = document.createElement('img');
-      img.src = build.photo_url;
-      img.alt = build.title || '';
+      img.src = cover.photo_url;
+      img.alt = entry.title || '';
       img.loading = 'lazy';
       inner.appendChild(img);
       item.appendChild(inner);
@@ -352,32 +447,38 @@
       const overlayText = document.createElement('div');
       overlayText.className = 'gallery-overlay-text';
       const h4 = document.createElement('h4');
-      h4.textContent = build.title || '';
+      h4.textContent = entry.title || '';
       const span = document.createElement('span');
       span.textContent = sub;
       overlayText.append(h4, span);
       overlay.appendChild(overlayText);
       item.appendChild(overlay);
 
-      item.addEventListener('click', () => openGalleryLightbox(build.photo_url, build.title || '', sub));
+      item.addEventListener('click', () => openGalleryLightbox(entry.photos, entry.title || '', sub));
       return item;
     }
 
     async function loadGallery() {
-      // Two sources: real finished builds (builds_public, still tracks its
-      // own job through the shop pipeline) and standalone gallery_photos
-      // (older/one-off work with no build record at all - see
-      // sql/gallery_photos.sql for why this is a separate table rather than
-      // fake rows in builds). Merged here so gallery.html doesn't care which
-      // one a given photo came from.
-      const [buildsRes, photosRes] = await Promise.all([
+      // Two sources: real finished builds (builds_public, still one photo
+      // each) and standalone gallery_projects (any number of photos each,
+      // e.g. a Before/After set - see sql/gallery_projects.sql). Both get
+      // normalized into the same { photos: [...] } shape so the rest of
+      // this page doesn't care which source a project came from.
+      const [buildsRes, projectsRes] = await Promise.all([
         supabase.from('builds_public').select('*').eq('status', 'ready').not('photo_url', 'is', null).order('updated_at', { ascending: false }),
-        supabase.from('gallery_photos').select('*').order('created_at', { ascending: false })
+        supabase.from('gallery_projects').select('*, gallery_project_photos(*)').order('created_at', { ascending: false })
       ]);
 
-      const builds = buildsRes.error ? [] : (buildsRes.data || []);
-      const photos = (photosRes.error ? [] : (photosRes.data || [])).map(p => ({ ...p, updated_at: p.created_at }));
-      const data = [...builds, ...photos].sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+      const builds = (buildsRes.error ? [] : (buildsRes.data || [])).map(b => ({
+        title: b.title, type: b.type, caliber: b.caliber, is_showcase: b.is_showcase,
+        updated_at: b.updated_at, photos: [{ photo_url: b.photo_url, label: null }]
+      }));
+      const projects = (projectsRes.error ? [] : (projectsRes.data || [])).map(p => ({
+        title: p.title, type: p.type, caliber: p.caliber, is_showcase: p.is_showcase,
+        updated_at: p.created_at,
+        photos: (p.gallery_project_photos || []).slice().sort((a, b) => a.position - b.position).map(ph => ({ photo_url: ph.photo_url, label: ph.label }))
+      })).filter(p => p.photos.length > 0);
+      const data = [...builds, ...projects].sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
 
       const grid = document.getElementById('galleryGrid');
       const empty = document.getElementById('galleryEmpty');
@@ -399,7 +500,7 @@
 
       empty.style.display = 'none';
       grid.style.display = '';
-      combined.forEach(build => grid.appendChild(buildGalleryItem(build)));
+      combined.forEach(entry => grid.appendChild(buildGalleryItem(entry)));
 
       // Fade-in observer in main.js only picks up elements present at page
       // load - these were added after, so trigger the same effect directly.
