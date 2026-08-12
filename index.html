@@ -371,9 +371,12 @@
   </script>
   <script>
     async function loadBuildPreview() {
+      // Same "hide once picked up" rule as inshop.html - this widget is
+      // just a 3-item preview of the same live board.
       const { data, error } = await supabase
         .from('builds_public')
         .select('title, type, caliber, status, is_nfa')
+        .is('completed_at', null)
         .order('received', { ascending: false })
         .limit(3);
 
