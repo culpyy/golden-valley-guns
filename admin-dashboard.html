@@ -450,7 +450,7 @@
          matters more here anyway, and mobile shows fewer rows per screen so
          losing track of a column is less of a problem than on desktop.
          Full-detail columns are already trimmed further below too. */
-      #buildsTable, #completedBuildsTable, #productsTable, #ordersTable, #messagesTable, #intakeTable, #catalogTable {
+      #buildsTable, #completedBuildsTable, #galleryPhotosTable, #productsTable, #ordersTable, #messagesTable, #intakeTable, #catalogTable {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
       }
@@ -497,6 +497,7 @@
   <!-- TABS -->
   <div class="tab-nav">
     <button class="tab-btn active" data-tab="builds">Builds</button>
+    <button class="tab-btn" data-tab="gallery">Gallery</button>
     <button class="tab-btn" data-tab="orders">Orders</button>
     <button class="tab-btn" data-tab="messages" id="messagesTabBtn">Messages</button>
     <button class="tab-btn" data-tab="intake" id="intakeTabBtn">Intake</button>
@@ -516,7 +517,9 @@
     <div class="tab-panel active" id="tab-builds">
       <div class="section-hd">
         <h2>Active Builds</h2>
-        <button class="btn-add" id="addBuildBtn">+ Add Build</button>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="btn-add" id="addBuildBtn">+ Add Build</button>
+        </div>
       </div>
 
       <div class="form-card" id="buildForm">
@@ -647,6 +650,62 @@
         <button class="btn-edit" id="toggleCompletedBtn">Show</button>
       </div>
       <div id="completedBuildsTable" style="display:none;"></div>
+    </div>
+
+    <!-- ── GALLERY TAB ── -->
+    <!-- Fully separate from builds - these photos never touch the builds
+         table, so adding one can't clutter Active Builds or inflate the
+         "X builds completed" count. Just a photo and a label. -->
+    <div class="tab-panel" id="tab-gallery">
+      <div class="section-hd">
+        <h2>Gallery Photos</h2>
+        <button class="btn-add" id="addGalleryPhotoBtn">+ Add Photo</button>
+      </div>
+
+      <div class="form-card" id="quickGalleryForm">
+        <h3 id="quickGalleryFormTitle">Add Gallery Photo</h3>
+        <input type="hidden" id="qg-id" />
+        <div class="form-grid">
+          <div class="form-field full" style="display:flex;gap:16px;align-items:flex-start;">
+            <img id="qg-image-preview" style="display:none;width:80px;height:80px;object-fit:cover;background:var(--bg);border:1px solid var(--border);" />
+            <div style="flex:1;">
+              <label>Photo</label>
+              <input type="file" id="qg-image-file" accept="image/jpeg,image/png,image/webp,image/gif" />
+            </div>
+          </div>
+          <div class="form-field full">
+            <label>Label</label>
+            <input type="text" id="qg-title" placeholder="AR-15 Custom Build, 5.56" />
+          </div>
+          <div class="form-field">
+            <label>Type (optional)</label>
+            <select id="qg-type">
+              <option value="">—</option>
+              <option>Rifle</option>
+              <option>Pistol</option>
+              <option>Shotgun</option>
+              <option>Short-Barreled Rifle</option>
+              <option>Short-Barreled Shotgun</option>
+              <option>Suppressor</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Caliber (optional)</label>
+            <input type="text" id="qg-caliber" placeholder="5.56 NATO" />
+          </div>
+          <div class="form-field full" style="display:flex;align-items:center;gap:10px;">
+            <input type="checkbox" id="qg-is-showcase" style="width:16px;height:16px;accent-color:var(--gold-light);cursor:pointer;" />
+            <label for="qg-is-showcase" style="cursor:pointer;font-size:11px;letter-spacing:1.5px;">Always showcase in gallery (skips the normal rotation)</label>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn-save" id="saveQuickGalleryBtn">Add Photo</button>
+          <button class="btn-cancel" id="cancelQuickGalleryBtn">Cancel</button>
+        </div>
+      </div>
+
+      <div id="galleryPhotosTable"></div>
     </div>
 
     <!-- ── ORDERS TAB ── -->
@@ -1041,6 +1100,143 @@
 
     document.getElementById('addBuildBtn').addEventListener('click', () => openBuildForm(null));
     document.getElementById('cancelBuildBtn').addEventListener('click', closeBuildForm);
+
+    // ── GALLERY PHOTOS ── standalone gallery_photos table, never touches
+    // builds - see sql/gallery_photos.sql for why (the old flow inserted a
+    // fake build row per photo, which cluttered Active Builds and could get
+    // "Mark Complete"'d by accident, inflating the public completed count).
+    let editingGalleryPhotoId = null;
+
+    function openQuickGalleryForm(photo) {
+      editingGalleryPhotoId = photo ? photo.id : null;
+      document.getElementById('quickGalleryFormTitle').textContent = photo ? 'Edit Gallery Photo' : 'Add Gallery Photo';
+      document.getElementById('qg-id').value = photo ? photo.id : '';
+      document.getElementById('qg-title').value = photo ? (photo.title || '') : '';
+      document.getElementById('qg-type').value = photo ? (photo.type || '') : '';
+      document.getElementById('qg-caliber').value = photo ? (photo.caliber || '') : '';
+      document.getElementById('qg-is-showcase').checked = photo ? !!photo.is_showcase : false;
+      document.getElementById('qg-image-file').value = '';
+      const preview = document.getElementById('qg-image-preview');
+      if (photo && photo.photo_url) { preview.src = photo.photo_url; preview.style.display = ''; }
+      else { preview.style.display = 'none'; }
+      document.getElementById('saveQuickGalleryBtn').textContent = photo ? 'Save Photo' : 'Add Photo';
+      document.getElementById('quickGalleryForm').classList.add('open');
+      document.getElementById('quickGalleryForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    function closeQuickGalleryForm() {
+      editingGalleryPhotoId = null;
+      document.getElementById('quickGalleryForm').classList.remove('open');
+    }
+    document.getElementById('addGalleryPhotoBtn').addEventListener('click', () => openQuickGalleryForm(null));
+    document.getElementById('cancelQuickGalleryBtn').addEventListener('click', closeQuickGalleryForm);
+
+    document.getElementById('qg-image-file').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      const preview = document.getElementById('qg-image-preview');
+      if (!file) return;
+      preview.src = URL.createObjectURL(file);
+      preview.style.display = '';
+    });
+
+    async function uploadGalleryImage(file) {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/admin/upload-gallery-image', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': file.type },
+        body: file
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Upload failed.');
+      return result.url;
+    }
+
+    document.getElementById('saveQuickGalleryBtn').addEventListener('click', async () => {
+      const title = document.getElementById('qg-title').value.trim();
+      const imageFile = document.getElementById('qg-image-file').files[0];
+      if (!title) { showToast('A label is required.'); return; }
+      if (!editingGalleryPhotoId && !imageFile) { showToast('A photo is required.'); return; }
+
+      const saveBtn = document.getElementById('saveQuickGalleryBtn');
+      saveBtn.disabled = true;
+
+      const payload = {
+        title,
+        type: document.getElementById('qg-type').value,
+        caliber: document.getElementById('qg-caliber').value,
+        is_showcase: document.getElementById('qg-is-showcase').checked
+      };
+
+      if (imageFile) {
+        try {
+          payload.photo_url = await uploadGalleryImage(imageFile);
+        } catch (err) {
+          saveBtn.disabled = false;
+          showToast('Photo upload failed: ' + err.message);
+          return;
+        }
+      }
+
+      const { error } = editingGalleryPhotoId
+        ? await supabase.from('gallery_photos').update(payload).eq('id', editingGalleryPhotoId)
+        : await supabase.from('gallery_photos').insert(payload);
+
+      saveBtn.disabled = false;
+      if (error) { showToast('Error: ' + error.message); return; }
+
+      closeQuickGalleryForm();
+      loadGalleryPhotos();
+      showToast(editingGalleryPhotoId ? 'Photo updated.' : 'Added to gallery.');
+    });
+
+    async function loadGalleryPhotos() {
+      const { data, error } = await supabase.from('gallery_photos').select('*').order('created_at', { ascending: false });
+      const container = document.getElementById('galleryPhotosTable');
+      if (error || !data || data.length === 0) {
+        container.innerHTML = '<div class="empty-state">No gallery photos yet. Click "+ Add Photo" to get started.</div>';
+        return;
+      }
+      container.innerHTML = `
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th></th>
+              <th>Label</th>
+              <th>Type / Caliber</th>
+              <th>Showcase</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.map(p => `
+              <tr>
+                <td><img src="${escapeHtml(p.photo_url)}" alt="" style="width:44px;height:44px;object-fit:cover;border:1px solid var(--border);" /></td>
+                <td class="title">${escapeHtml(p.title)}</td>
+                <td style="font-size:12px;">${[p.type, p.caliber].filter(Boolean).map(escapeHtml).join(' · ') || '—'}</td>
+                <td>${p.is_showcase ? '<span title="Showcase" style="color:var(--gold-light);">&#9733;</span>' : ''}</td>
+                <td>
+                  <div class="row-actions">
+                    <button class="btn-edit" onclick="editGalleryPhoto('${p.id}')">Edit</button>
+                    <button class="btn-delete" onclick="deleteGalleryPhoto('${p.id}')">Delete</button>
+                  </div>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>`;
+    }
+
+    async function editGalleryPhoto(id) {
+      const { data } = await supabase.from('gallery_photos').select('*').eq('id', id).single();
+      if (data) openQuickGalleryForm(data);
+    }
+
+    async function deleteGalleryPhoto(id) {
+      if (!confirm('Delete this gallery photo? This cannot be undone.')) return;
+      const { error } = await supabase.from('gallery_photos').delete().eq('id', id);
+      if (error) { showToast('Error: ' + error.message); return; }
+      showToast('Photo deleted.');
+      loadGalleryPhotos();
+    }
 
     // Live preview of a newly-picked file, before it's actually uploaded -
     // same pattern as the product image field.
@@ -2368,6 +2564,7 @@
 
     // ── INIT ──
     loadBuilds();
+    loadGalleryPhotos();
     loadOrders();
     loadMessages();
     loadIntake();

@@ -8,6 +8,7 @@ import { handleIntake } from './api/intake.js';
 import { handleNotifyBuildStatus } from './api/notifyBuildStatus.js';
 import { handleUploadProductImage } from './api/uploadProductImage.js';
 import { handleUploadBuildImage } from './api/uploadBuildImage.js';
+import { handleUploadGalleryImage } from './api/uploadGalleryImage.js';
 import { handleCreateSpecialOrder } from './api/specialOrder.js';
 import { handleGetPayOrder, handlePayOrder } from './api/pay.js';
 import { handleRefundOrder } from './api/refundOrder.js';
@@ -119,6 +120,42 @@ async function route(request, env) {
         'Cache-Control': 'public, max-age=31536000, immutable'
       }
     });
+  }
+
+  if (url.pathname.startsWith('/gallery-images/')) {
+    // Photos Shawn uploads via the standalone Gallery tab
+    // (uploadGalleryImage.js) - not attached to any build, own R2 key
+    // prefix so it can never collide with /build-images/.
+    const key = 'gallery/' + url.pathname.slice('/gallery-images/'.length);
+    const object = await env.DISTRIBUTOR_IMAGES.get(key);
+    if (!object) return new Response('Not found', { status: 404 });
+    return new Response(object.body, {
+      headers: {
+        'Content-Type': object.httpMetadata?.contentType || 'application/octet-stream',
+        'Cache-Control': 'public, max-age=31536000, immutable'
+      }
+    });
+  }
+
+  if (url.pathname === '/api/admin/upload-gallery-image' && request.method === 'POST') {
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    const { allowed, retryAfterSeconds } = await checkRateLimit(env, `upload-gallery-image:${ip}`, { limit: 20, windowSeconds: 600 });
+    if (!allowed) {
+      return new Response(JSON.stringify({ error: 'Too many uploads. Try again shortly.' }), {
+        status: 429,
+        headers: { 'Content-Type': 'application/json', 'Retry-After': String(retryAfterSeconds) }
+      });
+    }
+
+    try {
+      return await handleUploadGalleryImage(request, env);
+    } catch (err) {
+      console.error('Gallery image upload failed:', err);
+      return new Response(JSON.stringify({ error: 'Upload failed.' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
   }
 
   if (url.pathname === '/api/admin/upload-build-image' && request.method === 'POST') {

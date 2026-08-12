@@ -364,16 +364,24 @@
     }
 
     async function loadGallery() {
-      const { data, error } = await supabase
-        .from('builds_public')
-        .select('*')
-        .eq('status', 'ready')
-        .not('photo_url', 'is', null)
-        .order('updated_at', { ascending: false });
+      // Two sources: real finished builds (builds_public, still tracks its
+      // own job through the shop pipeline) and standalone gallery_photos
+      // (older/one-off work with no build record at all - see
+      // sql/gallery_photos.sql for why this is a separate table rather than
+      // fake rows in builds). Merged here so gallery.html doesn't care which
+      // one a given photo came from.
+      const [buildsRes, photosRes] = await Promise.all([
+        supabase.from('builds_public').select('*').eq('status', 'ready').not('photo_url', 'is', null).order('updated_at', { ascending: false }),
+        supabase.from('gallery_photos').select('*').order('created_at', { ascending: false })
+      ]);
+
+      const builds = buildsRes.error ? [] : (buildsRes.data || []);
+      const photos = (photosRes.error ? [] : (photosRes.data || [])).map(p => ({ ...p, updated_at: p.created_at }));
+      const data = [...builds, ...photos].sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
 
       const grid = document.getElementById('galleryGrid');
       const empty = document.getElementById('galleryEmpty');
-      if (error || !data || data.length === 0) {
+      if (data.length === 0) {
         grid.style.display = 'none';
         empty.style.display = '';
         return;

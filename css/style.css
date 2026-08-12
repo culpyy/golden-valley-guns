@@ -568,7 +568,14 @@ h2.section-title {
 .gallery-item img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  /* contain, not cover - the gallery mixes phone-shot portrait photos with
+     wide/panoramic ones inside a fixed 4:3 box. cover cropped enough off a
+     tall or extra-wide photo that the subject wasn't identifiable without
+     opening the lightbox (confirmed live 2026-08-12 on a 4:1 rifle photo) -
+     contain guarantees the whole photo is always visible, at the cost of
+     letterbox bars (filled by .gallery-item-inner's own background, reading
+     as an intentional mat rather than empty space). */
+  object-fit: contain;
   display: block;
 }
 
