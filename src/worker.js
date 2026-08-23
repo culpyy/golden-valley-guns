@@ -139,7 +139,7 @@ async function route(request, env) {
 
   if (url.pathname === '/api/admin/upload-gallery-image' && request.method === 'POST') {
     const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
-    const { allowed, retryAfterSeconds } = await checkRateLimit(env, `upload-gallery-image:${ip}`, { limit: 20, windowSeconds: 600 });
+    const { allowed, retryAfterSeconds } = await checkRateLimit(env, `upload-gallery-image:${ip}`, { limit: 50, windowSeconds: 600 });
     if (!allowed) {
       return new Response(JSON.stringify({ error: 'Too many uploads. Try again shortly.' }), {
         status: 429,

@@ -9,7 +9,7 @@
 import { isAdminToken } from '../lib/adminAuth.js';
 
 const ALLOWED_TYPES = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif' };
-const MAX_BYTES = 5 * 1024 * 1024;
+const MAX_BYTES = 10 * 1024 * 1024;
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
@@ -33,7 +33,7 @@ export async function handleUploadBuildImage(request, env) {
 
   const body = await request.arrayBuffer();
   if (body.byteLength === 0) return jsonResponse({ error: 'Empty upload.' }, 400);
-  if (body.byteLength > MAX_BYTES) return jsonResponse({ error: 'Image too large - 5MB max.' }, 400);
+  if (body.byteLength > MAX_BYTES) return jsonResponse({ error: 'Image too large - 10MB max.' }, 400);
 
   const filename = `${buildId}-${Date.now()}.${ext}`;
   await env.DISTRIBUTOR_IMAGES.put(`builds/${filename}`, body, {
