@@ -56,7 +56,7 @@
 //     this sync doesn't use.
 //
 import { getSupabaseAdmin } from '../lib/supabaseAdmin.js';
-import { getAllowedManufacturers, filterByAllowList, upsertDistributorProducts, getSyncCursor, setSyncCursor, getCycleStart, setCycleStart } from '../lib/catalogSync.js';
+import { getAllowedManufacturers, filterByAllowList, upsertDistributorProducts, getSyncCursor, claimSyncChunk, getCycleStart, setCycleStart } from '../lib/catalogSync.js';
 
 const LOGIN_PAGE_URL = 'https://www.davidsonsinc.com/customer/account/login/';
 const LOGIN_POST_URL = 'https://www.davidsonsinc.com/customer/account/loginPost/';
@@ -98,8 +98,26 @@ async function login(env) {
   let jar = {};
   let res = await fetch(LOGIN_PAGE_URL, { headers: { Cookie: cookieHeader(jar) } });
   jar = mergeCookies(jar, res);
-  const loginFormKey = extractFormKey(await res.text());
-  if (!loginFormKey) throw new Error("Davidson's login page: form_key not found (page markup may have changed).");
+  const loginHtml = await res.text();
+  const loginFormKey = extractFormKey(loginHtml);
+  if (!loginFormKey) {
+    // TEMPORARY DIAGNOSTIC (2026-08-23) - a plain curl from outside
+    // Cloudflare gets form_key fine, so this is checking whether Davidson's
+    // is specifically challenging/blocking requests from Cloudflare's own
+    // IP ranges (common anti-bot posture) rather than the page markup
+    // actually having changed. Remove once the real cause is confirmed and
+    // fixed.
+    console.error('Davidson\'s login page diagnostic:', JSON.stringify({
+      status: res.status,
+      contentLength: loginHtml.length,
+      titleMatch: (loginHtml.match(/<title>([^<]*)<\/title>/i) || [])[1] || null,
+      looksLikeChallenge: /just a moment|attention required|access denied|are you a human|captcha|cf-mitigated|request blocked/i.test(loginHtml),
+      cfMitigated: res.headers.get('cf-mitigated'),
+      server: res.headers.get('server'),
+      snippet: loginHtml.slice(0, 300)
+    }));
+    throw new Error("Davidson's login page: form_key not found (page markup may have changed).");
+  }
 
   res = await fetch(LOGIN_POST_URL, {
     method: 'POST',
@@ -324,15 +342,20 @@ export async function run(env) {
   const allowList = await getAllowedManufacturers(supabase);
   const syncTime = new Date().toISOString();
 
-  let cursor = await getSyncCursor(supabase, 'davidsons');
-  const isCycleStart = cursor === 0;
-
-  const csvText = await getCatalogText(env, isCycleStart);
+  // Just a cheap peek to decide whether to bypass the catalog cache below -
+  // doesn't need to be race-free, the actual chunk claim happens atomically
+  // right before slicing (see claimSyncChunk).
+  const cursorPeek = await getSyncCursor(supabase, 'davidsons');
+  const csvText = await getCatalogText(env, cursorPeek === 0);
   const lines = csvText.split(/\r?\n/).filter(line => line.length > 0);
   const headers = parseCsvLine(lines[0]);
   const dataLines = lines.slice(1);
 
-  if (cursor >= dataLines.length) cursor = 0;
+  // Atomic claim - see sql/atomic_sync_cursor.sql and the equivalent comment
+  // in sync/lipseys.js. Doing this after the slow catalog fetch/login above
+  // but right before the chunk is sliced keeps the race window down to a
+  // single DB round trip.
+  const cursor = await claimSyncChunk(supabase, 'davidsons', CHUNK_SIZE, dataLines.length);
 
   let cycleStart = await getCycleStart(supabase, 'davidsons');
   if (cursor === 0 || !cycleStart) {
@@ -346,11 +369,9 @@ export async function run(env) {
     .filter(Boolean);
   const filtered = filterByAllowList(normalized, allowList);
 
-  const nextCursor = cursor + CHUNK_SIZE;
-  const cycleComplete = nextCursor >= dataLines.length;
+  const cycleComplete = cursor + CHUNK_SIZE >= dataLines.length;
 
   await upsertDistributorProducts(supabase, 'davidsons', filtered, syncTime, cycleComplete ? cycleStart : null);
-  await setSyncCursor(supabase, 'davidsons', cycleComplete ? 0 : nextCursor);
 
   return filtered.length;
 }

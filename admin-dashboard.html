@@ -560,8 +560,8 @@
               <option value="blasting">Blasting</option>
               <option value="refinishing">Refinishing</option>
               <option value="testing">Testing</option>
-              <option value="atf-filed">ATF Filed</option>
-              <option value="atf-approved">ATF Approved</option>
+              <option value="atf-filed" class="b-status-nfa-only">ATF Filed</option>
+              <option value="atf-approved" class="b-status-nfa-only">ATF Approved</option>
               <option value="ready">Ready</option>
             </select>
           </div>
@@ -1072,9 +1072,15 @@
         document.getElementById('b-tracking-code').value = build.tracking_code;
         document.getElementById('b-tracking-code-display').textContent = build.tracking_code;
       } else {
-        const code = await generateTrackingCode();
-        document.getElementById('b-tracking-code').value = code;
-        document.getElementById('b-tracking-code-display').textContent = code;
+        try {
+          const code = await generateTrackingCode();
+          document.getElementById('b-tracking-code').value = code;
+          document.getElementById('b-tracking-code-display').textContent = code;
+        } catch (err) {
+          console.error('Failed to generate tracking code:', err);
+          showToast('Could not generate a tracking code - check your connection and try again.');
+          return;
+        }
       }
 
       form.classList.add('open');
@@ -1089,6 +1095,22 @@
       const show = document.getElementById('b-is-nfa').checked;
       document.getElementById('b-atf-form-wrap').style.display = show ? '' : 'none';
       document.getElementById('b-atf-filed-wrap').style.display = show ? '' : 'none';
+
+      // BUILD_STAGES_STD (js/main.js) has no atf-filed/atf-approved entries -
+      // picking one of those on a non-NFA build makes calcProgress() return
+      // -1/0% and breaks the pipeline render on inshop.html/track.html, even
+      // though the status badge itself would still say "ATF Filed." Disable
+      // (rather than just hide) so a currently-selected value stays visible/
+      // understandable if a build already has bad data, but can't be
+      // re-selected once NFA is unchecked; bump off it if it's the live
+      // selection so save() never has a chance to write the bad combination.
+      const statusSelect = document.getElementById('b-status');
+      for (const opt of statusSelect.querySelectorAll('.b-status-nfa-only')) {
+        opt.disabled = !show;
+      }
+      if (!show && statusSelect.selectedOptions[0]?.classList.contains('b-status-nfa-only')) {
+        statusSelect.value = 'testing';
+      }
     }
     document.getElementById('b-is-nfa').addEventListener('change', toggleAtfFields);
 
@@ -1380,15 +1402,21 @@
       const needsFreshCode = !id || !document.getElementById('b-tracking-code').value;
 
       if (needsFreshCode) {
-        for (let attempt = 0; attempt < 3; attempt++) {
-          trackingCode = attempt === 0
-            ? document.getElementById('b-tracking-code').value
-            : await generateTrackingCode(attempt);
-          const withCode = { ...payload, tracking_code: trackingCode };
-          ({ error } = id
-            ? await supabase.from('builds').update(withCode).eq('id', id)
-            : await supabase.from('builds').insert(withCode));
-          if (!error || error.code !== '23505') break;
+        try {
+          for (let attempt = 0; attempt < 3; attempt++) {
+            trackingCode = attempt === 0
+              ? document.getElementById('b-tracking-code').value
+              : await generateTrackingCode(attempt);
+            const withCode = { ...payload, tracking_code: trackingCode };
+            ({ error } = id
+              ? await supabase.from('builds').update(withCode).eq('id', id)
+              : await supabase.from('builds').insert(withCode));
+            if (!error || error.code !== '23505') break;
+          }
+        } catch (err) {
+          saveBtn.disabled = false;
+          showToast('Could not generate a tracking code: ' + err.message);
+          return;
         }
         payload.tracking_code = trackingCode;
       } else {
@@ -2575,46 +2603,58 @@
       btn.textContent = 'Working...';
       btn.disabled = true;
 
-      const { data: missing } = await supabase
-        .from('builds')
-        .select('id')
-        .is('tracking_code', null)
-        .order('created_at', { ascending: true });
+      try {
+        const { data: missing, error: missingError } = await supabase
+          .from('builds')
+          .select('id')
+          .is('tracking_code', null)
+          .order('created_at', { ascending: true });
+        if (missingError) throw missingError;
 
-      if (!missing || missing.length === 0) {
-        showToast('All builds already have tracking codes.');
+        if (!missing || missing.length === 0) {
+          showToast('All builds already have tracking codes.');
+          return;
+        }
+
+        // Same collision-safe scheme as the "Add Build" form (generateTrackingCode
+        // above), not a row count - a count-based scheme collides forever once
+        // any build is ever deleted, since the count drops but codes already in
+        // use don't. Assigned one at a time (not in parallel) so each call's
+        // fresh query sees the codes just assigned earlier in this same loop.
+        let assigned = 0;
+        let failed = 0;
+        for (const build of missing) {
+          let saved = false;
+          try {
+            for (let attempt = 0; attempt < 3 && !saved; attempt++) {
+              const code = await generateTrackingCode(attempt);
+              const { error } = await supabase
+                .from('builds')
+                .update({ tracking_code: code })
+                .eq('id', build.id);
+              if (!error) { saved = true; assigned++; }
+              else if (error.code !== '23505') break;
+            }
+          } catch (err) {
+            // A single build failing to generate a code (transient Supabase
+            // error) shouldn't kill the whole backfill run - log it, count it
+            // as failed same as an update error, and move on to the rest.
+            console.error(`Tracking code backfill failed for build ${build.id}:`, err);
+          }
+          if (!saved) failed++;
+        }
+
+        showToast(failed
+          ? `${assigned} code${assigned !== 1 ? 's' : ''} assigned, ${failed} failed - click again to retry.`
+          : `${assigned} code${assigned !== 1 ? 's' : ''} assigned.`);
+        loadBuilds();
+      } catch (err) {
+        console.error('Tracking code backfill failed:', err);
+        showToast('Could not assign codes - check your connection and try again.');
+      } finally {
         btn.textContent = 'Assign Missing Codes';
         btn.disabled = false;
-        return;
       }
-
-      // Same collision-safe scheme as the "Add Build" form (generateTrackingCode
-      // above), not a row count - a count-based scheme collides forever once
-      // any build is ever deleted, since the count drops but codes already in
-      // use don't. Assigned one at a time (not in parallel) so each call's
-      // fresh query sees the codes just assigned earlier in this same loop.
-      let assigned = 0;
-      let failed = 0;
-      for (const build of missing) {
-        let saved = false;
-        for (let attempt = 0; attempt < 3 && !saved; attempt++) {
-          const code = await generateTrackingCode(attempt);
-          const { error } = await supabase
-            .from('builds')
-            .update({ tracking_code: code })
-            .eq('id', build.id);
-          if (!error) { saved = true; assigned++; }
-          else if (error.code !== '23505') break;
-        }
-        if (!saved) failed++;
-      }
-
-      showToast(failed
-        ? `${assigned} code${assigned !== 1 ? 's' : ''} assigned, ${failed} failed - click again to retry.`
-        : `${assigned} code${assigned !== 1 ? 's' : ''} assigned.`);
-      btn.textContent = 'Assign Missing Codes';
-      btn.disabled = false;
-      loadBuilds();
     });
 
     // ── INIT ──

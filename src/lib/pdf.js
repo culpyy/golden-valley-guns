@@ -220,9 +220,14 @@ export async function buildInvoicePdf({
   if (isFirearm && fulfillmentMethod === 'ffl_transfer' && transferFfl) {
     label('TRANSFERRING TO', y);
     y -= 16;
-    for (const line of [transferFfl.businessName, `FFL #${transferFfl.licenseNumber}`, transferFfl.phone, transferFfl.address]) {
-      page.drawText(line, { x: left, y, size: 11, font, color: black });
-      y -= 14;
+    for (const field of [transferFfl.businessName, `FFL #${transferFfl.licenseNumber}`, transferFfl.phone, transferFfl.address]) {
+      // address is free-text with no length bound (see checkout.js) - wrap
+      // it like every other multi-line field on this invoice instead of
+      // letting a long one run off the page edge.
+      for (const line of wrapText(field, font, 11, innerWidth)) {
+        page.drawText(line, { x: left, y, size: 11, font, color: black });
+        y -= 14;
+      }
     }
     y -= 4;
     for (const line of wrapText('A NICS background check and ATF Form 4473 are required in person before this firearm transfers to you.', font, 9, innerWidth)) {

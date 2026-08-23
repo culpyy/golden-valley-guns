@@ -154,7 +154,7 @@ export async function handlePayOrder(request, env) {
   // Fulfillment choice is recorded here too - collected at payment time,
   // same moment as the rest of the customer's info.
   const customerName = `${customer.firstName} ${customer.lastName}`;
-  await supabase.from('orders').update({
+  const { error: detailsError } = await supabase.from('orders').update({
     customer_name: customerName,
     customer_email: customer.email,
     customer_phone: customer.phone || claimed.customer_phone,
@@ -170,6 +170,16 @@ export async function handlePayOrder(request, env) {
     shipping_state: shippingAddress?.state || null,
     shipping_zip: shippingAddress?.zip || null
   }).eq('id', claimed.id);
+  if (detailsError) {
+    // Must not proceed to charge the card if the FFL-transfer/shipping
+    // details didn't actually save - the admin dashboard's Orders tab is
+    // what Shawn works from, and a paid order with no transfer_ffl_* data
+    // on it would look like a plain pickup, defeating the "don't ship until
+    // FFL verified" gate entirely. Revert the claim so the customer can retry.
+    console.error(`Special order ${claimed.order_number}: failed to save customer/fulfillment details, aborting before charge:`, detailsError);
+    await supabase.from('orders').update({ status: 'pending' }).eq('id', claimed.id);
+    return jsonResponse({ error: 'Something went wrong saving your order details. Please try again or contact us.' }, 500);
+  }
 
   // Wrapped in try/catch, not just relying on chargeCreditCard's own return
   // value - if it THROWS instead of returning a normal decline (Authorize.net

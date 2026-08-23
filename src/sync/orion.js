@@ -42,7 +42,7 @@
 //     distributor here, via the shared backfillImages() pass.
 
 import { getSupabaseAdmin } from '../lib/supabaseAdmin.js';
-import { getAllowedManufacturers, filterByAllowList, upsertDistributorProducts, getSyncCursor, setSyncCursor, getCycleStart, setCycleStart } from '../lib/catalogSync.js';
+import { getAllowedManufacturers, filterByAllowList, upsertDistributorProducts, getSyncCursor, claimSyncChunk, getCycleStart, setCycleStart } from '../lib/catalogSync.js';
 import { backfillImages } from '../lib/imageCache.js';
 
 const API_BASE = 'https://orionfflsales.com/api.php';
@@ -225,18 +225,26 @@ export async function run(env) {
   // count down (see the subrequest-limit incident this sync already hit
   // once, further down). See getCatalogItems above and
   // getCachedManufacturerMap below for where each is cached.
-  let cursor = await getSyncCursor(supabase, 'orion');
-  const isCycleStart = cursor === 0;
+  // Just a cheap peek to decide whether to bypass the catalog/manufacturer
+  // caches below - doesn't need to be race-free, the actual chunk claim
+  // happens atomically right before slicing (see claimSyncChunk).
+  const cursorPeek = await getSyncCursor(supabase, 'orion');
+  const isCycleStartPeek = cursorPeek === 0;
 
   const [rawItems, quantityMap, manufacturerMap] = await Promise.all([
-    getCatalogItems(env, isCycleStart),
+    getCatalogItems(env, isCycleStartPeek),
     fetchInventoryMap(env),
-    isCycleStart ? fetchManufacturerMap(env) : getCachedManufacturerMap(supabase)
+    isCycleStartPeek ? fetchManufacturerMap(env) : getCachedManufacturerMap(supabase)
   ]);
   const allowList = await getAllowedManufacturers(supabase);
   const syncTime = new Date().toISOString();
 
-  if (cursor >= rawItems.length) cursor = 0;
+  // Atomic claim - see sql/atomic_sync_cursor.sql and the equivalent comment
+  // in sync/lipseys.js. Doing this after the slow catalog/inventory fetch
+  // above but right before the chunk is sliced keeps the race window down
+  // to a single DB round trip.
+  const cursor = await claimSyncChunk(supabase, 'orion', CHUNK_SIZE, rawItems.length);
+  const isCycleStart = cursor === 0;
 
   let cycleStart = await getCycleStart(supabase, 'orion');
   if (cursor === 0 || !cycleStart) {
@@ -250,11 +258,9 @@ export async function run(env) {
   const normalized = chunk.map(item => normalize(item, quantityMap, manufacturerMap, syncTime)).filter(Boolean);
   const filtered = filterByAllowList(normalized, allowList);
 
-  const nextCursor = cursor + CHUNK_SIZE;
-  const cycleComplete = nextCursor >= rawItems.length;
+  const cycleComplete = cursor + CHUNK_SIZE >= rawItems.length;
 
   await upsertDistributorProducts(supabase, 'orion', filtered, syncTime, cycleComplete ? cycleStart : null);
-  await setSyncCursor(supabase, 'orion', cycleComplete ? 0 : nextCursor);
 
   // Deliberately NOT calling backfillOrionImages() inline here (unlike
   // lipseys.js, which does). Verified live 2026-07-24: on a cold start with

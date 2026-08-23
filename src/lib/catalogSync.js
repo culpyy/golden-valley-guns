@@ -104,6 +104,22 @@ export async function setSyncCursor(supabase, distributor, cursor) {
   await setSiteContent(supabase, `${distributor}_sync_cursor`, String(cursor));
 }
 
+// Atomic claim - see sql/atomic_sync_cursor.sql for why the plain
+// getSyncCursor-then-setSyncCursor pair above is unsafe under concurrency
+// (same class of bug as the pre-fix stock reservation) and can't just be
+// narrowed, it has to be a single locking DB call. Returns the cursor
+// position this call claimed (the chunk to process now) - the caller no
+// longer calls setSyncCursor itself, this already advanced it.
+export async function claimSyncChunk(supabase, distributor, chunkSize, totalItems) {
+  const { data, error } = await supabase.rpc('claim_sync_chunk', {
+    p_key: `${distributor}_sync_cursor`,
+    p_chunk_size: chunkSize,
+    p_total_items: totalItems
+  });
+  if (error) throw error;
+  return data;
+}
+
 // Stamped once when a cursor cycle starts (cursor === 0) and read back when
 // it completes (cursor wraps back to 0) - upsertDistributorProducts uses
 // this instead of a per-run timestamp to detect genuinely stale/delisted

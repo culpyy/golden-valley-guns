@@ -37,7 +37,7 @@
 // sync so pricing/stock data is never blocked waiting on images again.
 //
 import { getSupabaseAdmin } from '../lib/supabaseAdmin.js';
-import { getAllowedManufacturers, filterByAllowList, upsertDistributorProducts, getSyncCursor, setSyncCursor, getCycleStart, setCycleStart } from '../lib/catalogSync.js';
+import { getAllowedManufacturers, filterByAllowList, upsertDistributorProducts, getSyncCursor, claimSyncChunk, getCycleStart, setCycleStart } from '../lib/catalogSync.js';
 import { backfillImages } from '../lib/imageCache.js';
 
 function relayBase(env) {
@@ -199,9 +199,19 @@ export async function run(env) {
   const allowList = await getAllowedManufacturers(supabase);
   const syncTime = new Date().toISOString();
 
-  let cursor = await getSyncCursor(supabase, 'lipseys');
-  const rawItems = await getCatalogItems(env, cursor === 0);
-  if (cursor >= rawItems.length) cursor = 0;
+  // Just a cheap peek to decide whether to bypass the catalog cache below -
+  // doesn't need to be race-free, the actual chunk claim happens atomically
+  // right before slicing (see claimSyncChunk).
+  const cursorPeek = await getSyncCursor(supabase, 'lipseys');
+  const rawItems = await getCatalogItems(env, cursorPeek === 0);
+
+  // Atomic claim - see sql/atomic_sync_cursor.sql. Doing this right before
+  // the chunk is used (rather than reading the cursor before the slow
+  // catalog fetch/login above and writing it back after processing) keeps
+  // the race window down to a single DB round trip instead of the whole
+  // run's duration, so two overlapping invocations of this sync can't both
+  // claim and process the same chunk.
+  const cursor = await claimSyncChunk(supabase, 'lipseys', CHUNK_SIZE, rawItems.length);
 
   // A cycle just starting gets its own start-of-cycle timestamp - reused on
   // every chunked run within this same cycle so the eventual stale-cleanup
@@ -217,14 +227,12 @@ export async function run(env) {
   const normalized = chunk.map(item => normalize(item, syncTime)).filter(Boolean);
   const filtered = filterByAllowList(normalized, allowList);
 
-  const nextCursor = cursor + CHUNK_SIZE;
-  const cycleComplete = nextCursor >= rawItems.length;
+  const cycleComplete = cursor + CHUNK_SIZE >= rawItems.length;
 
   // staleCleanupThreshold only passed on the run that completes a full
   // cycle - see upsertDistributorProducts for why a mid-cycle run can't
   // safely zero out items it simply hasn't reached yet.
   await upsertDistributorProducts(supabase, 'lipseys', filtered, syncTime, cycleComplete ? cycleStart : null);
-  await setSyncCursor(supabase, 'lipseys', cycleComplete ? 0 : nextCursor);
 
   return filtered.length;
 }
