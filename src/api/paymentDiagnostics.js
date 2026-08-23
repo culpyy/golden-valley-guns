@@ -18,7 +18,7 @@
 // Never touches Supabase, never writes an order, never charges a real card.
 // Safe to leave in place and re-run anytime account status needs rechecking.
 
-import { testAuthentication, getMerchantDetails, runDiagnosticTestCharge, getUnsettledTransactions, getRecentSettledTransactions } from '../lib/authorizeNet.js';
+import { testAuthentication, getMerchantDetails, runDiagnosticTestCharge } from '../lib/authorizeNet.js';
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body, null, 2), { status, headers: { 'Content-Type': 'application/json' } });
@@ -28,22 +28,6 @@ export async function handlePaymentDiagnostics(request, env) {
   const token = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
   if (!env.DIAGNOSTICS_TOKEN || token !== env.DIAGNOSTICS_TOKEN) {
     return jsonResponse({ error: 'Unauthorized' }, 401);
-  }
-
-  const url = new URL(request.url);
-  if (url.searchParams.has('transactions')) {
-    const results = {};
-    try {
-      results.unsettled = await getUnsettledTransactions(env);
-    } catch (err) {
-      results.unsettled = { error: String(err?.message || err) };
-    }
-    try {
-      results.settled = await getRecentSettledTransactions(env, { days: 5 });
-    } catch (err) {
-      results.settled = { error: String(err?.message || err) };
-    }
-    return jsonResponse(results);
   }
 
   const results = { environment: env.AUTHORIZENET_ENVIRONMENT || 'sandbox' };

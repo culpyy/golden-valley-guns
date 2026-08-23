@@ -98,26 +98,8 @@ async function login(env) {
   let jar = {};
   let res = await fetch(LOGIN_PAGE_URL, { headers: { Cookie: cookieHeader(jar) } });
   jar = mergeCookies(jar, res);
-  const loginHtml = await res.text();
-  const loginFormKey = extractFormKey(loginHtml);
-  if (!loginFormKey) {
-    // TEMPORARY DIAGNOSTIC (2026-08-23) - a plain curl from outside
-    // Cloudflare gets form_key fine, so this is checking whether Davidson's
-    // is specifically challenging/blocking requests from Cloudflare's own
-    // IP ranges (common anti-bot posture) rather than the page markup
-    // actually having changed. Remove once the real cause is confirmed and
-    // fixed.
-    console.error('Davidson\'s login page diagnostic:', JSON.stringify({
-      status: res.status,
-      contentLength: loginHtml.length,
-      titleMatch: (loginHtml.match(/<title>([^<]*)<\/title>/i) || [])[1] || null,
-      looksLikeChallenge: /just a moment|attention required|access denied|are you a human|captcha|cf-mitigated|request blocked/i.test(loginHtml),
-      cfMitigated: res.headers.get('cf-mitigated'),
-      server: res.headers.get('server'),
-      snippet: loginHtml.slice(0, 300)
-    }));
-    throw new Error("Davidson's login page: form_key not found (page markup may have changed).");
-  }
+  const loginFormKey = extractFormKey(await res.text());
+  if (!loginFormKey) throw new Error("Davidson's login page: form_key not found (page markup may have changed).");
 
   res = await fetch(LOGIN_POST_URL, {
     method: 'POST',
