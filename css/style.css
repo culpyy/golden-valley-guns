@@ -1283,6 +1283,13 @@ footer {
   .nav { padding: 0 20px; }
   .hero-logo { display: none; }
   .nav-logo-img { height: 38px; }
+  /* The desktop hero-bg zoom (150% auto) only guarantees full WIDTH
+     coverage - on mobile's much taller/narrower hero box that leaves the
+     photo short of the container height, showing bare gradient below it.
+     cover guarantees full coverage on any aspect ratio, and mobile's tall
+     shape already forces a tighter height-bound crop on its own (no need
+     for the extra zoom that desktop's wide/short shape requires). */
+  .hero-bg { background-size: auto, auto, cover; }
 
   section { padding: 40px 20px; }
   .hero { padding: 20px; padding-top: calc(var(--nav-h) + 32px); padding-bottom: 48px; }
