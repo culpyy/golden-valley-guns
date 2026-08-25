@@ -368,15 +368,23 @@
   </script>
   <script>
     async function loadBuildPreview() {
-      // Same "hide once picked up" rule as inshop.html - this widget is
-      // just a 3-item preview of the same live board.
+      // Same "hide once picked up" rule as inshop.html - this widget
+      // spotlights the builds closest to done, not just the newest, so it
+      // reads as progress rather than a raw intake log. Same stage order
+      // as inshop.html's renderBuilds() (see js/main.js's BUILD_STAGES for
+      // the canonical list this mirrors), sorted client-side since Supabase
+      // can't rank by an arbitrary status order on its own.
       const { data, error } = await supabase
         .from('builds_public')
         .select('title, type, caliber, status, is_nfa')
         .is('completed_at', null)
-        .neq('status', 'intake')
-        .order('received', { ascending: false })
-        .limit(3);
+        .neq('status', 'intake');
+
+      const order = ['ready','atf-approved','atf-filed','testing','refinishing','blasting','machining','weld','in-progress','parts-ordered','queued'];
+      if (data) {
+        data.sort((a, b) => order.indexOf(a.status) - order.indexOf(b.status));
+        data.length = Math.min(data.length, 3);
+      }
 
       const container = document.getElementById('buildPreview');
       container.classList.remove('cols-1', 'cols-2');
