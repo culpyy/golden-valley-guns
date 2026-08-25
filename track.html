@@ -17,51 +17,11 @@
     }
     .track-main {
       flex: 1;
-      padding: calc(var(--nav-h) + 40px) 24px 80px;
+      padding: 56px 24px 80px;
       max-width: 660px;
       margin: 0 auto;
       width: 100%;
       box-sizing: border-box;
-    }
-
-    /* ── HEADER ── */
-    .track-heading {
-      text-align: center;
-      margin-bottom: 36px;
-    }
-    .track-heading .eyebrow {
-      font-size: 10px;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      color: var(--gold-light);
-      margin-bottom: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-    }
-    .track-heading .eyebrow::before,
-    .track-heading .eyebrow::after {
-      content: '';
-      width: 24px;
-      height: 1px;
-      background: var(--gold-light);
-    }
-    .track-heading h1 {
-      font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
-      font-size: clamp(40px, 7vw, 68px);
-      letter-spacing: 3px;
-      color: var(--text);
-      line-height: 1;
-      margin-bottom: 12px;
-    }
-    .track-heading h1 span { color: var(--gold-light); }
-    .track-heading p {
-      font-size: 14px;
-      color: var(--muted);
-      line-height: 1.7;
-      max-width: 420px;
-      margin: 0 auto;
     }
 
     /* ── SEARCH ── */
@@ -388,14 +348,14 @@
     </div>
   </nav>
 
+  <div class="page-header">
+    <div class="section-label">Build Status</div>
+    <h1>Track Your Build</h1>
+    <p>Enter the tracking code from your intake receipt to see your build's current stage and progress.</p>
+  </div>
+
   <div class="track-page">
     <div class="track-main">
-
-      <div class="track-heading">
-        <div class="eyebrow">Build Status</div>
-        <h1>Track Your <span>Build</span></h1>
-        <p>Enter the tracking code from your intake receipt to see your build's current stage and progress.</p>
-      </div>
 
       <div class="search-wrap">
         <input type="text" id="codeInput" placeholder="GVG-2026-001" maxlength="12" autocomplete="off" />
