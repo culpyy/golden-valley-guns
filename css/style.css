@@ -1041,9 +1041,9 @@ footer {
 .footer-inner {
   max-width: 1200px;
   margin: 0 auto;
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  gap: 64px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 80px;
   margin-bottom: 32px;
 }
 
@@ -1296,7 +1296,7 @@ footer {
   .form-group textarea { font-size: 16px; }
 
   footer { padding: 32px 20px; }
-  .footer-inner { grid-template-columns: 1fr; gap: 24px; margin-bottom: 24px; }
+  .footer-inner { flex-direction: column; gap: 24px; margin-bottom: 24px; }
   .footer-bottom { flex-direction: column; gap: 12px; text-align: center; }
 }
 
