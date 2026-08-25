@@ -374,6 +374,7 @@
         .from('builds_public')
         .select('title, type, caliber, status, is_nfa')
         .is('completed_at', null)
+        .neq('status', 'intake')
         .order('received', { ascending: false })
         .limit(3);
 
