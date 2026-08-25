@@ -109,7 +109,7 @@
       line-height: 1;
       color: var(--text);
     }
-    .summary-stat .num.green  { color: #4caf50; }
+    .summary-stat .num.green  { color: var(--success); }
     .summary-stat .num.amber  { color: var(--s-atf-filed); }
     .summary-stat .num.slate  { color: var(--s-queued); }
     .summary-stat .label {
@@ -141,7 +141,7 @@
     .live-dot {
       width: 7px; height: 7px;
       border-radius: 50%;
-      background: #4caf50;
+      background: var(--success);
       flex-shrink: 0;
       animation: blink 2.2s ease-in-out infinite;
     }
@@ -352,7 +352,7 @@
       color: var(--silver);
     }
     .meta-val.days-long { color: #e07b39; }
-    .meta-val.green { color: #4caf50; }
+    .meta-val.green { color: var(--success); }
 
     /* ATF block */
     .atf-block {
@@ -393,13 +393,13 @@
       font-weight: 600;
       letter-spacing: 2px;
       text-transform: uppercase;
-      color: #4caf50;
+      color: var(--success);
       display: inline-flex;
       align-items: center;
       gap: 8px;
       margin-top: 8px;
       width: fit-content;
-      border: 2px solid #4caf50;
+      border: 2px solid var(--success);
       padding: 7px 16px;
       position: relative;
       transform: rotate(-2deg);
@@ -409,7 +409,7 @@
       content: '';
       position: absolute;
       inset: 3px;
-      border: 1px solid #4caf50;
+      border: 1px solid var(--success);
       opacity: 0.45;
       pointer-events: none;
     }

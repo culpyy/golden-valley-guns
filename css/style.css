@@ -22,10 +22,12 @@
   --s-machining:     #4a6a8a;
   --s-blasting:      #8a6d3b;
   --s-refinishing:   #7a3d82;
-  --s-testing:       #5a2d82;
+  --s-testing:       #1a7a7a;
   --s-atf-filed:     #7a3d00;
   --s-atf-approved:  #1a6b3a;
   --s-ready:         #1a5c1a;
+  --success:         #4caf50;
+  --success-border:  #2d7a3a;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -543,9 +545,6 @@ h2.section-title {
   gap: 12px;
 }
 
-.gallery-grid .wide { grid-column: span 2; }
-.gallery-grid .tall { grid-row: span 2; }
-
 .gallery-item {
   position: relative;
   overflow: hidden;
@@ -554,8 +553,6 @@ h2.section-title {
   background: var(--surface2);
   border: 1px solid var(--border);
 }
-
-.gallery-grid .tall { aspect-ratio: 2/3; }
 
 .gallery-item-inner {
   position: absolute;
@@ -579,21 +576,6 @@ h2.section-title {
   object-fit: contain;
   display: block;
 }
-
-.gallery-placeholder {
-  width: 100%; height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  color: var(--border);
-  background: linear-gradient(135deg, var(--surface) 0%, var(--surface2) 100%);
-  min-height: 240px;
-}
-
-.gallery-placeholder svg { opacity: 0.3; }
-.gallery-placeholder span { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; opacity: 0.4; }
 
 .gallery-overlay {
   position: absolute;
@@ -759,94 +741,6 @@ h2.section-title {
   letter-spacing: 2px;
   text-transform: uppercase;
 }
-
-/* ── UPDATES ── */
-.updates-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  background: var(--border);
-  border: 1px solid var(--border);
-  max-width: 900px;
-}
-
-.update-card {
-  background: var(--surface);
-  padding: 28px 32px;
-  display: grid;
-  grid-template-columns: 120px 1fr;
-  gap: 32px;
-  transition: background 0.2s;
-}
-
-.update-card:hover { background: var(--surface2); }
-
-.update-date {
-  text-align: right;
-  padding-top: 4px;
-}
-
-.update-date .month {
-  font-size: 11px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: var(--gold-light);
-}
-
-.update-date .day {
-  font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
-  font-size: 48px;
-  line-height: 1;
-  color: var(--text);
-}
-
-.update-date .year {
-  font-size: 11px;
-  color: var(--muted);
-  letter-spacing: 1px;
-}
-
-.update-body .tag {
-  display: inline-block;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  padding: 3px 10px;
-  border: 1px solid var(--gold);
-  color: var(--gold-light);
-  border-radius: 1px;
-  margin-bottom: 10px;
-}
-
-.update-body h3 {
-  font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
-  font-size: 26px;
-  letter-spacing: 1.5px;
-  color: var(--text);
-  margin-bottom: 8px;
-}
-
-.update-body p {
-  font-size: 14px;
-  color: var(--muted);
-  line-height: 1.7;
-}
-
-.update-body .read-more {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  color: var(--gold-light);
-  margin-top: 14px;
-  transition: gap 0.2s;
-}
-
-.update-body .read-more:hover { gap: 10px; }
 
 /* ── INLINE PHONE LINKS ── */
 /* One consistent look for the phone number wherever it's mentioned mid-copy, instead of a one-off inline style at each spot. */
@@ -1063,7 +957,7 @@ h2.section-title {
   line-height: 1.5;
   margin-top: 8px;
 }
-@media (max-width: 800px) {
+@media (max-width: 900px) {
   .checkout-wrap { grid-template-columns: 1fr; padding: 32px 16px; }
   .card-fields-row { grid-template-columns: 1fr; }
 }
@@ -1317,35 +1211,6 @@ footer {
   .admin-bar { padding: 10px 20px; padding-top: calc(var(--nav-h) + 10px); }
 }
 
-/* ── GALLERY PAGE FILTER ── */
-.filter-bar {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 32px;
-  flex-wrap: wrap;
-}
-
-.filter-btn {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  padding: 8px 18px;
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--muted);
-  border-radius: 2px;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-family: 'Inter', sans-serif;
-}
-
-.filter-btn:hover,
-.filter-btn.active {
-  border-color: var(--gold-light);
-  color: var(--gold-light);
-}
-
 /* ── DIVIDER ── */
 .divider {
   width: 48px; height: 2px;
@@ -1420,17 +1285,9 @@ footer {
   .hero-desc { font-size: 15px; }
 
   .gallery-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
-  .gallery-grid .wide { grid-column: span 1; }
-  .gallery-grid .tall { aspect-ratio: 4/3; grid-row: span 1; }
   .gallery-overlay { opacity: 1; background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 55%); }
 
   .about-inner { grid-template-columns: 1fr; gap: 32px; }
-
-  .updates-list { max-width: 100%; }
-  .update-card { grid-template-columns: 1fr; gap: 8px; padding: 20px 16px; }
-  .update-date { text-align: left; display: flex; align-items: baseline; gap: 10px; }
-  .update-date .day { font-size: 28px; }
-  .update-body h3 { font-size: 21px; }
 
   .contact-grid { grid-template-columns: 1fr; gap: 32px; }
   .form-row { grid-template-columns: 1fr; }
@@ -1625,10 +1482,10 @@ footer {
 .bp-status.machining     { color: #9fb8d9; border: 1px solid var(--s-machining); }
 .bp-status.blasting      { color: #d9c08a; border: 1px solid var(--s-blasting); }
 .bp-status.refinishing   { color: #c99ee6; border: 1px solid var(--s-refinishing); }
-.bp-status.testing       { color: #d9a0f0; border: 1px solid var(--s-testing); }
+.bp-status.testing       { color: #7ee3e3; border: 1px solid var(--s-testing); }
 .bp-status.atf-filed     { color: #e07b39; border: 1px solid var(--s-atf-filed); }
-.bp-status.atf-approved  { color: #4caf50; border: 1px solid var(--s-atf-approved); }
-.bp-status.ready         { color: #4caf50; border: 1px solid var(--s-ready); }
+.bp-status.atf-approved  { color: var(--success); border: 1px solid var(--s-atf-approved); }
+.bp-status.ready         { color: var(--success); border: 1px solid var(--s-ready); }
 
 /* ── LOADING SHIMMER ── */
 @keyframes shimmer {
@@ -1665,14 +1522,10 @@ footer {
   .page-header { padding: calc(var(--nav-h) + 24px) 16px 24px; }
 
   .gallery-grid { grid-template-columns: 1fr; gap: 8px; }
-  .gallery-grid .wide,
-  .gallery-grid .tall { grid-column: span 1; grid-row: span 1; aspect-ratio: 4/3; }
 
   .hero h1 { font-size: clamp(38px, 10vw, 52px); }
   .hero-desc { font-size: 14px; }
   .btn-primary, .btn-secondary { width: 100%; justify-content: center; }
-
-  .update-card { padding: 16px; }
 
   footer { padding: 28px 16px; }
   .footer-bottom .ffl-badge { font-size: 10px; }

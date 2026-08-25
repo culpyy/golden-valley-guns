@@ -126,7 +126,6 @@
       grid-template-columns: 1fr 1fr;
       gap: 16px;
     }
-    .form-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
     .form-field { display: flex; flex-direction: column; gap: 6px; }
     .form-field.full { grid-column: 1 / -1; }
     .form-field label {
@@ -248,10 +247,10 @@
     .status-pill.machining     { color: #9fb8d9; border: 1px solid var(--s-machining); }
     .status-pill.blasting      { color: #d9c08a; border: 1px solid var(--s-blasting); }
     .status-pill.refinishing   { color: #c99ee6; border: 1px solid var(--s-refinishing); }
-    .status-pill.testing       { color: #d9a0f0; border: 1px solid var(--s-testing); }
+    .status-pill.testing       { color: #7ee3e3; border: 1px solid var(--s-testing); }
     .status-pill.atf-filed     { color: #e07b39; border: 1px solid var(--s-atf-filed); }
-    .status-pill.atf-approved  { color: #4caf50; border: 1px solid var(--s-atf-approved); }
-    .status-pill.ready         { color: #4caf50; border: 1px solid var(--s-ready); }
+    .status-pill.atf-approved  { color: var(--success); border: 1px solid var(--s-atf-approved); }
+    .status-pill.ready         { color: var(--success); border: 1px solid var(--s-ready); }
     .row-actions { display: flex; gap: 8px; }
     .btn-edit {
       background: transparent;
@@ -394,7 +393,7 @@
 
     /* ── ORDERS / MESSAGES ── */
     .status-pill.pending  { color: #f0d060; border: 1px solid #887700; }
-    .status-pill.paid     { color: #4caf50; border: 1px solid #2d7a3a; }
+    .status-pill.paid     { color: var(--success); border: 1px solid var(--success-border); }
     .status-pill.failed   { color: #e05a5a; border: 1px solid #7a2d2d; }
     .status-pill.refunded { color: #888; border: 1px solid #555; }
     .status-select {
@@ -440,7 +439,7 @@
 
     @media (max-width: 700px) {
       .admin-main { padding: 20px 16px; }
-      .form-grid, .form-grid.cols-3 { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
       .admin-header { padding: 0 16px; }
       .tab-nav { padding: 0 16px; }
       .tab-btn { padding: 12px 14px; font-size: 12px; }
