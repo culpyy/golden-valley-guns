@@ -15,6 +15,7 @@
 
   /* Build pipeline status colors - shared by track.html and inshop.html */
   --s-intake:        #555555;
+  --s-queued:        #5c5c7a;
   --s-parts-ordered: #8a6a00;
   --s-in-progress:   #1a4f8a;
   --s-weld:          #b35900;
@@ -1564,6 +1565,7 @@ footer {
   align-self: flex-start;
 }
 .bp-status.intake        { color: #888; border: 1px solid #555; }
+.bp-status.queued        { color: #9a9ac2; border: 1px solid #5c5c7a; }
 .bp-status.parts-ordered { color: #a0a0f0; border: 1px solid #5555aa; }
 .bp-status.in-progress   { color: #7ec8e3; border: 1px solid #336688; }
 .bp-status.weld          { color: #ff9d5c; border: 1px solid #b35900; }

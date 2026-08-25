@@ -239,6 +239,7 @@
       color: var(--muted);
     }
     .status-pill.intake        { color: #888; border: 1px solid #555; }
+    .status-pill.queued        { color: #9a9ac2; border: 1px solid #5c5c7a; }
     .status-pill.parts-ordered { color: #a0a0f0; border: 1px solid #5555aa; }
     .status-pill.in-progress   { color: #7ec8e3; border: 1px solid #336688; }
     .status-pill.weld          { color: #ff9d5c; border: 1px solid #b35900; }
@@ -554,6 +555,7 @@
             <label>Status</label>
             <select id="b-status">
               <option value="intake">Intake</option>
+              <option value="queued">In Queue</option>
               <option value="parts-ordered">Parts Ordered</option>
               <option value="weld">Weld</option>
               <option value="machining">Machining</option>

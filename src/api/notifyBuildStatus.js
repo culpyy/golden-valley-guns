@@ -25,13 +25,14 @@ import { emailShell, emailGreeting, emailParagraph, emailInfoBox, emailFooterNot
 // migration build could theoretically still carry it, and this is only a
 // display fallback either way.
 const STATUS_LABELS = {
-  'intake': 'Intake', 'parts-ordered': 'Parts Ordered', 'in-progress': 'In Progress',
+  'intake': 'Intake', 'queued': 'In Queue', 'parts-ordered': 'Parts Ordered', 'in-progress': 'In Progress',
   'weld': 'Weld', 'machining': 'Machining', 'blasting': 'Blasting', 'refinishing': 'Refinishing',
   'testing': 'Testing', 'atf-filed': 'ATF Filed', 'atf-approved': 'ATF Approved', 'ready': 'Ready'
 };
 
 const STATUS_DESCRIPTIONS = {
   'intake':        'Checked in - being assessed',
+  'queued':        'Waiting for shop time, nothing started yet',
   'parts-ordered': 'Waiting on parts',
   'in-progress':   'On the bench',
   'weld':          'Welding',

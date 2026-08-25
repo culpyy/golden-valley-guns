@@ -111,6 +111,7 @@
     }
     .summary-stat .num.green  { color: #4caf50; }
     .summary-stat .num.amber  { color: var(--s-atf-filed); }
+    .summary-stat .num.slate  { color: var(--s-queued); }
     .summary-stat .label {
       font-size: 11px;
       letter-spacing: 2px;
@@ -166,6 +167,7 @@
     .build-card:hover { background: var(--surface2); }
 
     .build-card.status-intake        { border-left-color: var(--s-intake); }
+    .build-card.status-queued        { border-left-color: var(--s-queued); }
     .build-card.status-parts-ordered { border-left-color: var(--s-parts-ordered); }
     .build-card.status-in-progress   { border-left-color: var(--s-in-progress); }
     .build-card.status-weld          { border-left-color: var(--s-weld); }
@@ -220,6 +222,7 @@
       white-space: nowrap;
     }
     .status-intake        .status-badge { background: var(--s-intake); }
+    .status-queued        .status-badge { background: var(--s-queued); }
     .status-parts-ordered .status-badge { background: var(--s-parts-ordered); }
     .status-in-progress   .status-badge { background: var(--s-in-progress); }
     .status-weld          .status-badge { background: var(--s-weld); }
@@ -660,8 +663,8 @@
   <script src="js/cart.js"></script>
   <script>
     // BUILD_STAGES_NFA / BUILD_STAGES_STD / calcProgress come from js/main.js
-    const stageNamesNFA = ['Intake','Parts','Weld','Machining','Blasting','Refinishing','Testing','ATF Filed','ATF Approved','Ready'];
-    const stageNamesSTD = ['Intake','Parts Ordered','Weld','Machining','Blasting','Refinishing','Testing','Ready'];
+    const stageNamesNFA = ['Intake','Queue','Parts','Weld','Machining','Blasting','Refinishing','Testing','ATF Filed','ATF Approved','Ready'];
+    const stageNamesSTD = ['Intake','Queue','Parts Ordered','Weld','Machining','Blasting','Refinishing','Testing','Ready'];
     // STATUS_LABELS / STATUS_DESCRIPTIONS come from js/main.js
 
     let builds = [];
@@ -688,11 +691,13 @@
 
     function renderSummary() {
       const total  = builds.length;
-      const active = builds.filter(b => !['atf-filed','atf-approved','ready'].includes(b.status)).length;
+      const queued = builds.filter(b => b.status === 'queued').length;
+      const active = builds.filter(b => !['queued','atf-filed','atf-approved','ready'].includes(b.status)).length;
       const atf    = builds.filter(b => b.status === 'atf-filed' || b.status === 'atf-approved').length;
       const ready  = builds.filter(b => b.status === 'ready').length;
       document.getElementById('summaryBar').innerHTML = `
         <div class="summary-stat"><div class="num">${total}</div><div class="label">In Shop</div></div>
+        <div class="summary-stat"><div class="num slate">${queued}</div><div class="label">In Queue</div></div>
         <div class="summary-stat"><div class="num">${active}</div><div class="label">Active Builds</div></div>
         <div class="summary-stat"><div class="num amber">${atf}</div><div class="label">ATF Pending</div></div>
         <div class="summary-stat"><div class="num green">${ready}</div><div class="label">Ready / Transfer</div></div>
@@ -700,7 +705,7 @@
     }
 
     function renderBuilds() {
-      const order = ['ready','atf-approved','atf-filed','testing','refinishing','blasting','machining','weld','in-progress','parts-ordered','intake'];
+      const order = ['ready','atf-approved','atf-filed','testing','refinishing','blasting','machining','weld','in-progress','parts-ordered','queued','intake'];
       // 'in-progress' kept in this sort order only as a legacy fallback -
       // it's no longer a selectable status (see js/main.js), but any build
       // not yet migrated to a specific stage still needs a defined sort

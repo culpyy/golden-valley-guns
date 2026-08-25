@@ -177,6 +177,7 @@
       white-space: nowrap;
     }
     .status-badge.intake        { background: var(--s-intake); }
+    .status-badge.queued        { background: var(--s-queued); }
     .status-badge.parts-ordered { background: var(--s-parts-ordered); }
     .status-badge.in-progress   { background: var(--s-in-progress); }
     .status-badge.weld          { background: var(--s-weld); }
@@ -513,8 +514,8 @@
   <script>
     // BUILD_STAGES_NFA / BUILD_STAGES_STD / calcProgress / STATUS_LABELS /
     // STATUS_DESCRIPTIONS come from js/main.js
-    const stageNamesNFA = ['Intake','Parts','Weld','Machining','Blasting','Refinishing','Testing','ATF Filed','Approved','Ready'];
-    const stageNamesSTD = ['Intake','Parts Ordered','Weld','Machining','Blasting','Refinishing','Testing','Ready'];
+    const stageNamesNFA = ['Intake','Queue','Parts','Weld','Machining','Blasting','Refinishing','Testing','ATF Filed','Approved','Ready'];
+    const stageNamesSTD = ['Intake','Queue','Parts Ordered','Weld','Machining','Blasting','Refinishing','Testing','Ready'];
 
     function formatDate(d) {
       if (!d) return '—';

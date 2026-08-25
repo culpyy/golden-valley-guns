@@ -29,17 +29,18 @@ function escapeHtml(str) {
 // admin-dashboard.html's status <select>) purely so any build a stage
 // migration hasn't reached yet still renders a real word instead of
 // "undefined" - it's no longer a selectable or pipeline-tracked status.
-const BUILD_STAGES_NFA = ['intake', 'parts-ordered', 'weld', 'machining', 'blasting', 'refinishing', 'testing', 'atf-filed', 'atf-approved', 'ready'];
-const BUILD_STAGES_STD = ['intake', 'parts-ordered', 'weld', 'machining', 'blasting', 'refinishing', 'testing', 'ready'];
+const BUILD_STAGES_NFA = ['intake', 'queued', 'parts-ordered', 'weld', 'machining', 'blasting', 'refinishing', 'testing', 'atf-filed', 'atf-approved', 'ready'];
+const BUILD_STAGES_STD = ['intake', 'queued', 'parts-ordered', 'weld', 'machining', 'blasting', 'refinishing', 'testing', 'ready'];
 
 const STATUS_LABELS = {
-  'intake': 'Intake', 'parts-ordered': 'Parts Ordered', 'in-progress': 'In Progress',
+  'intake': 'Intake', 'queued': 'In Queue', 'parts-ordered': 'Parts Ordered', 'in-progress': 'In Progress',
   'weld': 'Weld', 'machining': 'Machining', 'blasting': 'Blasting', 'refinishing': 'Refinishing',
   'testing': 'Testing', 'atf-filed': 'ATF Filed', 'atf-approved': 'ATF Approved', 'ready': 'Ready'
 };
 
 const STATUS_DESCRIPTIONS = {
   'intake':        'Checked in, being assessed',
+  'queued':        'Waiting for shop time, nothing started yet',
   'parts-ordered': 'Waiting on parts',
   'in-progress':   'On the bench',
   'weld':          'Welding',
