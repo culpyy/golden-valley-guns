@@ -15,17 +15,17 @@
 
   /* Build pipeline status colors - shared by track.html and inshop.html */
   --s-intake:        #555555;
-  --s-queued:        #5c5c7a;
+  --s-queued:        #454f8a;
   --s-parts-ordered: #8a6a00;
-  --s-in-progress:   #1a4f8a;
-  --s-weld:          #b35900;
-  --s-machining:     #4a6a8a;
-  --s-blasting:      #8a6d3b;
-  --s-refinishing:   #7a3d82;
-  --s-testing:       #1a7a7a;
-  --s-atf-filed:     #7a3d00;
-  --s-atf-approved:  #1a6b3a;
-  --s-ready:         #1a5c1a;
+  --s-in-progress:   #1a5c9e;
+  --s-weld:          #b3470f;
+  --s-machining:     #2f6b73;
+  --s-blasting:      #6b6b2f;
+  --s-refinishing:   #6b3a8a;
+  --s-testing:       #8a2f5c;
+  --s-atf-filed:     #7a3520;
+  --s-atf-approved:  #2f8a3d;
+  --s-ready:         #1a6b2e;
   --success:         #4caf50;
   --success-border:  #2d7a3a;
 }
@@ -1474,18 +1474,18 @@ footer {
 /* Text colors are deliberately lighter tints for contrast; border colors
    reference the same --s-* stage variables inshop.html/track.html use, so a
    build's status color can't drift out of sync between pages again. */
-.bp-status.intake        { color: #888; border: 1px solid var(--s-intake); }
-.bp-status.queued        { color: #9a9ac2; border: 1px solid var(--s-queued); }
+.bp-status.intake        { color: #bdbdbd; border: 1px solid var(--s-intake); }
+.bp-status.queued        { color: #a6aee6; border: 1px solid var(--s-queued); }
 .bp-status.parts-ordered { color: #f0c060; border: 1px solid var(--s-parts-ordered); }
-.bp-status.in-progress   { color: #7ec8e3; border: 1px solid var(--s-in-progress); }
+.bp-status.in-progress   { color: #7ec2f0; border: 1px solid var(--s-in-progress); }
 .bp-status.weld          { color: #ff9d5c; border: 1px solid var(--s-weld); }
-.bp-status.machining     { color: #9fb8d9; border: 1px solid var(--s-machining); }
-.bp-status.blasting      { color: #d9c08a; border: 1px solid var(--s-blasting); }
+.bp-status.machining     { color: #8fd0d9; border: 1px solid var(--s-machining); }
+.bp-status.blasting      { color: #d4d488; border: 1px solid var(--s-blasting); }
 .bp-status.refinishing   { color: #c99ee6; border: 1px solid var(--s-refinishing); }
-.bp-status.testing       { color: #7ee3e3; border: 1px solid var(--s-testing); }
-.bp-status.atf-filed     { color: #e07b39; border: 1px solid var(--s-atf-filed); }
-.bp-status.atf-approved  { color: var(--success); border: 1px solid var(--s-atf-approved); }
-.bp-status.ready         { color: var(--success); border: 1px solid var(--s-ready); }
+.bp-status.testing       { color: #e6a8c4; border: 1px solid var(--s-testing); }
+.bp-status.atf-filed     { color: #e0946e; border: 1px solid var(--s-atf-filed); }
+.bp-status.atf-approved  { color: #8fe09c; border: 1px solid var(--s-atf-approved); }
+.bp-status.ready         { color: #7ee08f; border: 1px solid var(--s-ready); }
 
 /* ── LOADING SHIMMER ── */
 @keyframes shimmer {
