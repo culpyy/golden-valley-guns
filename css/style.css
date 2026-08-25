@@ -953,6 +953,121 @@ h2.section-title {
   margin-top: 2px;
 }
 
+/* ── CHECKOUT / PAY FORM (shared by checkout.html + pay.html) ──
+   Page-specific bits (colors on .firearm-notice, the #checkoutForm vs
+   #payForm id) stay in each page's own inline <style>. */
+.checkout-wrap {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 56px 48px;
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 2px;
+  background: var(--border);
+  align-items: start;
+}
+.checkout-summary,
+.checkout-form-panel {
+  background: var(--bg);
+  padding: 28px;
+}
+.checkout-summary { background: var(--surface); }
+.summary-line {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--muted);
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.summary-line .name { color: var(--text); }
+.summary-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
+  font-size: 20px;
+  color: var(--text);
+}
+.summary-total span { color: var(--gold-light); }
+.checkout-section-title {
+  font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+.card-fields { display: flex; flex-direction: column; gap: 14px; margin-top: 6px; }
+.card-fields-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.checkout-error {
+  display: none;
+  background: rgba(139, 20, 20, 0.15);
+  border: 1px solid #8B1414;
+  color: #e08080;
+  padding: 12px 16px;
+  font-size: 13px;
+  margin-top: 16px;
+}
+.checkout-success, .checkout-state {
+  display: none;
+  text-align: center;
+  padding: 40px 20px;
+}
+.checkout-success h2, .checkout-state h2 {
+  font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
+  color: var(--gold-light);
+  margin-bottom: 12px;
+}
+.checkout-success p, .checkout-state p { color: var(--muted); margin-bottom: 20px; }
+#checkoutForm[data-submitting] button[type="submit"],
+#payForm[data-submitting] button[type="submit"] { opacity: 0.6; pointer-events: none; }
+.fulfillment-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-weight: 400;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+.fulfillment-option:has(input:checked) { border-color: var(--gold-light); background: rgba(212, 175, 55, 0.06); }
+/* .form-group input (site-wide, for text fields) sets width:100% and
+   text-input padding/background - overridden back to a normal radio
+   button here, since these radios are nested inside a .form-group. */
+.fulfillment-option input[type="radio"] {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 0;
+  margin-top: 3px;
+  accent-color: var(--gold-light);
+  flex-shrink: 0;
+}
+.fulfillment-option span { flex: 1; }
+#fflTransferFields, #shippingAddressFields { margin-top: 4px; margin-bottom: 16px; }
+.restriction-notice {
+  display: none;
+  background: rgba(139, 20, 20, 0.15);
+  border: 1px solid #8B1414;
+  color: #e08080;
+  padding: 12px 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  margin-top: 8px;
+}
+@media (max-width: 800px) {
+  .checkout-wrap { grid-template-columns: 1fr; padding: 32px 16px; }
+  .card-fields-row { grid-template-columns: 1fr; }
+}
+
 /* ── LEGAL NOTICE ── */
 /* Shared across shop.html, contact.html, and intake.html so the ban-state
    disclaimer reads identically everywhere a firearm order can start. */
@@ -1499,18 +1614,21 @@ footer {
   margin-top: 14px;
   align-self: flex-start;
 }
-.bp-status.intake        { color: #888; border: 1px solid #555; }
-.bp-status.queued        { color: #9a9ac2; border: 1px solid #5c5c7a; }
-.bp-status.parts-ordered { color: #a0a0f0; border: 1px solid #5555aa; }
-.bp-status.in-progress   { color: #7ec8e3; border: 1px solid #336688; }
-.bp-status.weld          { color: #ff9d5c; border: 1px solid #b35900; }
-.bp-status.machining     { color: #9fb8d9; border: 1px solid #4a6a8a; }
-.bp-status.blasting      { color: #d9c08a; border: 1px solid #8a6d3b; }
-.bp-status.refinishing   { color: #c99ee6; border: 1px solid #7a3d82; }
-.bp-status.testing       { color: #f0d060; border: 1px solid #887700; }
-.bp-status.atf-filed     { color: #e07b39; border: 1px solid #7a3d00; }
-.bp-status.atf-approved  { color: #4caf50; border: 1px solid #2d7a3a; }
-.bp-status.ready         { color: #4caf50; border: 1px solid #2d7a3a; }
+/* Text colors are deliberately lighter tints for contrast; border colors
+   reference the same --s-* stage variables inshop.html/track.html use, so a
+   build's status color can't drift out of sync between pages again. */
+.bp-status.intake        { color: #888; border: 1px solid var(--s-intake); }
+.bp-status.queued        { color: #9a9ac2; border: 1px solid var(--s-queued); }
+.bp-status.parts-ordered { color: #f0c060; border: 1px solid var(--s-parts-ordered); }
+.bp-status.in-progress   { color: #7ec8e3; border: 1px solid var(--s-in-progress); }
+.bp-status.weld          { color: #ff9d5c; border: 1px solid var(--s-weld); }
+.bp-status.machining     { color: #9fb8d9; border: 1px solid var(--s-machining); }
+.bp-status.blasting      { color: #d9c08a; border: 1px solid var(--s-blasting); }
+.bp-status.refinishing   { color: #c99ee6; border: 1px solid var(--s-refinishing); }
+.bp-status.testing       { color: #d9a0f0; border: 1px solid var(--s-testing); }
+.bp-status.atf-filed     { color: #e07b39; border: 1px solid var(--s-atf-filed); }
+.bp-status.atf-approved  { color: #4caf50; border: 1px solid var(--s-atf-approved); }
+.bp-status.ready         { color: #4caf50; border: 1px solid var(--s-ready); }
 
 /* ── LOADING SHIMMER ── */
 @keyframes shimmer {

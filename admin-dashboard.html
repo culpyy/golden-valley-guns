@@ -238,18 +238,20 @@
       background: var(--surface2);
       color: var(--muted);
     }
-    .status-pill.intake        { color: #888; border: 1px solid #555; }
-    .status-pill.queued        { color: #9a9ac2; border: 1px solid #5c5c7a; }
-    .status-pill.parts-ordered { color: #a0a0f0; border: 1px solid #5555aa; }
-    .status-pill.in-progress   { color: #7ec8e3; border: 1px solid #336688; }
-    .status-pill.weld          { color: #ff9d5c; border: 1px solid #b35900; }
-    .status-pill.machining     { color: #9fb8d9; border: 1px solid #4a6a8a; }
-    .status-pill.blasting      { color: #d9c08a; border: 1px solid #8a6d3b; }
-    .status-pill.refinishing   { color: #c99ee6; border: 1px solid #7a3d82; }
-    .status-pill.testing       { color: #f0d060; border: 1px solid #887700; }
-    .status-pill.atf-filed     { color: #e07b39; border: 1px solid #7a3d00; }
-    .status-pill.atf-approved  { color: #4caf50; border: 1px solid #2d7a3a; }
-    .status-pill.ready         { color: #4caf50; border: 1px solid #2d7a3a; }
+    /* Border colors reference the same --s-* stage variables inshop.html/
+       track.html use, so a build's status color matches everywhere. */
+    .status-pill.intake        { color: #888; border: 1px solid var(--s-intake); }
+    .status-pill.queued        { color: #9a9ac2; border: 1px solid var(--s-queued); }
+    .status-pill.parts-ordered { color: #f0c060; border: 1px solid var(--s-parts-ordered); }
+    .status-pill.in-progress   { color: #7ec8e3; border: 1px solid var(--s-in-progress); }
+    .status-pill.weld          { color: #ff9d5c; border: 1px solid var(--s-weld); }
+    .status-pill.machining     { color: #9fb8d9; border: 1px solid var(--s-machining); }
+    .status-pill.blasting      { color: #d9c08a; border: 1px solid var(--s-blasting); }
+    .status-pill.refinishing   { color: #c99ee6; border: 1px solid var(--s-refinishing); }
+    .status-pill.testing       { color: #d9a0f0; border: 1px solid var(--s-testing); }
+    .status-pill.atf-filed     { color: #e07b39; border: 1px solid var(--s-atf-filed); }
+    .status-pill.atf-approved  { color: #4caf50; border: 1px solid var(--s-atf-approved); }
+    .status-pill.ready         { color: #4caf50; border: 1px solid var(--s-ready); }
     .row-actions { display: flex; gap: 8px; }
     .btn-edit {
       background: transparent;
