@@ -690,7 +690,7 @@
     }
 
     function renderSummary() {
-      const total  = builds.length;
+      const total  = builds.filter(b => b.status !== 'intake').length;
       const queued = builds.filter(b => b.status === 'queued').length;
       const active = builds.filter(b => !['queued','atf-filed','atf-approved','ready'].includes(b.status)).length;
       const atf    = builds.filter(b => b.status === 'atf-filed' || b.status === 'atf-approved').length;
