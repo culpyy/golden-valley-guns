@@ -46,13 +46,30 @@
       border-bottom: 1px solid var(--border);
     }
     .filter-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      background: none;
+      border: none;
+      padding: 0;
       font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
       font-size: 14px;
       letter-spacing: 2px;
       text-transform: uppercase;
       color: var(--text);
       margin-bottom: 12px;
+      cursor: pointer;
     }
+    .filter-title-chevron {
+      font-size: 10px;
+      color: var(--muted);
+      transition: transform 0.15s;
+      flex-shrink: 0;
+    }
+    .filter-group.collapsed .filter-title { margin-bottom: 0; }
+    .filter-group.collapsed .filter-title-chevron { transform: rotate(-90deg); }
+    .filter-group.collapsed .filter-options { display: none; }
     .filter-options {
       display: flex;
       flex-direction: column;
@@ -581,23 +598,23 @@
       <!-- FILTER SIDEBAR -->
       <aside class="filters-sidebar" id="filtersSidebar">
         <div class="filter-group">
-          <div class="filter-title">Category</div>
+          <button class="filter-title" type="button">Category<span class="filter-title-chevron">&#9662;</span></button>
           <div class="filter-options" id="categoryFilters"></div>
         </div>
         <div class="filter-group">
-          <div class="filter-title">Availability</div>
+          <button class="filter-title" type="button">Availability<span class="filter-title-chevron">&#9662;</span></button>
           <div class="filter-options" id="sourceFilters"></div>
         </div>
         <div class="filter-group" id="firearmTypeGroup" style="display:none;">
-          <div class="filter-title">Firearm Type</div>
+          <button class="filter-title" type="button">Firearm Type<span class="filter-title-chevron">&#9662;</span></button>
           <div class="filter-options" id="firearmTypeFilters"></div>
         </div>
-        <div class="filter-group" id="manufacturerGroup">
-          <div class="filter-title">Manufacturer</div>
+        <div class="filter-group collapsed" id="manufacturerGroup">
+          <button class="filter-title" type="button">Manufacturer<span class="filter-title-chevron">&#9662;</span></button>
           <div class="filter-options filter-options-scroll" id="manufacturerFilters"></div>
         </div>
-        <div class="filter-group" id="caliberGroup">
-          <div class="filter-title">Caliber</div>
+        <div class="filter-group collapsed" id="caliberGroup">
+          <button class="filter-title" type="button">Caliber<span class="filter-title-chevron">&#9662;</span></button>
           <div class="filter-options filter-options-scroll" id="caliberFilters"></div>
         </div>
         <div class="filter-group" style="border-bottom: none;">
@@ -808,6 +825,19 @@
 
     document.getElementById('filtersToggle').addEventListener('click', () => {
       document.getElementById('filtersSidebar').classList.toggle('open');
+    });
+
+    // Accordion filter groups - collapsed groups (Manufacturer/Caliber start
+    // this way, see markup) hide their options entirely rather than relying
+    // on filter-options-scroll alone, so picking a filter doesn't require
+    // scrolling past every other group first on a 25k+ item catalog.
+    document.querySelectorAll('#filtersSidebar .filter-title').forEach(btn => {
+      const group = btn.closest('.filter-group');
+      btn.setAttribute('aria-expanded', !group.classList.contains('collapsed'));
+      btn.addEventListener('click', () => {
+        const collapsed = group.classList.toggle('collapsed');
+        btn.setAttribute('aria-expanded', !collapsed);
+      });
     });
 
     // Missing/broken images fall back to a plain placeholder instead of a
