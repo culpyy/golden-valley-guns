@@ -90,21 +90,16 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
   filter: drop-shadow(0 0 14px rgba(200,149,26,0.55)) drop-shadow(0 0 32px rgba(200,149,26,0.2));
 }
 
-/* --logo-w (inherited from .hero-inner, where min-height also reacts to
-   it) drives the crest's size and, via the calc()s on .hero-logo img and
-   .hero-stamp below, everything anchored to it - so the emblem actually
-   grows into the extra room on wide monitors instead of sitting at a fixed
-   230px no matter how much space is available. All three calc()s preserve
-   the original 230px proportions (stamp at 236/105/150 against a 230px
-   crest - see the alpha-scan note on .hero-stamp), so scaling --logo-w
-   keeps the stamp correctly seated on the crest at any size. */
+/* --logo-w (inherited from .hero-inner) drives the crest's width via
+   .hero-logo img below, so the emblem grows into the extra room on wide
+   monitors instead of sitting at a fixed 230px no matter how much space
+   is available. */
 .hero-logo {
   position: relative;
   order: 2;
   flex-shrink: 0;
   z-index: 1;
   pointer-events: none;
-  --logo-scale: calc(var(--logo-w) / 230px);
 }
 
 .hero-logo img {
@@ -238,9 +233,13 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
 .hero-bg {
   position: absolute;
   inset: 0;
-  background:
+  background-image:
     radial-gradient(ellipse 70% 60% at 60% 50%, rgba(139,105,20,0.12) 0%, transparent 70%),
-    linear-gradient(135deg, #0d0d0d 0%, #141414 100%);
+    linear-gradient(100deg, rgba(8,8,8,0.97) 0%, rgba(8,8,8,0.85) 32%, rgba(8,8,8,0.62) 62%, rgba(8,8,8,0.72) 100%),
+    url('../images/hero-mountains.jpg');
+  background-size: auto, auto, 150% auto;
+  background-position: center, center, center 20%;
+  background-repeat: no-repeat, no-repeat, no-repeat;
 }
 
 .hero-grid {
@@ -263,24 +262,16 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
    sitting fixed at 230px, and space-between spreads the now-larger crest
    toward .hero-rail's edge rather than leaving it stranded mid-width.
 
-   --logo-w is defined here (not on .hero-logo) so min-height can react to
-   it too: the FFL stamp badge hangs well below the crest artwork (see the
-   alpha-scan note on .hero-stamp - its bottom edge lands at ~1.68x the
-   crest's own height down from the crest's top). A wider crest drags the
-   stamp down by that same ratio, and on a wide-but-short viewport a plain
-   72vh hero doesn't leave enough room - the stamp got clipped by whatever
-   section follows once it dropped below .hero's own box. The 14vw/300px
-   cap keeps normal growth inside 72vh on its own; max() is just the
-   backstop for short viewports where even that modest growth wouldn't
-   fit. */
+   --logo-w is defined here (not on .hero-logo) since it also drives the
+   crest image's own width. */
 .hero-inner {
   position: relative;
   z-index: 1;
   max-width: 1400px;
   margin: 0 auto;
-  --logo-w: clamp(230px, 14vw, 300px);
-  min-height: max(72vh, calc(var(--logo-w) * 2.4));
-  min-height: max(72svh, calc(var(--logo-w) * 2.4));
+  --logo-w: clamp(260px, 17vw, 360px);
+  min-height: 72vh;
+  min-height: 72svh;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -293,7 +284,7 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
    the license/location line already said elsewhere on the page (nav sub,
    credentials strip), set as a running vertical rule. Gated to viewports
    wide enough that .hero-inner has actually hit its 1400px cap (so this
-   never overlaps the crest); hidden together with .hero-logo/.hero-stamp
+   never overlaps the crest); hidden together with .hero-logo
    well before that, at 900px. */
 .hero-rail {
   display: none;
@@ -418,69 +409,6 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
 .btn-secondary:hover {
   border-color: var(--silver);
   color: var(--text);
-}
-
-/* Positioned relative to .hero-logo (now its parent), not .hero itself -
-   .hero-logo is vertically centered (top:50%) while this used to be
-   bottom-anchored to .hero's own box, so on any viewport shorter than the
-   ~830px this was eyeballed against, the two would drift together and
-   overlap. Anchoring to the logo (a fixed 230px image, never responsive
-   while shown) keeps a constant gap regardless of hero height.
-   `top: 236px` is measured against the logo's actual visible artwork, not
-   its full 230px image box - a canvas pixel-alpha scan of images/logo.png
-   found the crest only fills 49-474 of 512px (ends at 92.6%, ~213px at
-   this render size), so anchoring flush to the box's bottom edge left a
-   bigger gap than intended (first pass used 250px and visibly floated
-   the stamp too far below the ribbon). */
-.hero-stamp {
-  position: absolute;
-  top: calc(236px * var(--logo-scale));
-  left: calc(105px * var(--logo-scale));
-  width: calc(150px * var(--logo-scale));
-  height: calc(150px * var(--logo-scale));
-  border: calc(2px * var(--logo-scale)) solid var(--gold-light);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transform: rotate(-8deg);
-  opacity: 0.9;
-}
-
-.hero-stamp::before {
-  content: '';
-  position: absolute;
-  inset: calc(7px * var(--logo-scale));
-  border: 1px solid var(--gold-light);
-  border-radius: 50%;
-  opacity: 0.55;
-}
-
-.stamp-inner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: calc(4px * var(--logo-scale));
-  text-align: center;
-  padding: 0 calc(14px * var(--logo-scale));
-}
-
-.stamp-top,
-.stamp-bottom {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: calc(7px * var(--logo-scale));
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  color: var(--gold-light);
-}
-
-.stamp-main {
-  font-family: 'Big Shoulders Display', sans-serif;
-  font-weight: 800;
-  font-size: calc(26px * var(--logo-scale));
-  letter-spacing: 1px;
-  color: var(--text);
-  margin: 2px 0;
 }
 
 /* ── SECTION BASE ── */
@@ -1358,16 +1286,10 @@ footer {
 
   section { padding: 40px 20px; }
   .hero { padding: 20px; padding-top: calc(var(--nav-h) + 32px); padding-bottom: 48px; }
-  /* min-height back to plain 72vh here (no *2.4 stamp-clearance term) -
-     that term exists purely so the crest/stamp cluster doesn't get clipped
-     by the section below it, and both are display:none on this breakpoint,
-     so keeping it would just force extra empty height under the text on
-     short/landscape mobile viewports for no reason. */
-  .hero-inner { align-items: flex-start; justify-content: flex-start; min-height: 72vh; min-height: 72svh; }
+  .hero-inner { align-items: flex-start; justify-content: flex-start; }
   .page-header { padding: calc(var(--nav-h) + 32px) 20px 20px; }
   .hero h1 { font-size: clamp(42px, 11vw, 60px); }
   .hero-desc { font-size: 15px; }
-  .hero-stamp { display: none; }
 
   .gallery-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
   .gallery-grid .wide { grid-column: span 1; }
