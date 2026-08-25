@@ -1293,7 +1293,13 @@ footer {
 
   section { padding: 40px 20px; }
   .hero { padding: 20px; padding-top: calc(var(--nav-h) + 32px); padding-bottom: 48px; }
-  .hero-inner { align-items: flex-start; justify-content: flex-start; }
+  /* Base .hero-inner's 72vh min-height was sized to leave the crest/stamp
+     cluster room to breathe - both are hidden on mobile (.hero-logo above),
+     so nothing fills that height. It used to just read as flat black
+     negative space; now that hero-bg is a real photo it shows up as an
+     obvious dead stretch of bare desert below the buttons, so let content
+     define the height here instead of forcing a viewport-relative floor. */
+  .hero-inner { align-items: flex-start; justify-content: flex-start; min-height: auto; }
   .page-header { padding: calc(var(--nav-h) + 32px) 20px 20px; }
   .hero h1 { font-size: clamp(42px, 11vw, 60px); }
   .hero-desc { font-size: 15px; }
