@@ -38,55 +38,10 @@
   </script>
   <style>
     /* .admin-bar base styles now live in css/style.css so any page can reuse them */
-    .admin-bar.visible + .track-strip { padding-top: 20px; }
-
-    /* ── TRACK STRIP ── */
-    .track-strip {
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      padding: 20px 48px;
-      padding-top: calc(var(--nav-h) + 20px);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 24px;
-      flex-wrap: wrap;
-    }
-    .track-strip-text { font-size: 14px; color: var(--muted); line-height: 1.5; }
-    .track-strip-text strong { color: var(--silver); display: block; font-size: 14px; margin-bottom: 2px; }
-    .track-strip-form { display: flex; gap: 0; border: 1px solid var(--border); }
-    .track-strip-form input {
-      background: var(--bg);
-      border: none;
-      padding: 10px 16px;
-      font-family: 'Courier New', monospace;
-      font-size: 14px;
-      letter-spacing: 2px;
-      color: var(--text);
-      text-transform: uppercase;
-      outline: none;
-      width: 180px;
-    }
-    .track-strip-form input::placeholder {
-      color: var(--muted);
-      letter-spacing: 1px;
-      text-transform: none;
-      font-family: 'Inter', sans-serif;
-      font-size: 13px;
-    }
-    .track-strip-form button {
-      background: var(--gold-light);
-      border: none;
-      padding: 10px 20px;
-      font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
-      font-size: 14px;
-      letter-spacing: 2px;
-      color: #000;
-      cursor: pointer;
-      transition: background 0.2s;
-      white-space: nowrap;
-    }
-    .track-strip-form button:hover { background: var(--gold); color: #fff; }
+    /* .page-header normally carries extra top padding to clear the fixed nav -
+       when the admin bar is visible, it clears the nav itself, so this would
+       otherwise be a large redundant gap (see shop.html for the same pattern). */
+    .admin-bar.visible + .page-header { padding-top: 40px; }
 
     /* ── SUMMARY BAR ── */
     .summary-bar {
@@ -102,7 +57,17 @@
       background: var(--surface);
       padding: 22px 20px;
       text-align: center;
+      /* These render as <button>s so the stat tiles double as status
+         filters - reset the button chrome back to how the plain div
+         looked before. */
+      border: none;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.15s;
     }
+    .summary-stat:hover { background: var(--surface2); }
+    .summary-stat.active { background: var(--surface2); box-shadow: inset 0 -3px 0 var(--gold-light); }
+    .summary-stat.active .label { color: var(--gold-light); }
     .summary-stat .num {
       font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
       font-size: 44px;
@@ -118,6 +83,69 @@
       text-transform: uppercase;
       color: var(--muted);
       margin-top: 4px;
+    }
+
+    /* ── BOARD SEARCH ── */
+    .board-search-wrap {
+      position: relative;
+      margin-bottom: 24px;
+    }
+    .board-search-icon {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      color: var(--muted);
+      pointer-events: none;
+    }
+    .board-search-wrap input {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 13px 40px 13px 44px;
+      font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .board-search-wrap input::placeholder { color: var(--muted); }
+    .board-search-wrap input:focus {
+      outline: none;
+      border-color: var(--gold-light);
+      box-shadow: 0 0 0 3px rgba(200, 149, 26, 0.15);
+    }
+    .board-search-clear {
+      display: none;
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 28px;
+      height: 28px;
+      border: none;
+      background: none;
+      color: var(--muted);
+      font-size: 20px;
+      line-height: 1;
+      cursor: pointer;
+    }
+    .board-search-clear:hover { color: var(--text); }
+    .board-search-wrap.has-value .board-search-clear { display: block; }
+    .board-filter-note {
+      font-size: 12px;
+      color: var(--muted);
+      margin: -12px 0 24px;
+    }
+    .board-filter-note button {
+      background: none;
+      border: none;
+      color: var(--gold-light);
+      font: inherit;
+      cursor: pointer;
+      text-decoration: underline;
+      padding: 0;
     }
 
     /* ── BOARD HEADER ── */
@@ -491,16 +519,7 @@
     }
     .disclaimer strong { color: var(--silver); }
 
-    /* .page-header normally carries extra top padding to clear the fixed nav as the
-       first element on the page — here .track-strip is first and handles that itself,
-       so this would otherwise be a large redundant gap. */
-    .page-header { padding-top: 40px; }
-
     /* ── RESPONSIVE ── */
-    @media (max-width: 900px) {
-      .track-strip { padding: 16px 20px; padding-top: calc(var(--nav-h) + 16px); }
-      .admin-bar.visible + .track-strip { padding-top: 16px; }
-    }
     @media (max-width: 580px) {
       .pipeline-labels { display: none; }
       .summary-stat { width: calc(50% - 1px); flex: none; min-width: unset; padding: 16px 10px; }
@@ -510,9 +529,6 @@
       .card-status-block { align-items: flex-start; flex-direction: row; align-items: center; gap: 10px; }
       .status-desc { text-align: left; }
       .card-meta-row { gap: 16px; }
-      .track-strip { flex-direction: column; align-items: flex-start; }
-      .track-strip-form { width: 100%; }
-      .track-strip-form input { flex: 1; min-width: 0; width: auto; }
     }
   </style>
 </head>
@@ -575,18 +591,6 @@
     </div>
   </div>
 
-  <!-- TRACK YOUR BUILD STRIP -->
-  <div class="track-strip">
-    <div class="track-strip-text">
-      <strong>Have a tracking code?</strong>
-      Enter it to see your build's current stage, progress, and estimated completion.
-    </div>
-    <div class="track-strip-form">
-      <input type="text" id="quickTrackInput" placeholder="GVG-2026-001" maxlength="12" />
-      <button onclick="quickTrack()">Track Build</button>
-    </div>
-  </div>
-
   <!-- PAGE HEADER -->
   <div class="page-header">
     <div class="section-label">Active Work</div>
@@ -605,6 +609,14 @@
     </div>
 
     <div class="summary-bar" id="summaryBar"></div>
+
+    <div class="board-search-wrap" id="boardSearchWrap">
+      <svg class="board-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="boardSearch" placeholder="Search by name, type, caliber, or tracking code..." />
+      <button type="button" class="board-search-clear" id="boardSearchClear" aria-label="Clear search">&times;</button>
+    </div>
+    <div class="board-filter-note" id="boardFilterNote" style="display:none;"></div>
+
     <div class="builds-list" id="buildsList"></div>
 
     <div class="disclaimer">
@@ -669,6 +681,39 @@
 
     let builds = [];
     let isAdmin = false;
+    let currentFilter = 'all';
+    let currentSearch = '';
+
+    const FILTER_LABELS = {
+      all: 'In Shop',
+      queued: 'In Queue',
+      active: 'Active Builds',
+      atf: 'ATF Pending',
+      ready: 'Ready / Transfer',
+    };
+
+    function matchesFilter(b, filter) {
+      switch (filter) {
+        case 'queued': return b.status === 'queued';
+        case 'active':  return !['queued', 'atf-filed', 'atf-approved', 'ready'].includes(b.status);
+        case 'atf':     return b.status === 'atf-filed' || b.status === 'atf-approved';
+        case 'ready':   return b.status === 'ready';
+        default:        return b.status !== 'intake';
+      }
+    }
+
+    function matchesSearch(b, q) {
+      if (!q) return true;
+      const hay = [b.title, b.type, b.caliber, b.tracking_code, b.notes]
+        .filter(Boolean).join(' ').toLowerCase();
+      return hay.includes(q);
+    }
+
+    function setFilter(filter) {
+      currentFilter = currentFilter === filter ? 'all' : filter;
+      renderSummary();
+      renderBuilds();
+    }
 
     function formatDate(d) {
       if (!d) return '—';
@@ -695,13 +740,36 @@
       const active = builds.filter(b => !['queued','atf-filed','atf-approved','ready'].includes(b.status)).length;
       const atf    = builds.filter(b => b.status === 'atf-filed' || b.status === 'atf-approved').length;
       const ready  = builds.filter(b => b.status === 'ready').length;
+      const active_ = (key) => currentFilter === key ? ' active' : '';
       document.getElementById('summaryBar').innerHTML = `
-        <div class="summary-stat"><div class="num">${total}</div><div class="label">In Shop</div></div>
-        <div class="summary-stat"><div class="num slate">${queued}</div><div class="label">In Queue</div></div>
-        <div class="summary-stat"><div class="num">${active}</div><div class="label">Active Builds</div></div>
-        <div class="summary-stat"><div class="num amber">${atf}</div><div class="label">ATF Pending</div></div>
-        <div class="summary-stat"><div class="num green">${ready}</div><div class="label">Ready / Transfer</div></div>
+        <button type="button" class="summary-stat${active_('all')}" onclick="setFilter('all')"><div class="num">${total}</div><div class="label">In Shop</div></button>
+        <button type="button" class="summary-stat${active_('queued')}" onclick="setFilter('queued')"><div class="num slate">${queued}</div><div class="label">In Queue</div></button>
+        <button type="button" class="summary-stat${active_('active')}" onclick="setFilter('active')"><div class="num">${active}</div><div class="label">Active Builds</div></button>
+        <button type="button" class="summary-stat${active_('atf')}" onclick="setFilter('atf')"><div class="num amber">${atf}</div><div class="label">ATF Pending</div></button>
+        <button type="button" class="summary-stat${active_('ready')}" onclick="setFilter('ready')"><div class="num green">${ready}</div><div class="label">Ready / Transfer</div></button>
       `;
+    }
+
+    function renderFilterNote(shown, total) {
+      const note = document.getElementById('boardFilterNote');
+      const hasFilter = currentFilter !== 'all';
+      const hasSearch = !!currentSearch;
+      if (!hasFilter && !hasSearch) { note.style.display = 'none'; return; }
+
+      const parts = [];
+      if (hasFilter) parts.push(`status: ${FILTER_LABELS[currentFilter]}`);
+      if (hasSearch) parts.push(`"${currentSearch}"`);
+      note.style.display = 'block';
+      note.innerHTML = `Showing ${shown} of ${total} builds (${parts.join(', ')}) &middot; <button type="button" onclick="clearBoardFilters()">Clear</button>`;
+    }
+
+    function clearBoardFilters() {
+      currentFilter = 'all';
+      currentSearch = '';
+      document.getElementById('boardSearch').value = '';
+      document.getElementById('boardSearchWrap').classList.remove('has-value');
+      renderSummary();
+      renderBuilds();
     }
 
     function renderBuilds() {
@@ -710,14 +778,25 @@
       // it's no longer a selectable status (see js/main.js), but any build
       // not yet migrated to a specific stage still needs a defined sort
       // position instead of landing at the end via indexOf's -1.
-      const sorted = [...builds].sort((a, b) => order.indexOf(a.status) - order.indexOf(b.status));
+      const filtered = builds.filter(b => matchesFilter(b, currentFilter) && matchesSearch(b, currentSearch));
+      const sorted = [...filtered].sort((a, b) => order.indexOf(a.status) - order.indexOf(b.status));
       const list = document.getElementById('buildsList');
+      renderFilterNote(sorted.length, builds.length);
 
-      if (!sorted.length) {
+      if (!builds.length) {
         list.innerHTML = `
           <div class="builds-empty">
             <h3>Nothing on the board right now.</h3>
             <p>Call or text us at <a href="tel:9287270893" class="tel-link">(928) 727-0893</a> to get your build started.</p>
+          </div>`;
+        return;
+      }
+
+      if (!sorted.length) {
+        list.innerHTML = `
+          <div class="builds-empty">
+            <h3>No builds match your search or filter.</h3>
+            <p><button type="button" onclick="clearBoardFilters()" class="btn-card-edit" style="display:inline-block;">Clear search &amp; filters</button></p>
           </div>`;
         return;
       }
@@ -802,14 +881,20 @@
       }).join('');
     }
 
-    // quick track from the strip at top
-    function quickTrack() {
-      const code = document.getElementById('quickTrackInput').value.trim().toUpperCase();
-      if (!code) return;
-      window.location.href = 'track.html?code=' + encodeURIComponent(code);
-    }
-    document.getElementById('quickTrackInput').addEventListener('keydown', e => {
-      if (e.key === 'Enter') quickTrack();
+    // board search - matches name, type, caliber, and tracking code
+    const boardSearchInput = document.getElementById('boardSearch');
+    const boardSearchWrap = document.getElementById('boardSearchWrap');
+    boardSearchInput.addEventListener('input', () => {
+      currentSearch = boardSearchInput.value.trim().toLowerCase();
+      boardSearchWrap.classList.toggle('has-value', !!boardSearchInput.value);
+      renderBuilds();
+    });
+    document.getElementById('boardSearchClear').addEventListener('click', () => {
+      boardSearchInput.value = '';
+      currentSearch = '';
+      boardSearchWrap.classList.remove('has-value');
+      boardSearchInput.focus();
+      renderBuilds();
     });
 
     // admin sign out
