@@ -493,7 +493,16 @@
       .filters-toggle { display: block; }
       .filters-sidebar { width: 100%; display: none; }
       .filters-sidebar.open { display: block; }
+      /* .shop-layout's align-items:flex-start is correct for the desktop
+         row layout (sidebar/main align to the top instead of stretching to
+         match height), but in this stacked column layout it has the side
+         effect of sizing .shop-main to shrink-to-fit instead of full width -
+         since some content deep in its subtree doesn't wrap, that floors it
+         at a fixed width wider than narrow phones, silently clipped by
+         html/body's overflow-x:hidden instead of visibly scrolling. Explicit
+         width, same fix already applied to .filters-sidebar above. */
       .shop-layout { flex-direction: column; }
+      .shop-main { width: 100%; }
     }
     @media (max-width: 580px) {
       .best-sellers-section { padding: 24px 16px 4px; }
