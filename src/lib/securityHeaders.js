@@ -20,7 +20,11 @@ const CSP = [
   // blocked, no error ever surfaced. Wildcarding the whole subdomain avoids
   // playing whack-a-mole with whichever numbered endpoint they load-balance
   // to next.
-  "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://*.authorize.net",
+  // static.cloudflareinsights.com is the Web Analytics beacon Cloudflare
+  // auto-injects into every HTML response at the edge (turned on in the
+  // dashboard, not in this repo's own code) - without it in script-src the
+  // beacon script itself is CSP-blocked before it can even run.
+  "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://*.authorize.net https://static.cloudflareinsights.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com",
   // blob: needed for admin-dashboard.html's pre-upload photo previews
@@ -29,7 +33,11 @@ const CSP = [
   // catchable error, just a broken-image icon. Same origin either way,
   // since blob: URLs are only ever created by our own inline scripts.
   "img-src 'self' data: blob: https:",
-  "connect-src 'self' https://tyqgvpiunplgqzkygnii.supabase.co https://*.authorize.net",
+  // cloudflareinsights.com (no static. prefix) is where the beacon script
+  // above actually reports each pageview to - script-src only allows
+  // loading the script itself, connect-src is separately required for the
+  // beacon's own fetch/beacon call or it's blocked just as silently.
+  "connect-src 'self' https://tyqgvpiunplgqzkygnii.supabase.co https://*.authorize.net https://cloudflareinsights.com",
   "frame-src https://*.authorize.net",
   "object-src 'none'",
   "frame-ancestors 'none'",
