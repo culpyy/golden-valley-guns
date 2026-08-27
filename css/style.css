@@ -34,6 +34,8 @@
 
 html { scroll-behavior: smooth; }
 
+html, body { overflow-x: hidden; }
+
 body {
   background: var(--bg);
   color: var(--text);
@@ -69,12 +71,20 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
   align-items: center;
   gap: 12px;
   line-height: 1;
+  /* Without this, a flex item's default min-width is its content width, so
+     the logo block refuses to shrink below "Golden Valley Guns LLC" at full
+     size - on narrow phones that pushes the cart icon and hamburger off the
+     right edge of the screen and forces the whole page to scroll
+     horizontally. min-width:0 lets it shrink; the wordmark/sub truncation
+     below keeps the text readable instead of just clipping mid-letter. */
+  min-width: 0;
 }
 
 .nav-logo-text {
   display: flex;
   flex-direction: column;
   line-height: 1;
+  min-width: 0;
 }
 
 .nav-logo-img {
@@ -118,6 +128,9 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
   font-size: 22px;
   letter-spacing: 2px;
   color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .nav-logo .sub {
@@ -126,6 +139,9 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
   text-transform: uppercase;
   color: var(--gold-light);
   margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .nav-links {
@@ -163,6 +179,7 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
   position: relative;
   display: flex;
   align-items: center;
+  flex-shrink: 0;
   /* Padding (not just the 21px SVG) so the actual tap target is ~40x40px,
      matching .hamburger right next to it - the icon alone was only ~21x21px,
      an easy-to-miss target on a page whose whole point is "go to checkout." */
@@ -212,6 +229,7 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
 .hamburger {
   display: none;
   flex-direction: column;
+  flex-shrink: 0;
   gap: 5px;
   cursor: pointer;
   padding: 12px 8px;
