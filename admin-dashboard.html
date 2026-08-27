@@ -2199,11 +2199,10 @@
       document.getElementById('tab-builds').classList.add('active');
 
       const type = BUILD_TYPE_OPTIONS.includes(intake.firearm_type) ? intake.firearm_type : 'Rifle';
-      const titleParts = [intake.caliber, intake.firearm_type, INTAKE_SERVICE_LABELS[intake.service] || intake.service].filter(Boolean);
 
       openBuildForm({
         id: '',
-        title: titleParts.join(' - '),
+        title: '',
         type,
         caliber: intake.caliber || '',
         status: 'intake',
