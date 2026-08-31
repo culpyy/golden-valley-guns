@@ -77,6 +77,9 @@ export async function handleNotifyBuildStatus(request, env) {
   await sendEmail(env, {
     to: build.customer_email,
     subject: `Update on your build: ${build.title} - ${statusLabel}`,
+    source: 'build_status',
+    relatedTable: 'builds',
+    relatedId: build.id,
     text: [
       `Hi ${build.customer_name || 'there'},`,
       ``,

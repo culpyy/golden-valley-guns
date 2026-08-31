@@ -70,6 +70,7 @@ export async function handleContact(request, env) {
       // inbox, instead of having to copy their email out of the message body.
       replyTo: email,
       subject: `Website inquiry: ${subjectLabel} - ${fname} ${lname}`,
+      source: 'contact_form',
       text: [
         `New contact form submission from goldenvalleygunsllc.com`,
         ``,

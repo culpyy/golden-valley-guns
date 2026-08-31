@@ -310,7 +310,7 @@ export async function handleCheckout(request, env) {
   // recorded, and stock already decremented via the reservation above), so
   // an email hiccup shouldn't turn into a customer-facing checkout failure.
   try {
-    await sendOrderEmails(env, { orderNumber, customer, items: priced, subtotal, taxAmount, total, hasFirearm, fulfillmentMethod, transferFfl, shippingMethod, shippingAddress });
+    await sendOrderEmails(env, { orderId: orderRow.id, orderNumber, customer, items: priced, subtotal, taxAmount, total, hasFirearm, fulfillmentMethod, transferFfl, shippingMethod, shippingAddress });
   } catch (err) {
     console.error(`Order ${orderNumber} placed successfully, but confirmation emails failed:`, err);
   }
@@ -318,7 +318,7 @@ export async function handleCheckout(request, env) {
   return jsonResponse({ success: true, orderNumber, transactionId: result.transactionId, isFirearm: hasFirearm });
 }
 
-async function sendOrderEmails(env, { orderNumber, customer, items, subtotal, taxAmount, total, hasFirearm, fulfillmentMethod, transferFfl, shippingMethod, shippingAddress }) {
+async function sendOrderEmails(env, { orderId, orderNumber, customer, items, subtotal, taxAmount, total, hasFirearm, fulfillmentMethod, transferFfl, shippingMethod, shippingAddress }) {
   const itemLines = items.map(i => `  ${i.qty} x ${i.name} - $${i.price.toFixed(2)} each`).join('\n');
   let firearmNote = '';
   let firearmNoteHtml = '';
@@ -356,6 +356,9 @@ async function sendOrderEmails(env, { orderNumber, customer, items, subtotal, ta
   await sendEmail(env, {
     to: customer.email,
     subject: `Order confirmed: #${orderNumber} - Golden Valley Guns`,
+    source: 'order_confirmation',
+    relatedTable: 'orders',
+    relatedId: orderId,
     text: [
       `Hi ${customer.firstName},`,
       ``,
@@ -415,6 +418,9 @@ async function sendOrderEmails(env, { orderNumber, customer, items, subtotal, ta
 
   await sendEmail(env, {
     subject: `New order #${orderNumber} (${customer.firstName} ${customer.lastName})`,
+    source: 'order_admin_notice',
+    relatedTable: 'orders',
+    relatedId: orderId,
     text: [
       `New paid order on the website.`,
       ``,

@@ -171,6 +171,9 @@ export async function handleCreateSpecialOrder(request, env) {
     await sendEmail(env, {
       to: customerEmail,
       subject: `Payment link for your order - Golden Valley Guns`,
+      source: 'special_order_payment_link',
+      relatedTable: 'orders',
+      relatedId: orderRow.id,
       text: [
         `Hi ${firstName},`,
         ``,

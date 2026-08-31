@@ -106,6 +106,7 @@ export async function handleIntake(request, env) {
   try {
     await sendEmail(env, {
       subject: `Incoming shipment: ${serviceLabel} - ${name} [${intakeCode}]`,
+      source: 'intake_admin_notice',
       text: [
         `Someone filled out the intake form for a shipment on the way.`,
         ``,
@@ -141,6 +142,7 @@ export async function handleIntake(request, env) {
       await sendEmail(env, {
         to: email,
         subject: `Your shipping reference code: ${intakeCode} - Golden Valley Guns`,
+        source: 'intake_confirmation',
         text: [
           `Hi ${firstName},`,
           ``,

@@ -272,6 +272,9 @@ async function sendPaymentConfirmationEmails(env, { order, customer, customerNam
   await sendEmail(env, {
     to: customer.email,
     subject: `Payment confirmed: ${order.order_number} - Golden Valley Guns`,
+    source: 'special_order_payment_confirmation',
+    relatedTable: 'orders',
+    relatedId: order.id,
     text: [
       `Hi ${customer.firstName},`,
       ``,
@@ -322,6 +325,9 @@ async function sendPaymentConfirmationEmails(env, { order, customer, customerNam
 
   await sendEmail(env, {
     subject: `Special order paid: ${order.order_number} (${customerName})`,
+    source: 'special_order_admin_notice',
+    relatedTable: 'orders',
+    relatedId: order.id,
     text: [
       `Payment received on a special order.`,
       ``,
