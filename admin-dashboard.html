@@ -1509,7 +1509,26 @@
         if (!buildEmailStatus[r.related_id]) buildEmailStatus[r.related_id] = r;
       });
 
-      const active = buildsAllRows.filter(b => !b.completed_at);
+      // Furthest-along first (same idea as inshop.html's public board) -
+      // sorting by received date alone meant a build with a wrong/old
+      // received date (a data-entry typo, or a genuinely old backfilled
+      // build) could sort next to builds in completely different pipeline
+      // stages, which read as "out of order" since a brand-new queued build
+      // could land right next to one that's nearly done. calcProgress()
+      // already encodes "how far along" a build is (and already accounts
+      // for NFA vs standard having different stage counts), so reusing it
+      // here instead of a separate hardcoded stage list keeps this in sync
+      // with the Progress column automatically.
+      const active = buildsAllRows.filter(b => !b.completed_at)
+        .sort((a, b) => {
+          const diff = calcProgress(b.status, b.is_nfa) - calcProgress(a.status, a.is_nfa);
+          // Within the same stage, oldest-added first (FIFO) - created_at
+          // instead of received, since received is a hand-typed date (a
+          // GVG-2026-049 data-entry typo put it 3 months in the past) and
+          // shouldn't be able to throw off ordering the way it just did.
+          // created_at is set once, automatically, and never edited.
+          return diff !== 0 ? diff : new Date(a.created_at) - new Date(b.created_at);
+        });
       const completed = buildsAllRows.filter(b => b.completed_at)
         .sort((a, b) => new Date(b.completed_at) - new Date(a.completed_at));
 
