@@ -947,8 +947,17 @@
     // silently sent nothing on every status change. Now goes through
     // POST /api/notify-build-status (src/api/notifyBuildStatus.js), which
     // sends via Resend, same as the contact form and order confirmations.
+    //
+    // Returns { ok, reason } instead of swallowing failures - a customer
+    // reported never getting a "your build is ready" email, and tracing it
+    // back turned up two real gaps: this used to catch any send failure and
+    // only console.error it (invisible to whoever's actually looking at the
+    // screen), and the save handler's "Customer notified" toast was shown
+    // unconditionally based on *attempting* to send, not on it actually
+    // succeeding. There was also no way to retry a notification after the
+    // fact short of editing the status away and back.
     async function sendStatusChangeEmail(build) {
-      if (!build.customer_email) return;
+      if (!build.customer_email) return { ok: false, reason: 'no-email' };
       try {
         const { data: { session } } = await supabase.auth.getSession();
         const res = await fetch('/api/notify-build-status', {
@@ -960,11 +969,28 @@
           body: JSON.stringify({ buildId: build.id })
         });
         if (!res.ok) throw new Error(`Status ${res.status}`);
+        return { ok: true };
       } catch (err) {
-        // The build itself already saved successfully by the time this
-        // runs - don't let an email hiccup look like a failed save.
         console.error('Status email failed to send:', err);
+        return { ok: false, reason: 'send-failed' };
       }
+    }
+
+    // Manual retry, callable anytime from the builds table (not just as a
+    // side effect of changing status) - for exactly the situation that
+    // surfaced this gap: a customer says they never got a notification, and
+    // there was previously no way to just try sending it again.
+    async function resendBuildNotification(id) {
+      const build = buildsAllRows.find(b => b.id === id);
+      if (!build) return;
+      if (!build.customer_email) {
+        showToast('No customer email on file for this build - add one first.');
+        return;
+      }
+      showToast('Sending...');
+      const result = await sendStatusChangeEmail(build);
+      showToast(result.ok ? 'Notification sent.' : 'Failed to send - check the customer\'s email address, or try again in a moment.');
+      loadBuilds();
     }
 
     // ── AUTH GUARD ──
@@ -1431,28 +1457,57 @@
       if (error) { showToast('Error: ' + error.message); return; }
 
       const statusChanged = !isNew && editingBuildOriginalStatus !== null && editingBuildOriginalStatus !== payload.status;
-      const willEmail = statusChanged && !!payload.customer_email;
       // payload deliberately has no `id` field (it's the Supabase update
       // body, and `id` isn't a column to write) - has to be added back here
       // or notify-build-status gets a bodyless request and 400s silently.
-      if (statusChanged) sendStatusChangeEmail({ ...payload, id });
+      // Awaited (not fire-and-forget) so the toast below can report what
+      // actually happened instead of assuming success the moment the send
+      // was attempted - that mismatch (toast said "Customer notified" no
+      // matter what) is exactly what let a real send failure go unnoticed.
+      const emailResult = statusChanged
+        ? await sendStatusChangeEmail({ ...payload, id })
+        : null;
 
       closeBuildForm();
       loadBuilds();
 
       if (isNew) {
         showCodeModal(payload.tracking_code);
+      } else if (emailResult?.ok) {
+        showToast('Build updated. Customer notified.');
+      } else if (emailResult && !emailResult.ok) {
+        showToast(emailResult.reason === 'no-email'
+          ? 'Build updated. No customer email on file, so nothing was sent.'
+          : 'Build updated, but the notification email failed to send - use Resend Email to retry.');
       } else {
-        showToast(willEmail ? 'Build updated. Customer notified.' : 'Build updated.');
+        showToast('Build updated.');
       }
     });
 
     let buildsAllRows = [];
     let completedExpanded = false;
+    // Most recent email_log row per build id - lets the table show "was
+    // this customer actually notified" at a glance instead of that only
+    // being answerable by querying email_log directly in Supabase.
+    let buildEmailStatus = {};
 
     async function loadBuilds() {
       const { data, error } = await supabase.from('builds').select('*').order('received', { ascending: false });
       buildsAllRows = error ? [] : (data || []);
+
+      // Newest first, so the first entry seen per build id is its latest -
+      // 500 is generous headroom for a shop this size and keeps this a
+      // single cheap query instead of one per build.
+      const { data: emailRows } = await supabase
+        .from('email_log')
+        .select('related_id, status, created_at')
+        .eq('related_table', 'builds')
+        .order('created_at', { ascending: false })
+        .limit(500);
+      buildEmailStatus = {};
+      (emailRows || []).forEach(r => {
+        if (!buildEmailStatus[r.related_id]) buildEmailStatus[r.related_id] = r;
+      });
 
       const active = buildsAllRows.filter(b => !b.completed_at);
       const completed = buildsAllRows.filter(b => b.completed_at)
@@ -1462,12 +1517,29 @@
       renderCompletedBuildsTable(completed);
     }
 
+    function buildEmailCell(b) {
+      const log = buildEmailStatus[b.id];
+      if (!log) return '<span style="font-size:11px;color:var(--muted);">Never sent</span>';
+      const when = new Date(log.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+      if (log.status === 'sent') {
+        return `<span style="font-size:11px;color:var(--success);">&#10003; Sent ${when}</span>`;
+      }
+      return `<span style="font-size:11px;color:#c33;">&#9888; Failed ${when}</span>`;
+    }
+
     function buildRowActions(b) {
       const actions = [`<button class="btn-edit" onclick="editBuild('${b.id}')">Edit</button>`];
       if (b.completed_at) {
         actions.push(`<button class="btn-edit" onclick="reopenBuild('${b.id}')">Reopen</button>`);
       } else if (b.status === 'ready') {
         actions.push(`<button class="btn-save" onclick="markBuildComplete('${b.id}')">Mark Complete</button>`);
+      }
+      // Previously the only way to notify a customer was to change the
+      // status field and change it back - not something to reach for when
+      // someone calls saying they never got an email. This just re-sends
+      // the current status as-is, on demand.
+      if (b.customer_email) {
+        actions.push(`<button class="btn-edit" onclick="resendBuildNotification('${b.id}')">Resend Email</button>`);
       }
       actions.push(`<button class="btn-delete" onclick="deleteBuild('${b.id}')">Delete</button>`);
       return actions.join('');
@@ -1489,6 +1561,7 @@
               <th>Status</th>
               <th>Progress</th>
               <th>Payment</th>
+              <th>Email</th>
               <th></th>
             </tr>
           </thead>
@@ -1501,6 +1574,7 @@
                 <td><span class="status-pill ${b.status}">${escapeHtml(b.status)}</span></td>
                 <td>${calcProgress(b.status, b.is_nfa)}%</td>
                 <td>${buildPaymentCell(b)}</td>
+                <td>${buildEmailCell(b)}</td>
                 <td>
                   <div class="row-actions">${buildRowActions(b)}</div>
                 </td>
@@ -1532,6 +1606,7 @@
               <th>Customer</th>
               <th>Completed</th>
               <th>Payment</th>
+              <th>Email</th>
               <th></th>
             </tr>
           </thead>
@@ -1543,6 +1618,7 @@
                 <td style="font-size:12px;">${escapeHtml(b.customer_name) || '—'}</td>
                 <td style="font-size:12px;">${new Date(b.completed_at).toLocaleDateString()}</td>
                 <td>${buildPaymentCell(b)}</td>
+                <td>${buildEmailCell(b)}</td>
                 <td>
                   <div class="row-actions">${buildRowActions(b)}</div>
                 </td>
