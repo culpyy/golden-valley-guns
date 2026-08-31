@@ -114,6 +114,35 @@
       display: none;
     }
     .form-card.open { display: block; }
+
+    /* ── BUILD FORM MODAL ── */
+    /* The build form specifically (not the other .form-card forms in this
+       file) used to sit inline near the top of the Builds tab, so editing a
+       build far down a long list meant scrollIntoView() jumping the whole
+       page back up to it - easy to lose your place, and you'd lose sight of
+       the table you were just looking at. As an overlay instead, the form
+       comes to you wherever you clicked Edit, and its own max-height/scroll
+       keeps a long form (title through customer info through image upload)
+       reachable without the page itself moving at all. */
+    .form-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .form-modal-overlay.open { display: flex; }
+    .form-modal-overlay .form-card {
+      display: block;
+      margin-bottom: 0;
+      max-width: 820px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
     .form-card h3 {
       font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
       font-size: 18px;
@@ -524,6 +553,7 @@
         </div>
       </div>
 
+      <div class="form-modal-overlay" id="buildFormOverlay">
       <div class="form-card" id="buildForm">
         <h3 id="buildFormTitle">Add Build</h3>
         <input type="hidden" id="buildId" />
@@ -640,6 +670,7 @@
           <button class="btn-save" id="saveBuildBtn">Save Build</button>
           <button class="btn-cancel" id="cancelBuildBtn">Cancel</button>
         </div>
+      </div>
       </div>
 
       <div id="buildsTable"></div>
@@ -1065,7 +1096,6 @@
 
     async function openBuildForm(build) {
       editingBuildOriginalStatus = build ? build.status : null;
-      const form = document.getElementById('buildForm');
       document.getElementById('buildFormTitle').textContent = build ? 'Edit Build' : 'Add Build';
       document.getElementById('buildId').value = build ? build.id : '';
       document.getElementById('b-title').value = build ? build.title : '';
@@ -1112,12 +1142,11 @@
         }
       }
 
-      form.classList.add('open');
-      form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document.getElementById('buildFormOverlay').classList.add('open');
     }
 
     function closeBuildForm() {
-      document.getElementById('buildForm').classList.remove('open');
+      document.getElementById('buildFormOverlay').classList.remove('open');
     }
 
     function toggleAtfFields() {
