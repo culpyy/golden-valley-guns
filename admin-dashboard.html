@@ -494,12 +494,33 @@
     }
 
     @media (max-width: 700px) {
-      .admin-main { padding: 20px 16px; }
-      .form-grid { grid-template-columns: 1fr; }
+      .admin-main { padding: 20px 16px; overflow-x: hidden; }
+      /* minmax(0, 1fr), not bare 1fr - a plain `1fr` track has an implicit
+         `auto` MINIMUM per the grid spec, so a child that resists shrinking
+         (any of the min-width:auto flexbox cases documented throughout this
+         file) can still force the whole column - and with it the whole
+         card - wider than the screen even though it's declared as a single
+         1fr track. minmax(0, ...) actually lets the track go to 0, which is
+         what makes children's own overflow-x:hidden/min-width:0 fixes
+         effective instead of moot. Confirmed live 2026-09-02: this alone
+         measurably shrank the gallery form's overflow, though the photo
+         row still needed its own fix on top (see .qg-photo-row below). */
+      .form-grid { grid-template-columns: minmax(0, 1fr); }
       /* .form-modal-overlay .form-grid's 4-column rule outranks the plain
          .form-grid rule above on specificity alone regardless of source
          order, so it needs its own explicit override here too. */
-      .form-modal-overlay .form-grid { grid-template-columns: 1fr; }
+      .form-modal-overlay .form-grid { grid-template-columns: minmax(0, 1fr); }
+      /* Real measured bug (2026-09-02), found from a live screenshot after
+         the first mobile pass on Gallery still showed the whole card
+         shifted right with text cut off at the screen edge: flex-wrap
+         alone on .qg-photo-row (see renderQgPhotos()) didn't stop the
+         Remove button overflowing, because the wrap decision is made using
+         each item's flex-basis (0% from the `flex:1` shorthand on the
+         label input), not its eventual min-width-clamped size - so the
+         browser decided the row fit on one line BEFORE that clamp ever
+         applied. Giving the button a 100% flex-basis forces it onto its
+         own line unconditionally, independent of how the input sizes. */
+      .qg-photo-row .btn-delete { flex: 1 1 100%; }
       /* Real measured bug (2026-09-02): the Notes/Internal Notes fields carry
          a hardcoded .span-2 (grid-column:span 2). Grid auto-placement grows
          an implicit 2nd column to satisfy that span even when the explicit
@@ -1376,10 +1397,18 @@
       // #qg-photos-list's flex column) refuses to shrink below its
       // children's combined content width and grows past its own parent -
       // confirmed live, the Remove button rendered 42px past the card's
-      // right edge on a phone-width screen. flex-wrap is a second-layer
-      // safety net for a genuinely long typed label.
+      // right edge on a phone-width screen.
+      //
+      // flex-wrap alone did NOT fix it (still measured overflowing by 33px
+      // after the first pass) - the wrap decision is made using each item's
+      // flex-basis, which `flex:1` shorthand sets to 0%, so the browser
+      // decided everything fit on one line BEFORE the min-width:120px floor
+      // below ever applied, then that floor pushed the row wide anyway.
+      // .qg-photo-row's mobile rule (in the @media block) gives the Remove
+      // button an explicit 100% flex-basis so it's unconditionally forced
+      // onto its own line there, independent of the input's sizing.
       list.innerHTML = qgPhotos.map((p, i) => `
-        <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;background:var(--bg);border:1px solid var(--border);padding:8px;min-width:0;">
+        <div class="qg-photo-row" style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;background:var(--bg);border:1px solid var(--border);padding:8px;min-width:0;">
           <img src="${escapeHtml(p.previewUrl)}" style="width:56px;height:56px;object-fit:cover;flex-shrink:0;" />
           <input type="text" placeholder="Label (optional) - Before, After..." value="${escapeHtml(p.label)}" oninput="qgPhotos[${i}].label = this.value" style="flex:1;min-width:120px;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:8px 10px;font-size:16px;" />
           <button type="button" class="btn-delete" onclick="removeQgPhoto(${i})">Remove</button>
