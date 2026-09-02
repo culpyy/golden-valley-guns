@@ -510,6 +510,27 @@
          collapses the grid to one real column. */
       .form-modal-overlay .span-2 { grid-column: 1 / -1; }
 
+      /* Belt-and-suspenders against any remaining sideways "sway" on touch.
+         Grid/flex items default to min-width:auto, which lets a child
+         refuse to shrink below ITS OWN intrinsic content width even inside
+         a 1fr column - a <select> with a long option, or the native
+         <input type="file"> control below (its "Choose File" chrome has a
+         real minimum render width in mobile Safari), can each quietly push
+         a field wider than the column and make the whole card horizontally
+         draggable by a few px. min-width:0 lets them actually respect the
+         column; flex-wrap on the photo row (image + file input + two
+         checkbox rows side by side on desktop) lets it stack instead of
+         forcing width; overflow-x:hidden on the overlay/card is the hard
+         backstop so even a rounding-error pixel can't be dragged. */
+      .form-modal-overlay,
+      .form-modal-overlay .form-card { overflow-x: hidden; }
+      .form-modal-overlay .form-field { min-width: 0; }
+      .form-modal-overlay .form-field.full { flex-wrap: wrap; }
+      .form-modal-overlay .form-field input,
+      .form-modal-overlay .form-field select,
+      .form-modal-overlay .form-field textarea,
+      .form-modal-overlay .form-field img { max-width: 100%; }
+
       /* The 4-column desktop density (9px labels, 12px inputs, tight
          padding) exists to fit ~20 fields in a normal desktop window
          without scrolling - see the comment above .form-modal-overlay
