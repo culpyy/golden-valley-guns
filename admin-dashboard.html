@@ -543,6 +543,17 @@
       #catalogTable .data-table td:nth-child(2),
       #catalogTable .data-table th:nth-child(3),
       #catalogTable .data-table td:nth-child(3) { display: none; }
+
+      /* Real measured bug (2026-09-02): a table auto-sizes every column to
+         its widest row, so as soon as ONE row needs a 3rd action button
+         (Resend Email on builds, Create Build on messages, etc.) the whole
+         actions column balloons to fit all 3 side-by-side - measured at
+         236px on #buildsTable and 315px on #messagesTable, 60-80% of a
+         390px phone viewport, on a column every row pays for even when it
+         only has Edit/Delete. Stacking the buttons instead caps the column
+         at the width of the single widest button. */
+      .row-actions { flex-direction: column; align-items: stretch; gap: 6px; }
+      .row-actions button { width: 100%; }
     }
   </style>
 </head>
