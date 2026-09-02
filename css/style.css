@@ -1237,8 +1237,15 @@ footer {
   margin: 16px 0;
 }
 
-/* ── NAV COLLAPSE (≤1100px) — 7 nav items need room before the bar crowds ── */
-@media (max-width: 1100px) {
+/* ── NAV COLLAPSE (≤1650px) — 8 nav items need room before the bar crowds.
+   Real measured bug (2026-09-02): adding "What's Next" made the nav's own
+   content (logo + links + Get In Touch + cart icon) 1541px wide at a
+   1536px browser width - 5px over, just enough to wrap nav-links onto a
+   second line instead of triggering the hamburger, which used to switch
+   over at 1100px (tuned for a 7-item nav, stale the moment an 8th was
+   added). 1650px gives real margin above the measured 1541px requirement
+   instead of another cliff-edge threshold. ── */
+@media (max-width: 1650px) {
   .nav-links { display: none; }
   .nav-cta { display: none; }
   .nav-logo .sub-ffl { display: none; }
