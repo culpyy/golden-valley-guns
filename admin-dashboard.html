@@ -157,6 +157,8 @@
        but the goal is real headroom, not an exact fit. */
     .form-modal-overlay .form-card h3 { margin-bottom: 10px; font-size: 16px; }
     .form-modal-overlay .form-grid { grid-template-columns: repeat(4, 1fr); gap: 8px 14px; }
+    .form-modal-overlay .span-2 { grid-column: span 2; }
+    .form-modal-overlay .nfa-row { padding-top: 22px; }
     .form-modal-overlay .form-field { gap: 3px; }
     .form-modal-overlay .form-field label { font-size: 9px; }
     .form-modal-overlay .form-field input,
@@ -498,6 +500,44 @@
          .form-grid rule above on specificity alone regardless of source
          order, so it needs its own explicit override here too. */
       .form-modal-overlay .form-grid { grid-template-columns: 1fr; }
+      /* Real measured bug (2026-09-02): the Notes/Internal Notes fields carry
+         a hardcoded .span-2 (grid-column:span 2). Grid auto-placement grows
+         an implicit 2nd column to satisfy that span even when the explicit
+         template above is collapsed to 1fr, and every OTHER field then
+         auto-places two-per-row into that implicit column instead of
+         stacking - which is what was forcing the horizontal scrolling on
+         the build edit form. Resetting the span here is what actually
+         collapses the grid to one real column. */
+      .form-modal-overlay .span-2 { grid-column: 1 / -1; }
+
+      /* The 4-column desktop density (9px labels, 12px inputs, tight
+         padding) exists to fit ~20 fields in a normal desktop window
+         without scrolling - see the comment above .form-modal-overlay
+         .form-grid. That tradeoff doesn't apply on mobile (scrolling a tall
+         form is normal there), so it's undone here in favor of readable
+         text and real tap targets. Input font-size is 16px specifically -
+         anything smaller makes iOS Safari auto-zoom the page on focus. */
+      .form-modal-overlay { padding: 8px; }
+      .form-modal-overlay .form-card { padding: 20px 16px; }
+      .form-modal-overlay .form-card h3 { font-size: 18px; }
+      .form-modal-overlay .form-grid { gap: 16px; }
+      .form-modal-overlay .form-field label { font-size: 11px; }
+      .form-modal-overlay .form-field input,
+      .form-modal-overlay .form-field select,
+      .form-modal-overlay .form-field textarea { padding: 10px 12px; font-size: 16px; }
+      .form-modal-overlay .form-field textarea { min-height: 70px; }
+      .form-modal-overlay input[type="checkbox"] { width: 20px !important; height: 20px !important; }
+      /* This padding-top only exists to visually align the checkbox with
+         the Status dropdown beside it in the desktop 4-column row - once
+         everything stacks to 1 column there's nothing to align with, so it
+         just reads as unexplained dead space above the checkbox. */
+      .form-modal-overlay .nfa-row { padding-top: 4px; }
+      /* Stacked full-width buttons are easier to hit one-thumb than the
+         desktop side-by-side pair, and match the "big tappable button"
+         pattern used elsewhere on mobile (e.g. .btn-add). */
+      .form-modal-overlay .form-actions { flex-direction: column-reverse; }
+      .form-modal-overlay .form-actions button { width: 100%; }
+
       .admin-header { padding: 0 16px; }
       .tab-nav { padding: 0 16px; }
       .tab-btn { padding: 12px 14px; font-size: 12px; }
@@ -638,7 +678,7 @@
               <option value="ready">Ready</option>
             </select>
           </div>
-          <div class="form-field" style="display:flex;align-items:center;gap:10px;padding-top:22px;">
+          <div class="form-field nfa-row" style="display:flex;align-items:center;gap:10px;">
             <input type="checkbox" id="b-is-nfa" style="width:16px;height:16px;accent-color:var(--gold-light);cursor:pointer;" />
             <label for="b-is-nfa" style="cursor:pointer;font-size:11px;letter-spacing:1.5px;">NFA Item (shows ATF pipeline stages)</label>
           </div>
@@ -664,11 +704,11 @@
             <label>ATF Filed Date (optional)</label>
             <input type="date" id="b-atf-filed" />
           </div>
-          <div class="form-field" style="grid-column:span 2;">
+          <div class="form-field span-2">
             <label>Notes (public-facing)</label>
             <textarea id="b-notes" placeholder="Short note visible to customers..."></textarea>
           </div>
-          <div class="form-field" style="grid-column:span 2;">
+          <div class="form-field span-2">
             <label style="color:var(--gold-light);">Internal Notes (shop only - never shown to the customer)</label>
             <textarea id="b-internal-notes" placeholder="e.g. customer wants blued not parkerized, waiting on a callback about the stock swap..."></textarea>
           </div>
