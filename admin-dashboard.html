@@ -1165,25 +1165,31 @@
     // Edit Build modal was scrolling the Active Builds table behind it).
     // Plain `overflow:hidden` on body is well known not to reliably stop
     // this on iOS Safari - pinning body to `position:fixed` at its current
-    // scroll offset is the standard fix that actually works there. Counted
-    // so two overlays opening in sequence (e.g. the tracking-code modal
-    // right after the build form) don't have the first close() re-enable
-    // scroll while the second is still open.
-    let modalLockCount = 0;
+    // scroll offset is the standard fix that actually works there.
+    //
+    // A hand-incremented counter here (an earlier version of this) can
+    // desync: openBuildForm() awaits generateTrackingCode() before it ever
+    // shows the overlay, so there's a beat with no visible response - easy
+    // to tap Edit twice on a phone in that gap. Two opens increment a
+    // counter to 2, but the single resulting Cancel only decrements once,
+    // so body stays pinned at position:fixed forever after the modal looks
+    // closed - "scrolling just doesn't work", un-recoverable short of a
+    // reload, which resets the in-memory counter. Deriving lock state from
+    // the DOM instead of a counter makes this self-correcting: no matter
+    // how many times lockBodyScroll() fires redundantly, or how it's
+    // called, it always reflects whether an overlay is ACTUALLY open right
+    // now.
     let modalLockScrollY = 0;
     function lockBodyScroll() {
-      if (modalLockCount === 0) {
+      const anyOpen = document.querySelector('.form-modal-overlay.open, .code-modal-overlay.open');
+      const isLocked = document.body.style.position === 'fixed';
+      if (anyOpen && !isLocked) {
         modalLockScrollY = window.scrollY;
         document.body.style.position = 'fixed';
         document.body.style.top = `-${modalLockScrollY}px`;
         document.body.style.left = '0';
         document.body.style.right = '0';
-      }
-      modalLockCount++;
-    }
-    function unlockBodyScroll() {
-      modalLockCount = Math.max(0, modalLockCount - 1);
-      if (modalLockCount === 0) {
+      } else if (!anyOpen && isLocked) {
         document.body.style.position = '';
         document.body.style.top = '';
         document.body.style.left = '';
@@ -1191,6 +1197,10 @@
         window.scrollTo(0, modalLockScrollY);
       }
     }
+    // unlockBodyScroll re-checks the DOM the same way lockBodyScroll does -
+    // both just call the same sync so it doesn't matter which name gets
+    // called after which classList change.
+    const unlockBodyScroll = lockBodyScroll;
 
     // ── TABS ──
     function activateTab(tabName) {
