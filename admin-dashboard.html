@@ -1295,6 +1295,12 @@
       }
 
       document.getElementById('buildFormOverlay').classList.add('open');
+      // #buildForm is one persistent element reused for every open (Add and
+      // every Edit) - its own overflow-y:auto scroll position isn't reset
+      // by anything else, so without this it opens wherever the LAST open
+      // happened to be left scrolled (bottom, if that edit ended by
+      // scrolling down to Customer Info) instead of at Title.
+      document.getElementById('buildForm').scrollTop = 0;
       lockBodyScroll();
     }
 
