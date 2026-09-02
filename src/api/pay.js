@@ -13,6 +13,7 @@ import { chargeCreditCard } from '../lib/authorizeNet.js';
 import { sendEmail } from '../lib/email.js';
 import { emailShell, emailGreeting, emailParagraph, emailInfoBox, emailFooterNote } from '../lib/emailTemplate.js';
 import { buildInvoicePdf, bytesToBase64 } from '../lib/pdf.js';
+import { sendReviewInvite } from '../lib/reviews.js';
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
@@ -221,9 +222,20 @@ export async function handlePayOrder(request, env) {
   // Keeps the Builds tab's payment badge in sync when this special order was
   // generated from a build's "Get Paid" button (src/api/specialOrder.js) -
   // most orders have no linked build, so this is a no-op for those.
-  const { error: buildSyncError } = await supabase.from('builds').update({ payment_status: 'paid' }).eq('order_id', claimed.id);
+  const { data: syncedBuilds, error: buildSyncError } = await supabase.from('builds').update({ payment_status: 'paid' }).eq('order_id', claimed.id).select('id');
   if (buildSyncError) {
     console.error(`Order ${claimed.order_number} paid, but syncing linked build's payment_status failed:`, buildSyncError);
+  } else if (syncedBuilds?.length) {
+    // Same "paid + Ready = the customer actually has it now" gate as the
+    // admin dashboard's Mark Paid path (src/lib/reviews.js) - isolated in
+    // its own try/catch so a review-invite hiccup can never affect the
+    // payment response itself, same reasoning as the confirmation emails
+    // below.
+    try {
+      await sendReviewInvite(env, syncedBuilds[0].id);
+    } catch (err) {
+      console.error(`Order ${claimed.order_number} paid, but review invite failed:`, err);
+    }
   }
 
   try {

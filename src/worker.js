@@ -9,10 +9,13 @@ import { handleNotifyBuildStatus } from './api/notifyBuildStatus.js';
 import { handleUploadProductImage } from './api/uploadProductImage.js';
 import { handleUploadBuildImage } from './api/uploadBuildImage.js';
 import { handleUploadGalleryImage } from './api/uploadGalleryImage.js';
+import { handleUploadBulletinImage } from './api/uploadBulletinImage.js';
 import { handleCreateSpecialOrder } from './api/specialOrder.js';
 import { handleGetPayOrder, handlePayOrder } from './api/pay.js';
 import { handleRefundOrder } from './api/refundOrder.js';
 import { handlePaymentDiagnostics } from './api/paymentDiagnostics.js';
+import { handleGetReview, handlePostReview } from './api/reviews.js';
+import { handleSendReviewInvite } from './api/sendReviewInvite.js';
 import { checkRateLimit } from './lib/rateLimit.js';
 import { addSecurityHeaders } from './lib/securityHeaders.js';
 
@@ -137,6 +140,21 @@ async function route(request, env) {
     });
   }
 
+  if (url.pathname.startsWith('/bulletin-images/')) {
+    // Photos Shawn uploads for "What We're Building Next" ideas
+    // (uploadBulletinImage.js) - same R2 bucket/prefix pattern as the
+    // other admin-uploaded image types.
+    const key = 'bulletin/' + url.pathname.slice('/bulletin-images/'.length);
+    const object = await env.DISTRIBUTOR_IMAGES.get(key);
+    if (!object) return new Response('Not found', { status: 404 });
+    return new Response(object.body, {
+      headers: {
+        'Content-Type': object.httpMetadata?.contentType || 'application/octet-stream',
+        'Cache-Control': 'public, max-age=31536000, immutable'
+      }
+    });
+  }
+
   if (url.pathname === '/api/admin/upload-gallery-image' && request.method === 'POST') {
     const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
     const { allowed, retryAfterSeconds } = await checkRateLimit(env, `upload-gallery-image:${ip}`, { limit: 50, windowSeconds: 600 });
@@ -193,6 +211,27 @@ async function route(request, env) {
       return await handleUploadProductImage(request, env);
     } catch (err) {
       console.error('Product image upload failed:', err);
+      return new Response(JSON.stringify({ error: 'Upload failed.' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+  }
+
+  if (url.pathname === '/api/admin/upload-bulletin-image' && request.method === 'POST') {
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    const { allowed, retryAfterSeconds } = await checkRateLimit(env, `upload-bulletin-image:${ip}`, { limit: 20, windowSeconds: 600 });
+    if (!allowed) {
+      return new Response(JSON.stringify({ error: 'Too many uploads. Try again shortly.' }), {
+        status: 429,
+        headers: { 'Content-Type': 'application/json', 'Retry-After': String(retryAfterSeconds) }
+      });
+    }
+
+    try {
+      return await handleUploadBulletinImage(request, env);
+    } catch (err) {
+      console.error('Bulletin image upload failed:', err);
       return new Response(JSON.stringify({ error: 'Upload failed.' }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' }
@@ -377,6 +416,70 @@ async function route(request, env) {
     } catch (err) {
       console.error('Build status notification failed:', err);
       return new Response(JSON.stringify({ error: 'Failed to send notification.' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+  }
+
+  if (url.pathname === '/api/reviews' && request.method === 'GET') {
+    // Read-only lookup by token, same reasoning as /api/pay's GET.
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    const { allowed, retryAfterSeconds } = await checkRateLimit(env, `review-lookup:${ip}`, { limit: 30, windowSeconds: 600 });
+    if (!allowed) {
+      return new Response(JSON.stringify({ error: 'Too many requests.' }), {
+        status: 429,
+        headers: { 'Content-Type': 'application/json', 'Retry-After': String(retryAfterSeconds) }
+      });
+    }
+
+    try {
+      return await handleGetReview(request, env);
+    } catch (err) {
+      console.error('Review lookup failed:', err);
+      return new Response(JSON.stringify({ error: 'Something went wrong.' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+  }
+
+  if (url.pathname === '/api/reviews' && request.method === 'POST') {
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    const { allowed, retryAfterSeconds } = await checkRateLimit(env, `review-submit:${ip}`, { limit: 10, windowSeconds: 600 });
+    if (!allowed) {
+      return new Response(JSON.stringify({ error: 'Too many attempts. Please try again later.' }), {
+        status: 429,
+        headers: { 'Content-Type': 'application/json', 'Retry-After': String(retryAfterSeconds) }
+      });
+    }
+
+    try {
+      return await handlePostReview(request, env);
+    } catch (err) {
+      console.error('Review submission failed:', err);
+      return new Response(JSON.stringify({ error: 'Something went wrong. Please try again.' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+  }
+
+  if (url.pathname === '/api/admin/send-review-invite' && request.method === 'POST') {
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    const { allowed, retryAfterSeconds } = await checkRateLimit(env, `send-review-invite:${ip}`, { limit: 20, windowSeconds: 600 });
+    if (!allowed) {
+      return new Response(JSON.stringify({ error: 'Too many requests.' }), {
+        status: 429,
+        headers: { 'Content-Type': 'application/json', 'Retry-After': String(retryAfterSeconds) }
+      });
+    }
+
+    try {
+      return await handleSendReviewInvite(request, env);
+    } catch (err) {
+      console.error('Review invite failed:', err);
+      return new Response(JSON.stringify({ error: 'Failed to send invite.' }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' }
       });

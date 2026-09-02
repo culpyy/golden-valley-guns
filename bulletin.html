@@ -4,15 +4,31 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
-  <title>Shipping &amp; Returns | Golden Valley Guns LLC | Golden Valley, AZ</title>
-  <meta name="description" content="Shipping & Returns Policy for Golden Valley Guns LLC. How firearms transfer, how non-firearm items ship, ammunition shipping restrictions, and our return policy." />
-  <meta name="robots" content="index, follow" />
-  <meta property="og:title" content="Shipping & Returns | Golden Valley Guns LLC" />
-  <meta property="og:description" content="How firearms transfer, how non-firearm items ship, ammunition shipping restrictions, and our return policy." />
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://goldenvalleygunsllc.com/shipping-returns.html" />
-  <meta property="og:image" content="https://goldenvalleygunsllc.com/images/logo.png" />
+  <title>What's Next | Golden Valley Guns LLC | Golden Valley, AZ</title>
+  <meta name="description" content="Build types and ideas we're excited about next." />
   <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .bulletin-wrap { max-width: 1000px; margin: 0 auto; padding: 0 20px 80px; }
+    .bulletin-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+    @media (max-width: 700px) { .bulletin-grid { grid-template-columns: 1fr; } }
+    .bulletin-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .bulletin-card-img { width: 100%; aspect-ratio: 16/10; object-fit: cover; display: block; background: var(--surface2); }
+    .bulletin-card-body { padding: 20px 24px; }
+    .bulletin-card-title {
+      font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
+      font-size: 19px;
+      letter-spacing: 1px;
+      color: var(--text);
+      margin-bottom: 10px;
+    }
+    .bulletin-card-desc { color: var(--muted); font-size: 13px; line-height: 1.7; }
+    .bulletin-empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+    .bulletin-cta { text-align: center; margin-top: 48px; }
+  </style>
 </head>
 <body>
 
@@ -53,7 +69,7 @@
       <li><a href="gallery.html">Gallery</a></li>
       <li><a href="shop.html">Shop</a></li>
       <li><a href="reviews.html">Reviews</a></li>
-      <li><a href="bulletin.html">What's Next</a></li>
+      <li><a href="bulletin.html" class="active">What's Next</a></li>
       <li><a href="contact.html">Contact</a></li>
     </ul>
     <a href="cart.html" class="nav-cart-icon" aria-label="Cart">
@@ -68,49 +84,20 @@
 
   <!-- PAGE HEADER -->
   <div class="page-header">
-    <div class="section-label">Legal</div>
-    <h1>Shipping &amp; Returns</h1>
-    <p>How firearms transfer, how everything else ships, and how returns work.</p>
+    <div class="section-label">On the Horizon</div>
+    <h1>What We're Building Next</h1>
+    <p>Build types and ideas we're excited about - see something you want? Get in touch.</p>
   </div>
 
-  <!-- CONTENT -->
-  <section>
-    <div class="legal-doc fade-in">
-      <div class="updated-date">Effective date: July 28, 2026</div>
-
-      <div class="toc">
-        <h4>On This Page</h4>
-        <ul>
-          <li><a href="#firearms">1. Firearms</a></li>
-          <li><a href="#non-firearm-shipping">2. Shipping Non-Firearm Items</a></li>
-          <li><a href="#ammo-restrictions">3. Ammunition Shipping Restrictions</a></li>
-          <li><a href="#returns">4. Returns &amp; Refunds</a></li>
-          <li><a href="#contact">5. Contact Us</a></li>
-        </ul>
-      </div>
-
-      <h2 id="firearms">1. Firearms</h2>
-      <p>By federal law, a firearm can never ship directly to you. Every firearm order is picked up in person at our shop after your NICS background check and ATF Form 4473, or transferred to your own local FFL dealer, who completes that step there. We verify a receiving dealer's license before anything ships to them. See <a href="terms.html#firearms-sales">Terms of Service, Section 3</a> for the full firearms policy, including restricted states.</p>
-
-      <h2 id="non-firearm-shipping">2. Shipping Non-Firearm Items</h2>
-      <p>Ammunition, parts, accessories, and other non-firearm items can ship directly to you. At checkout you can choose to pick these up at our shop or have them shipped to your address. We aim to ship within a few business days of your order clearing, though processing time can vary with order volume and item availability.</p>
-
-      <h2 id="ammo-restrictions">3. Ammunition Shipping Restrictions</h2>
-      <p>Ammunition shipping is restricted by state and local law. These restrictions come from our distributors' own shipping guidelines and apply regardless of how the order was placed.</p>
-      <p><strong>We cannot ship ammunition to:</strong> California, New York, Rhode Island, Massachusetts, New Jersey, Connecticut, Illinois, Washington D.C., or Annapolis (Maryland). If your shipping address falls in one of these locations, ammunition can't be added to a direct-ship order. In-store pickup is still available.</p>
-
-      <h2 id="returns">4. Returns &amp; Refunds</h2>
-      <p>Firearms are never returnable once transferred. For non-firearm parts, accessories, and ammunition purchased from our own in-stock inventory, we handle returns on a case-by-case basis. Contact us before sending or bringing anything back. Special orders are final sale, with the exception of a NICS-denial refund on a firearm. Full details are in <a href="terms.html#returns">Terms of Service, Sections 4 &amp; 5</a>.</p>
-
-      <h2 id="contact">5. Contact Us</h2>
-      <p>Questions about an order, shipment, or return? Reach us at:</p>
-      <ul>
-        <li>Phone / Text: <a href="tel:9287270893">(928) 727-0893</a></li>
-        <li>Email: <a href="mailto:goldenvalleyguns@gmail.com">goldenvalleyguns@gmail.com</a></li>
-        <li>Address: 7088 W Jupiter Dr, Golden Valley, AZ 86413</li>
-      </ul>
+  <div class="bulletin-wrap">
+    <div id="bulletinGrid" class="bulletin-grid"></div>
+    <div id="bulletinEmpty" class="bulletin-empty" style="display:none;">
+      <p>Nothing posted yet - check back soon.</p>
     </div>
-  </section>
+    <div class="bulletin-cta">
+      <a href="contact.html" class="btn-primary">Ask About One of These &#8594;</a>
+    </div>
+  </div>
 
   <!-- FOOTER -->
   <footer>
@@ -130,8 +117,8 @@
           <li><a href="inshop.html">In Shop</a></li>
           <li><a href="gallery.html">Gallery</a></li>
           <li><a href="shop.html">Shop</a></li>
-      <li><a href="reviews.html">Reviews</a></li>
-      <li><a href="bulletin.html">What's Next</a></li>
+          <li><a href="reviews.html">Reviews</a></li>
+          <li><a href="bulletin.html">What's Next</a></li>
           <li><a href="contact.html">Contact</a></li>
         </ul>
       </div>
@@ -159,7 +146,34 @@
     </div>
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
   <script src="js/main.js"></script>
   <script src="js/cart.js"></script>
+  <script>
+    document.getElementById('copyYear').textContent = new Date().getFullYear();
+
+    (async () => {
+      const { data, error } = await supabase.from('bulletin_ideas')
+        .select('*')
+        .eq('is_visible', true)
+        .order('position', { ascending: true })
+        .order('created_at', { ascending: false });
+      const grid = document.getElementById('bulletinGrid');
+      if (error || !data || data.length === 0) {
+        document.getElementById('bulletinEmpty').style.display = 'block';
+        return;
+      }
+      grid.innerHTML = data.map(idea => `
+        <div class="bulletin-card">
+          ${idea.image_url ? `<img class="bulletin-card-img" src="${escapeHtml(idea.image_url)}" alt="${escapeHtml(idea.title)}" />` : ''}
+          <div class="bulletin-card-body">
+            <div class="bulletin-card-title">${escapeHtml(idea.title)}</div>
+            ${idea.description ? `<div class="bulletin-card-desc">${escapeHtml(idea.description)}</div>` : ''}
+          </div>
+        </div>
+      `).join('');
+    })();
+  </script>
 </body>
 </html>

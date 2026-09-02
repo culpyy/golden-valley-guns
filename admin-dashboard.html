@@ -452,6 +452,9 @@
     .status-pill.paid     { color: var(--success); border: 1px solid var(--success-border); }
     .status-pill.failed   { color: #e05a5a; border: 1px solid #7a2d2d; }
     .status-pill.refunded { color: #888; border: 1px solid #555; }
+    .status-pill.invited  { color: #888; border: 1px solid #555; }
+    .status-pill.rejected { color: #e05a5a; border: 1px solid #7a2d2d; }
+    .review-stars { color: var(--gold-light); letter-spacing: 1px; }
     .status-select {
       background: var(--bg);
       border: 1px solid var(--border);
@@ -654,6 +657,8 @@
     <button class="tab-btn" data-tab="orders">Orders</button>
     <button class="tab-btn" data-tab="messages" id="messagesTabBtn">Messages</button>
     <button class="tab-btn" data-tab="intake" id="intakeTabBtn">Intake</button>
+    <button class="tab-btn" data-tab="reviews" id="reviewsTabBtn">Reviews</button>
+    <button class="tab-btn" data-tab="bulletin">Bulletin Board</button>
     <button class="tab-btn" data-tab="products">Products</button>
     <button class="tab-btn" data-tab="catalog">Distributor Catalog</button>
     <!-- No nav button for Catalog Settings (data-tab="content") - markup %
@@ -944,6 +949,64 @@
         Submitted from the "Ship Something to Us" page before a customer mails in a kit or firearm. The printable slip they include in the box has the same info - this just lets you see it coming.
       </div>
       <div id="intakeTable"></div>
+    </div>
+
+    <!-- ── REVIEWS TAB ── -->
+    <div class="tab-panel" id="tab-reviews">
+      <div class="section-hd">
+        <h2>Customer Reviews</h2>
+      </div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:20px;max-width:640px;">
+        Customers get an emailed invite automatically once a build is marked Ready and paid. A submitted review sits as Pending until you Approve or Reject it - only Approved reviews ever show on the public site.
+      </div>
+      <div id="reviewsTable"></div>
+    </div>
+
+    <!-- ── BULLETIN BOARD TAB ── -->
+    <div class="tab-panel" id="tab-bulletin">
+      <div class="section-hd">
+        <h2>Bulletin Board</h2>
+        <button class="btn-add" id="addBulletinIdeaBtn">+ Add Idea</button>
+      </div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:20px;max-width:640px;">
+        Shows on the public "What We're Building Next" page - build types or ideas you want to put in front of customers. Hide an idea instead of deleting it if it's just not "upcoming" anymore (already a real build, or shelved).
+      </div>
+
+      <div class="form-card" id="bulletinForm">
+        <h3 id="bulletinFormTitle">Add Idea</h3>
+        <input type="hidden" id="bl-id" />
+        <div class="form-grid">
+          <div class="form-field full">
+            <label>Title</label>
+            <input type="text" id="bl-title" placeholder="AR-9 Pistol Caliber Carbine Builds" required />
+          </div>
+          <div class="form-field full">
+            <label>Description</label>
+            <textarea id="bl-description" placeholder="What it is, why you're excited about it..."></textarea>
+          </div>
+          <div class="form-field full" style="display:flex;flex-wrap:wrap;align-items:center;gap:16px;">
+            <img id="bl-image-preview" style="display:none;width:80px;height:80px;object-fit:cover;background:var(--bg);border:1px solid var(--border);flex-shrink:0;" />
+            <div style="flex:1;min-width:0;">
+              <label>Photo (optional)</label>
+              <input type="file" id="bl-image-file" accept="image/jpeg,image/png,image/webp,image/gif" style="max-width:100%;" />
+              <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+                <input type="checkbox" id="bl-image-remove" style="width:14px;height:14px;accent-color:var(--gold-light);cursor:pointer;" />
+                <label for="bl-image-remove" style="cursor:pointer;font-size:11px;letter-spacing:1px;color:var(--muted);">Remove current photo</label>
+              </div>
+            </div>
+          </div>
+          <div class="form-field full" style="display:flex;align-items:center;gap:10px;">
+            <input type="checkbox" id="bl-is-visible" style="width:16px;height:16px;accent-color:var(--gold-light);cursor:pointer;" checked />
+            <label for="bl-is-visible" style="cursor:pointer;font-size:12px;">Visible on the public site</label>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn-save" id="saveBulletinIdeaBtn">Add Idea</button>
+          <button class="btn-cancel" id="cancelBulletinIdeaBtn">Cancel</button>
+        </div>
+      </div>
+
+      <div id="bulletinTable"></div>
     </div>
 
     <!-- ── PRODUCTS TAB ── -->
@@ -2049,6 +2112,22 @@
       if (!confirm('Mark this build as paid? This only updates the record here - it does not charge anything.')) return;
       const { error } = await supabase.from('builds').update({ payment_status: 'paid' }).eq('id', id);
       if (error) { showToast('Error: ' + error.message); return; }
+      // The online pay-link path triggers this server-side (src/api/pay.js)
+      // since it's already a server request there - this is a direct
+      // client-side Supabase write with nothing else to hook the invite
+      // off, so it goes through its own admin route instead
+      // (src/api/sendReviewInvite.js). Best-effort: a failed invite send
+      // shouldn't make the "marked paid" action itself look like it failed.
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        await fetch('/api/admin/send-review-invite', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token || ''}` },
+          body: JSON.stringify({ buildId: id })
+        });
+      } catch (err) {
+        console.error('Review invite request failed:', err);
+      }
       showToast('Marked paid.');
       loadBuilds();
     }
@@ -2601,6 +2680,233 @@
       if (intake.notes) showToast('Pre-filled from intake - check the notes below for what they sent before saving.');
     }
 
+    // ── REVIEWS ──
+    let reviewsAllRows = [];
+    let openReviewIds = new Set();
+    const REVIEW_STATUS_LABELS = { invited: 'Invited', pending: 'Pending', approved: 'Approved', rejected: 'Rejected' };
+
+    async function loadReviews() {
+      const { data, error } = await supabase.from('reviews').select('*').order('created_at', { ascending: false });
+      reviewsAllRows = error ? [] : (data || []);
+      renderReviewsTable();
+      updateReviewsBadge();
+    }
+
+    function updateReviewsBadge() {
+      const pending = reviewsAllRows.filter(r => r.status === 'pending').length;
+      document.getElementById('reviewsTabBtn').innerHTML = 'Reviews' + (pending > 0 ? `<span class="count-badge">${pending}</span>` : '');
+    }
+
+    function starString(rating) {
+      if (!rating) return '';
+      return '&#9733;'.repeat(rating) + '&#9734;'.repeat(5 - rating);
+    }
+
+    function renderReviewsTable() {
+      const container = document.getElementById('reviewsTable');
+      if (reviewsAllRows.length === 0) {
+        container.innerHTML = '<div class="empty-state">No reviews yet - invites go out automatically once a build is Ready and paid.</div>';
+        return;
+      }
+      container.innerHTML = `
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Build</th>
+              <th>Customer</th>
+              <th>Rating</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${reviewsAllRows.map(r => `
+              <tr>
+                <td style="font-size:12px;">${new Date(r.submitted_at || r.created_at).toLocaleDateString()}</td>
+                <td class="title">${escapeHtml(r.build_title || '—')}</td>
+                <td>${escapeHtml(r.customer_name || '—')}</td>
+                <td class="review-stars">${starString(r.rating) || '<span style="color:var(--muted);">—</span>'}</td>
+                <td><span class="status-pill ${r.status}">${REVIEW_STATUS_LABELS[r.status] || r.status}</span></td>
+                <td>
+                  <div class="row-actions">
+                    ${r.review_text ? `<button class="btn-edit" onclick="toggleReviewBody('${r.id}')">View</button>` : ''}
+                    ${r.status === 'pending' ? `<button class="btn-save" onclick="setReviewStatus('${r.id}', 'approved')">Approve</button>` : ''}
+                    ${r.status === 'pending' ? `<button class="btn-delete" onclick="setReviewStatus('${r.id}', 'rejected')">Reject</button>` : ''}
+                    ${r.status === 'invited' ? `<button class="btn-delete" onclick="deleteReview('${r.id}')">Delete</button>` : ''}
+                  </div>
+                </td>
+              </tr>
+              ${r.review_text ? `
+              <tr class="msg-full-row" id="review-${r.id}" style="display:none;">
+                <td colspan="6">${escapeHtml(r.review_text)}</td>
+              </tr>` : ''}
+            `).join('')}
+          </tbody>
+        </table>`;
+      openReviewIds.forEach(id => {
+        const row = document.getElementById('review-' + id);
+        if (row) row.style.display = '';
+      });
+    }
+
+    function toggleReviewBody(id) {
+      const opening = !openReviewIds.has(id);
+      if (opening) openReviewIds.add(id); else openReviewIds.delete(id);
+      const row = document.getElementById('review-' + id);
+      if (row) row.style.display = opening ? '' : 'none';
+    }
+
+    async function setReviewStatus(id, status) {
+      const { error } = await supabase.from('reviews').update({ status }).eq('id', id);
+      if (error) { showToast('Error: ' + error.message); return; }
+      showToast(status === 'approved' ? 'Review approved - now live on the site.' : 'Review rejected.');
+      loadReviews();
+    }
+
+    // Only reachable for 'invited' rows (never submitted) - deleting a
+    // real customer's approved/rejected review isn't exposed here on
+    // purpose, same spirit as builds not having a casual one-click delete.
+    async function deleteReview(id) {
+      if (!confirm('Delete this invite? The customer\'s emailed link will stop working.')) return;
+      const { error } = await supabase.from('reviews').delete().eq('id', id);
+      if (error) { showToast('Error: ' + error.message); return; }
+      loadReviews();
+      showToast('Invite deleted.');
+    }
+
+    // ── BULLETIN BOARD ──
+    let bulletinAllRows = [];
+    let editingBulletinImageUrl = null;
+
+    async function loadBulletin() {
+      const { data, error } = await supabase.from('bulletin_ideas').select('*').order('position', { ascending: true }).order('created_at', { ascending: false });
+      bulletinAllRows = error ? [] : (data || []);
+      renderBulletinTable();
+    }
+
+    function renderBulletinTable() {
+      const container = document.getElementById('bulletinTable');
+      if (bulletinAllRows.length === 0) {
+        container.innerHTML = '<div class="empty-state">No ideas posted yet.</div>';
+        return;
+      }
+      container.innerHTML = `
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Photo</th>
+              <th>Title</th>
+              <th>Visible</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${bulletinAllRows.map(b => `
+              <tr>
+                <td>${b.image_url ? `<img src="${escapeHtml(b.image_url)}" style="width:44px;height:44px;object-fit:cover;" />` : '<span style="color:var(--muted);font-size:11px;">—</span>'}</td>
+                <td class="title">${escapeHtml(b.title)}</td>
+                <td>${b.is_visible ? '<span class="status-pill paid">Visible</span>' : '<span class="status-pill refunded">Hidden</span>'}</td>
+                <td>
+                  <div class="row-actions">
+                    <button class="btn-edit" onclick="editBulletinIdea('${b.id}')">Edit</button>
+                    <button class="btn-delete" onclick="deleteBulletinIdea('${b.id}')">Delete</button>
+                  </div>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>`;
+    }
+
+    function openBulletinForm(idea) {
+      document.getElementById('bulletinFormTitle').textContent = idea ? 'Edit Idea' : 'Add Idea';
+      document.getElementById('bl-id').value = idea ? idea.id : '';
+      document.getElementById('bl-title').value = idea ? idea.title : '';
+      document.getElementById('bl-description').value = idea ? (idea.description || '') : '';
+      document.getElementById('bl-is-visible').checked = idea ? !!idea.is_visible : true;
+      document.getElementById('bl-image-file').value = '';
+      document.getElementById('bl-image-remove').checked = false;
+      editingBulletinImageUrl = idea ? (idea.image_url || null) : null;
+      const preview = document.getElementById('bl-image-preview');
+      if (editingBulletinImageUrl) {
+        preview.src = editingBulletinImageUrl;
+        preview.style.display = '';
+      } else {
+        preview.style.display = 'none';
+      }
+      document.getElementById('saveBulletinIdeaBtn').textContent = idea ? 'Save Idea' : 'Add Idea';
+      document.getElementById('bulletinForm').classList.add('open');
+      document.getElementById('bulletinForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    function closeBulletinForm() {
+      document.getElementById('bulletinForm').classList.remove('open');
+    }
+    function editBulletinIdea(id) {
+      const idea = bulletinAllRows.find(b => b.id === id);
+      if (idea) openBulletinForm(idea);
+    }
+    document.getElementById('addBulletinIdeaBtn').addEventListener('click', () => openBulletinForm(null));
+    document.getElementById('cancelBulletinIdeaBtn').addEventListener('click', closeBulletinForm);
+
+    document.getElementById('saveBulletinIdeaBtn').addEventListener('click', async () => {
+      const id = document.getElementById('bl-id').value;
+      const title = document.getElementById('bl-title').value.trim();
+      if (!title) { showToast('Title is required.'); return; }
+
+      const saveBtn = document.getElementById('saveBulletinIdeaBtn');
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving...';
+
+      let imageUrl = editingBulletinImageUrl;
+      const file = document.getElementById('bl-image-file').files[0];
+      const removeImage = document.getElementById('bl-image-remove').checked;
+      try {
+        if (file) {
+          const { data: { session } } = await supabase.auth.getSession();
+          const res = await fetch(`/api/admin/upload-bulletin-image`, {
+            method: 'POST',
+            headers: { 'Content-Type': file.type, Authorization: `Bearer ${session?.access_token || ''}` },
+            body: file
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Image upload failed.');
+          imageUrl = data.url;
+        } else if (removeImage) {
+          imageUrl = null;
+        }
+
+        const payload = {
+          title,
+          description: document.getElementById('bl-description').value.trim() || null,
+          image_url: imageUrl,
+          is_visible: document.getElementById('bl-is-visible').checked
+        };
+
+        const { error } = id
+          ? await supabase.from('bulletin_ideas').update(payload).eq('id', id)
+          : await supabase.from('bulletin_ideas').insert(payload);
+        if (error) throw new Error(error.message);
+
+        closeBulletinForm();
+        loadBulletin();
+        showToast(id ? 'Idea saved.' : 'Idea added.');
+      } catch (err) {
+        showToast('Error: ' + err.message);
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = id ? 'Save Idea' : 'Add Idea';
+      }
+    });
+
+    async function deleteBulletinIdea(id) {
+      if (!confirm('Delete this idea? This cannot be undone.')) return;
+      const { error } = await supabase.from('bulletin_ideas').delete().eq('id', id);
+      if (error) { showToast('Error: ' + error.message); return; }
+      loadBulletin();
+      showToast('Idea deleted.');
+    }
+
     // ── PRODUCTS ──
     document.getElementById('addProductBtn').addEventListener('click', () => openProductForm(null));
     document.getElementById('cancelProductBtn').addEventListener('click', () => {
@@ -3047,6 +3353,8 @@
     loadOrders();
     loadMessages();
     loadIntake();
+    loadReviews();
+    loadBulletin();
     loadProducts();
     loadCatalog();
     loadContent();
