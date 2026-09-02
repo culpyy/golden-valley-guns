@@ -1002,10 +1002,14 @@
           </div>
           <div class="form-field full">
             <label>Photo</label>
-            <div style="display:flex;align-items:center;gap:16px;">
-              <img id="p-image-preview" style="display:none;width:80px;height:80px;object-fit:cover;background:var(--bg);border:1px solid var(--border);" />
-              <div style="flex:1;">
-                <input type="file" id="p-image-file" accept="image/jpeg,image/png,image/webp,image/gif" />
+            <!-- Same overflow pattern as the Build/Gallery photo rows fixed
+                 2026-09-02: a fixed-size image next to a flex:1 wrapper
+                 around a native file input, which refuses to shrink below
+                 its own content width by default (min-width:auto). -->
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:16px;">
+              <img id="p-image-preview" style="display:none;width:80px;height:80px;object-fit:cover;background:var(--bg);border:1px solid var(--border);flex-shrink:0;" />
+              <div style="flex:1;min-width:0;">
+                <input type="file" id="p-image-file" accept="image/jpeg,image/png,image/webp,image/gif" style="max-width:100%;" />
                 <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
                   <input type="checkbox" id="p-image-remove" style="width:14px;height:14px;accent-color:var(--gold-light);cursor:pointer;" />
                   <label for="p-image-remove" style="cursor:pointer;font-size:11px;letter-spacing:1px;color:var(--muted);">Remove current photo</label>
