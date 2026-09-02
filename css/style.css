@@ -59,7 +59,13 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 48px;
+  /* Explicit gap alongside space-between: gap sets a real MINIMUM between
+     logo/links/cart/button, space-between fills any leftover width into
+     those same gaps rather than nowhere - the earlier version (no gap
+     property) let space-between shrink the logo-to-links gap to ~5px at
+     tight widths, reading as the logo and "HOME" touching. */
+  gap: 24px;
+  padding: 0 32px;
   background: rgba(13,13,13,0.92);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
@@ -144,16 +150,26 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
   text-overflow: ellipsis;
 }
 
+/* Real measured bug (2026-09-02): the "· FFL 07 Manufacturer" suffix alone
+   is 170px+ (the full .sub line runs 396px with it, ~224px without) -
+   bigger than the entire 8-item nav-links row combined. Dropping it well
+   before the hamburger breakpoint (see below) buys back most of the room
+   an 8th nav item cost, so the nav stays a real horizontal bar down to
+   normal laptop widths instead of falling back to a dropdown. */
+@media (max-width: 1550px) {
+  .nav-logo .sub-ffl { display: none; }
+}
+
 .nav-links {
   display: flex;
-  gap: 36px;
+  gap: 16px;
   list-style: none;
 }
 
 .nav-links a {
   font-size: 13px;
   font-weight: 500;
-  letter-spacing: 1.5px;
+  letter-spacing: 1px;
   text-transform: uppercase;
   color: var(--muted);
   transition: color 0.2s;
@@ -214,7 +230,7 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
   font-weight: 600;
   letter-spacing: 1.5px;
   text-transform: uppercase;
-  padding: 10px 22px;
+  padding: 8px 16px;
   border: 1px solid var(--gold);
   color: var(--gold-glow);
   border-radius: 2px;
@@ -1237,18 +1253,23 @@ footer {
   margin: 16px 0;
 }
 
-/* ── NAV COLLAPSE (≤1650px) — 8 nav items need room before the bar crowds.
-   Real measured bug (2026-09-02): adding "What's Next" made the nav's own
-   content (logo + links + Get In Touch + cart icon) 1541px wide at a
-   1536px browser width - 5px over, just enough to wrap nav-links onto a
-   second line instead of triggering the hamburger, which used to switch
-   over at 1100px (tuned for a 7-item nav, stale the moment an 8th was
-   added). 1650px gives real margin above the measured 1541px requirement
-   instead of another cliff-edge threshold. ── */
-@media (max-width: 1650px) {
+/* ── NAV COLLAPSE (≤1350px) ──
+   First fix here (raising this to 1650px) was wrong - it "fixed" the
+   overflow by handing normal 1366-1536px laptop widths a dropdown menu
+   instead of a real top nav, which isn't what a desktop nav should do.
+   The actual fix was freeing up room (dropping the logo's "FFL 07
+   Manufacturer" suffix earlier - see .sub-ffl above - and tightening
+   nav-links gap/nav padding/.nav-cta padding), which brought the true
+   minimum required width (logo + links + cart + button + padding + the
+   explicit .nav gap's floor) down to ~1242px, confirmed by constraining
+   .nav's own box to exactly that width and checking it doesn't overflow.
+   1350px keeps real margin above that number - the nav now stays a real
+   horizontal bar through every normal desktop/laptop width (confirmed
+   comfortable at 1366px) and only collapses for actually-narrow
+   (tablet-ish) windows. ── */
+@media (max-width: 1350px) {
   .nav-links { display: none; }
   .nav-cta { display: none; }
-  .nav-logo .sub-ffl { display: none; }
   .hamburger { display: flex; }
   /* With nav-links/nav-cta hidden, .nav's space-between would otherwise
      strand the cart icon alone at the horizontal midpoint (logo, cart-icon,
