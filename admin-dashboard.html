@@ -1159,6 +1159,39 @@
       setTimeout(() => t.classList.remove('show'), 2800);
     }
 
+    // ── MODAL SCROLL LOCK ──
+    // A fixed-position overlay does NOT stop the page underneath it from
+    // scrolling on touch (confirmed live 2026-09-02 - swiping over the
+    // Edit Build modal was scrolling the Active Builds table behind it).
+    // Plain `overflow:hidden` on body is well known not to reliably stop
+    // this on iOS Safari - pinning body to `position:fixed` at its current
+    // scroll offset is the standard fix that actually works there. Counted
+    // so two overlays opening in sequence (e.g. the tracking-code modal
+    // right after the build form) don't have the first close() re-enable
+    // scroll while the second is still open.
+    let modalLockCount = 0;
+    let modalLockScrollY = 0;
+    function lockBodyScroll() {
+      if (modalLockCount === 0) {
+        modalLockScrollY = window.scrollY;
+        document.body.style.position = 'fixed';
+        document.body.style.top = `-${modalLockScrollY}px`;
+        document.body.style.left = '0';
+        document.body.style.right = '0';
+      }
+      modalLockCount++;
+    }
+    function unlockBodyScroll() {
+      modalLockCount = Math.max(0, modalLockCount - 1);
+      if (modalLockCount === 0) {
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.left = '';
+        document.body.style.right = '';
+        window.scrollTo(0, modalLockScrollY);
+      }
+    }
+
     // ── TABS ──
     function activateTab(tabName) {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -1196,10 +1229,12 @@
     function showCodeModal(code) {
       document.getElementById('codeDisplay').textContent = code;
       document.getElementById('codeModalOverlay').classList.add('open');
+      lockBodyScroll();
     }
 
     document.getElementById('closeModalBtn').addEventListener('click', () => {
       document.getElementById('codeModalOverlay').classList.remove('open');
+      unlockBodyScroll();
     });
 
     document.getElementById('copyCodeBtn').addEventListener('click', () => {
@@ -1260,10 +1295,12 @@
       }
 
       document.getElementById('buildFormOverlay').classList.add('open');
+      lockBodyScroll();
     }
 
     function closeBuildForm() {
       document.getElementById('buildFormOverlay').classList.remove('open');
+      unlockBodyScroll();
     }
 
     function toggleAtfFields() {
@@ -1845,6 +1882,7 @@
       input.placeholder = build.tracking_code ? `Type ${build.tracking_code} here` : `Type "${build.title}" here`;
       document.getElementById('confirmDeleteBuildBtn').disabled = true;
       document.getElementById('deleteBuildModalOverlay').classList.add('open');
+      lockBodyScroll();
       input.focus();
     }
 
@@ -1852,6 +1890,7 @@
       pendingDeleteBuildId = null;
       pendingDeleteConfirmText = null;
       document.getElementById('deleteBuildModalOverlay').classList.remove('open');
+      unlockBodyScroll();
     }
 
     document.getElementById('deleteBuildConfirmInput').addEventListener('input', (e) => {
@@ -2198,6 +2237,7 @@
 
         document.getElementById('payLinkDisplay').textContent = data.payUrl;
         document.getElementById('payLinkModalOverlay').classList.add('open');
+        lockBodyScroll();
         loadOrders();
         if (buildId) loadBuilds();
       } catch (err) {
@@ -2214,6 +2254,7 @@
     });
     document.getElementById('closePayLinkModalBtn').addEventListener('click', () => {
       document.getElementById('payLinkModalOverlay').classList.remove('open');
+      unlockBodyScroll();
     });
 
     async function updateOrderStatus(id, status) {
