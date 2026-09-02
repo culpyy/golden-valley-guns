@@ -44,6 +44,35 @@
       .faq-grid { margin-top: 28px; }
       .faq-item { padding: 24px; }
     }
+
+    /* One review shown at a time, auto-advancing (see loadReviewsRotator
+       below) - a single large quote reads as more editorial/credible than
+       a grid of small cards, and rotating keeps it from feeling static on
+       repeat visits. Cross-fade instead of a hard cut between reviews. */
+    .reviews-rotator {
+      max-width: 720px;
+      min-height: 160px;
+      margin: 32px 0;
+      padding: 32px 40px;
+      background: var(--surface);
+      border-left: 3px solid var(--gold);
+    }
+    .review-slide { display: none; opacity: 0; transition: opacity 0.5s; }
+    .review-slide.active { display: block; opacity: 1; }
+    .review-slide-stars { color: var(--gold-light); font-size: 18px; letter-spacing: 2px; margin-bottom: 14px; }
+    .review-slide-text {
+      font-family: 'Big Shoulders Display', sans-serif; font-weight: 500;
+      font-size: 20px;
+      line-height: 1.5;
+      color: var(--text);
+      margin-bottom: 16px;
+    }
+    .review-slide-name { font-size: 13px; color: var(--muted); }
+    .review-slide-name strong { color: var(--silver); }
+    @media (max-width: 580px) {
+      .reviews-rotator { padding: 24px; }
+      .review-slide-text { font-size: 17px; }
+    }
   </style>
   <script type="application/ld+json">
   {
@@ -106,7 +135,6 @@
       <li><a href="inshop.html">In Shop</a></li>
       <li><a href="gallery.html">Gallery</a></li>
       <li><a href="shop.html">Shop</a></li>
-      <li><a href="reviews.html">Reviews</a></li>
       <li><a href="bulletin.html">What's Next</a></li>
       <li><a href="contact.html">Contact</a></li>
     </ul>
@@ -227,6 +255,14 @@
     </div>
   </section>
 
+  <!-- CUSTOMER REVIEWS -->
+  <section id="reviewsSection" style="display:none;">
+    <div class="section-label">What Customers Say</div>
+    <h2 class="section-title">Reviews</h2>
+    <div class="reviews-rotator" id="reviewsRotator"></div>
+    <a href="reviews.html" class="btn-secondary">Read More Reviews &#8594;</a>
+  </section>
+
   <!-- FAQ -->
   <section>
     <div class="section-label">Questions</div>
@@ -292,7 +328,6 @@
           <li><a href="inshop.html">In Shop</a></li>
           <li><a href="gallery.html">Gallery</a></li>
           <li><a href="shop.html">Shop</a></li>
-      <li><a href="reviews.html">Reviews</a></li>
       <li><a href="bulletin.html">What's Next</a></li>
           <li><a href="contact.html">Contact</a></li>
         </ul>
@@ -355,6 +390,35 @@
         document.getElementById('completedStat').style.display = '';
       }
     })();
+
+    async function loadReviewsRotator() {
+      // reviews_public already filters to admin-approved rows only and
+      // excludes anything sensitive (sql/reviews.sql) - safe to query
+      // directly with the anon key, same as builds_public.
+      const { data, error } = await supabase.from('reviews_public').select('*').limit(8);
+      if (error || !data || data.length === 0) return;
+
+      const rotator = document.getElementById('reviewsRotator');
+      rotator.innerHTML = data.map((r, i) => `
+        <div class="review-slide${i === 0 ? ' active' : ''}">
+          <div class="review-slide-stars">${'&#9733;'.repeat(r.rating)}${'&#9734;'.repeat(5 - r.rating)}</div>
+          ${r.review_text ? `<div class="review-slide-text">"${escapeHtml(r.review_text)}"</div>` : ''}
+          <div class="review-slide-name"><strong>${escapeHtml(r.customer_name || 'Verified Customer')}</strong>${r.build_title ? ` &middot; ${escapeHtml(r.build_title)}` : ''}</div>
+        </div>
+      `).join('');
+      document.getElementById('reviewsSection').style.display = '';
+
+      if (data.length > 1) {
+        let current = 0;
+        const slides = rotator.querySelectorAll('.review-slide');
+        setInterval(() => {
+          slides[current].classList.remove('active');
+          current = (current + 1) % slides.length;
+          slides[current].classList.add('active');
+        }, 6000);
+      }
+    }
+    loadReviewsRotator();
 
     document.querySelectorAll('.faq-item').forEach(item => {
       const toggle = () => {
