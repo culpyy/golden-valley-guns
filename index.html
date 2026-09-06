@@ -73,6 +73,28 @@
       .reviews-rotator { padding: 24px; }
       .review-slide-text { font-size: 17px; }
     }
+
+    .bulletin-preview-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    @media (max-width: 900px) { .bulletin-preview-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 580px) { .bulletin-preview-grid { grid-template-columns: 1fr; } }
+    .bulletin-preview-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .bulletin-preview-img { width: 100%; aspect-ratio: 16/10; object-fit: cover; display: block; background: var(--surface2); }
+    .bulletin-preview-body { padding: 16px 18px; }
+    .bulletin-preview-title {
+      font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
+      font-size: 16px;
+      letter-spacing: 1px;
+      color: var(--text);
+    }
   </style>
   <script type="application/ld+json">
   {
@@ -205,6 +227,15 @@
       <div class="build-preview-card"><div class="shimmer-block" style="height:12px;width:40%;margin-bottom:12px;"></div><div class="shimmer-block" style="height:20px;width:70%;margin-bottom:8px;"></div><div class="shimmer-block" style="height:10px;width:30%;"></div></div>
     </div>
     <a href="inshop.html" class="btn-secondary">Full Build Board &#8594;</a>
+  </section>
+
+  <!-- WHAT'S NEXT PREVIEW -->
+  <section id="bulletinSection" style="display:none;">
+    <div class="section-label">On the Horizon</div>
+    <h2 class="section-title">What We're Building Next</h2>
+    <p class="section-sub">Build types and ideas we're excited about - see something you want? Get in touch.</p>
+    <div class="bulletin-preview-grid" id="bulletinPreview"></div>
+    <a href="bulletin.html" class="btn-secondary">See What's Next &#8594;</a>
   </section>
 
   <!-- SERVICES -->
@@ -419,6 +450,27 @@
       }
     }
     loadReviewsRotator();
+
+    async function loadBulletinPreview() {
+      const { data, error } = await supabase.from('bulletin_ideas')
+        .select('title, description, image_url')
+        .eq('is_visible', true)
+        .order('position', { ascending: true })
+        .order('created_at', { ascending: false })
+        .limit(3);
+      if (error || !data || data.length === 0) return;
+
+      document.getElementById('bulletinPreview').innerHTML = data.map(idea => `
+        <div class="bulletin-preview-card">
+          ${idea.image_url ? `<img class="bulletin-preview-img" src="${escapeHtml(idea.image_url)}" alt="${escapeHtml(idea.title)}" />` : ''}
+          <div class="bulletin-preview-body">
+            <div class="bulletin-preview-title">${escapeHtml(idea.title)}</div>
+          </div>
+        </div>
+      `).join('');
+      document.getElementById('bulletinSection').style.display = '';
+    }
+    loadBulletinPreview();
 
     document.querySelectorAll('.faq-item').forEach(item => {
       const toggle = () => {

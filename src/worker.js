@@ -16,6 +16,7 @@ import { handleRefundOrder } from './api/refundOrder.js';
 import { handlePaymentDiagnostics } from './api/paymentDiagnostics.js';
 import { handleGetReview, handlePostReview } from './api/reviews.js';
 import { handleSendReviewInvite } from './api/sendReviewInvite.js';
+import { handleAddTracking } from './api/addTracking.js';
 import { checkRateLimit } from './lib/rateLimit.js';
 import { addSecurityHeaders } from './lib/securityHeaders.js';
 
@@ -480,6 +481,27 @@ async function route(request, env) {
     } catch (err) {
       console.error('Review invite failed:', err);
       return new Response(JSON.stringify({ error: 'Failed to send invite.' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+  }
+
+  if (url.pathname === '/api/admin/add-tracking' && request.method === 'POST') {
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    const { allowed, retryAfterSeconds } = await checkRateLimit(env, `add-tracking:${ip}`, { limit: 20, windowSeconds: 600 });
+    if (!allowed) {
+      return new Response(JSON.stringify({ error: 'Too many requests.' }), {
+        status: 429,
+        headers: { 'Content-Type': 'application/json', 'Retry-After': String(retryAfterSeconds) }
+      });
+    }
+
+    try {
+      return await handleAddTracking(request, env);
+    } catch (err) {
+      console.error('Add tracking failed:', err);
+      return new Response(JSON.stringify({ error: 'Failed to save tracking info.' }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' }
       });

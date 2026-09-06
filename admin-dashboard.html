@@ -2229,6 +2229,7 @@
                     </div>
                     ${!o.ffl_verified ? `<button class="btn-edit" onclick="markFflVerified('${o.id}')">Mark FFL Verified</button>` : ''}
                   </div>
+                  ${o.status === 'paid' ? trackingBlock(o) : ''}
                 </td>
               </tr>` : ''}
               ${isShipToCustomer ? `
@@ -2239,6 +2240,7 @@
                     ${escapeHtml(o.shipping_line1 || '—')}${o.shipping_line2 ? '<br>' + escapeHtml(o.shipping_line2) : ''}<br>
                     ${escapeHtml(o.shipping_city || '—')}, ${escapeHtml(o.shipping_state || '—')} ${escapeHtml(o.shipping_zip || '—')}
                   </div>
+                  ${o.status === 'paid' ? trackingBlock(o) : ''}
                 </td>
               </tr>` : ''}
               <tr class="items-detail-row" id="items-${o.id}" style="display:none;">
@@ -2255,6 +2257,64 @@
             `;}).join('')}
           </tbody>
         </table>`;
+    }
+
+    // Shawn buys shipping labels outside this site, so there's no automatic
+    // way to know a tracking number exists - this is the manual entry point,
+    // shown on any paid order that actually gets carried somewhere (ship-to-
+    // customer or FFL-to-FFL transfer). Once saved, shows the tracking info
+    // read-only with a Resend Email button instead of the form again -
+    // re-entering a tracking number for an already-shipped order should be
+    // a deliberate correction, not something that could happen by accident.
+    function trackingBlock(o) {
+      if (o.tracking_number) {
+        return `
+          <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.1);font-size:12px;line-height:1.7;">
+            <strong>Shipped</strong> &middot; ${escapeHtml(o.carrier)} ${escapeHtml(o.tracking_number)}${o.shipped_at ? ` &middot; ${new Date(o.shipped_at).toLocaleDateString()}` : ''}
+            <div style="margin-top:6px;">
+              <button class="btn-edit" style="padding:4px 10px;font-size:10px;" onclick="saveTracking('${o.id}', true)">Resend Tracking Email</button>
+            </div>
+          </div>`;
+      }
+      return `
+        <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.1);display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+          <select id="carrier-${o.id}" style="background:var(--bg);border:1px solid var(--border);color:var(--text);padding:6px 8px;font-size:12px;">
+            <option value="USPS">USPS</option>
+            <option value="UPS">UPS</option>
+            <option value="FedEx">FedEx</option>
+            <option value="Other">Other</option>
+          </select>
+          <input id="tracking-${o.id}" type="text" placeholder="Tracking number" style="background:var(--bg);border:1px solid var(--border);color:var(--text);padding:6px 10px;font-size:12px;flex:1;min-width:140px;" />
+          <button class="btn-save" style="padding:6px 14px;font-size:11px;" onclick="saveTracking('${o.id}', false)">Save &amp; Email Customer</button>
+        </div>`;
+    }
+
+    async function saveTracking(id, isResend) {
+      const order = ordersAllRows.find(o => o.id === id);
+      let carrier, trackingNumber;
+      if (isResend) {
+        carrier = order.carrier;
+        trackingNumber = order.tracking_number;
+      } else {
+        carrier = document.getElementById(`carrier-${id}`).value;
+        trackingNumber = document.getElementById(`tracking-${id}`).value.trim();
+        if (!trackingNumber) { showToast('Enter a tracking number first.'); return; }
+      }
+
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const res = await fetch('/api/admin/add-tracking', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token || ''}` },
+          body: JSON.stringify({ orderId: id, carrier, trackingNumber })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to save tracking.');
+        showToast(data.emailSent ? 'Tracking saved - customer notified.' : 'Tracking saved, but the email failed to send.');
+        loadOrders();
+      } catch (err) {
+        showToast('Error: ' + err.message);
+      }
     }
 
     function copyPayLink(payToken) {
