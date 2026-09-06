@@ -75,7 +75,7 @@
   <!-- CONTENT -->
   <section>
     <div class="legal-doc fade-in">
-      <div class="updated-date">Effective date: July 21, 2026</div>
+      <div class="updated-date">Effective date: September 6, 2026</div>
 
       <div class="toc">
         <h4>On This Page</h4>
@@ -102,6 +102,7 @@
         <li><strong>Shipment intake form:</strong> name, phone and/or email, service type, firearm type, caliber, and whether the item is NFA-regulated, plus any notes you add.</li>
         <li><strong>Shop checkout and special-order payment links:</strong> name, email, and phone, tied to your order. Payment card details are entered directly into our payment processor's secure hosted form and are never sent to or stored on our servers.</li>
         <li><strong>Build tracking:</strong> if we're building or servicing something for you, we keep a record of the work (status, notes, estimated completion) tied to a tracking code. Looking up a tracking code on our site doesn't require you to submit any personal information.</li>
+        <li><strong>Reviews:</strong> once a build is complete and paid for, we email a one-time link inviting you to leave a review. If you submit one, we keep your name, star rating, and review text, tied to that build. Reviews we approve are shown publicly on the site with your name as provided - never your email or phone number.</li>
       </ul>
 
       <h2 id="how-we-use-it">2. How We Use It</h2>
@@ -117,8 +118,9 @@
       <h2 id="who-we-share-it-with">3. Who We Share It With</h2>
       <p>We use a small number of service providers to run the site and process orders. Each only receives what it needs to do its job:</p>
       <ul>
-        <li><strong>Supabase:</strong> hosts our database (orders, builds, messages, intake submissions)</li>
-        <li><strong>Cloudflare:</strong> hosts the website and delivers transactional emails (order confirmations, contact form notifications)</li>
+        <li><strong>Supabase:</strong> hosts our database (orders, builds, messages, intake submissions, reviews)</li>
+        <li><strong>Cloudflare:</strong> hosts the website</li>
+        <li><strong>Resend:</strong> delivers transactional emails (order confirmations, build status updates, review invitations, contact form notifications)</li>
         <li><strong>Authorize.net:</strong> processes payment card transactions; we never see or store your full card number</li>
       </ul>
       <p>We don't share your information with anyone else, except where required by law. For example, in response to a valid request from ATF or law enforcement.</p>
