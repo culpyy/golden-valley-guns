@@ -393,10 +393,11 @@
     }
 
     /* ── WATCH REQUEST ── */
-    .watch-panel {
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-    }
+    /* Folded into .catalog-search-wrap's own card (see markup) rather than a
+       separate full-width banded section - as its own section it read as a
+       stray caption wedged between the search bar and the catalog below,
+       not a real part of either. */
+    .watch-panel { max-width: 640px; margin: 14px auto 0; }
     .watch-panel-toggle {
       display: block;
       width: 100%;
@@ -406,15 +407,15 @@
       font-family: 'Inter', sans-serif;
       font-size: 13px;
       text-align: center;
-      padding: 12px 32px;
+      padding: 0;
       cursor: pointer;
     }
     .watch-panel-toggle span { color: var(--gold-light); }
     .watch-panel-toggle:hover span { text-decoration: underline; }
     .watch-panel-body {
-      padding: 0 32px 24px;
-      max-width: 640px;
-      margin: 0 auto;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
     }
     .watch-search-inner { margin-bottom: 16px; }
     .watch-result-row {
@@ -643,27 +644,26 @@
     <p>Firearms, ammo, and parts we actually have. Looking for a custom build instead? <a href="services.html" class="tel-link">See what we build</a>.</p>
   </div>
 
-  <!-- CATALOG SEARCH -->
+  <!-- CATALOG SEARCH (watch-request panel below is folded into the same
+       card, not a separate section - out-of-stock items are hidden from the
+       grid below, so this is where a customer finds one anyway and asks to
+       be notified when it's back) -->
   <div class="catalog-search-wrap">
     <div class="catalog-search-inner">
       <svg class="catalog-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <input type="text" id="catalogSearch" placeholder="Search firearms, ammo, and parts by name, manufacturer, or caliber..." />
     </div>
-  </div>
-
-  <!-- WATCH REQUEST (out-of-stock items are hidden from the grid above -
-       this searches the full catalog including those, so a customer can
-       still ask to be notified when a specific one comes back) -->
-  <div class="watch-panel">
-    <button type="button" class="watch-panel-toggle" id="watchPanelToggle">
-      Can&rsquo;t find what you&rsquo;re looking for? <span>Search our full inventory, including things that are out of stock &#9662;</span>
-    </button>
-    <div class="watch-panel-body" id="watchPanelBody" hidden>
-      <div class="catalog-search-inner watch-search-inner">
-        <svg class="catalog-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" id="watchSearch" placeholder="Search by name, manufacturer, or caliber..." />
+    <div class="watch-panel">
+      <button type="button" class="watch-panel-toggle" id="watchPanelToggle">
+        Can&rsquo;t find what you&rsquo;re looking for? <span>Search our full inventory, including things that are out of stock &#9662;</span>
+      </button>
+      <div class="watch-panel-body" id="watchPanelBody" hidden>
+        <div class="catalog-search-inner watch-search-inner">
+          <svg class="catalog-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="watchSearch" placeholder="Search by name, manufacturer, or caliber..." />
+        </div>
+        <div id="watchResults"></div>
       </div>
-      <div id="watchResults"></div>
     </div>
   </div>
 
@@ -904,7 +904,10 @@
     const CATEGORY_INFO = {
       all: {
         title: 'All Products',
-        desc: 'Firearms, ammo, and parts we actually have. Looking for a custom build instead? <a href="services.html" class="tel-link">See what we build</a>.',
+        // No desc - the page header above already says this same thing
+        // ("Firearms, ammo, and parts we actually have...") and repeating it
+        // one scroll further down read as redundant, not reassuring.
+        desc: '',
         cta: null
       },
       firearms: {
@@ -1095,7 +1098,7 @@
       document.getElementById('categoryHeader').innerHTML = `
         <div>
           <h2>${info.title}</h2>
-          <p>${info.desc}</p>
+          ${info.desc ? `<p>${info.desc}</p>` : ''}
         </div>
         ${cta}
       `;
