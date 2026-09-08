@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <title>Out of Stock | Golden Valley Guns LLC | Golden Valley, AZ</title>
+  <meta name="description" content="Browse everything currently out of stock with our distributors and ask to be notified when it's back." />
+  <meta name="robots" content="noindex, follow" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    /* ── LAYOUT (subset of shop.html's own styles - no bundler on this site,
+       so shared visual language is duplicated per page rather than a common
+       stylesheet) ── */
+    .shop-wrap { max-width: 1400px; margin: 0 auto; padding: 56px 48px; }
+
+    /* ── SECTIONS ── */
+    .builds-header {
+      background: var(--surface);
+      padding: 28px 32px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .builds-header h2 {
+      font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
+      font-size: 24px;
+      letter-spacing: 2px;
+      color: var(--text);
+    }
+    .builds-header p {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 4px;
+      max-width: 480px;
+      line-height: 1.7;
+    }
+
+    /* ── CATEGORY PILLS ── */
+    .category-pills { display: flex; flex-wrap: wrap; gap: 8px; padding: 16px 32px; background: var(--surface); border-bottom: 1px solid var(--border); }
+    .category-pill {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 8px 16px;
+      font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
+      font-size: 12px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+    .category-pill.active { border-color: var(--gold); color: var(--gold-light); }
+
+    /* ── RESULTS BAR ── */
+    .results-bar { padding: 12px 32px; background: var(--bg); font-size: 12px; color: var(--muted); letter-spacing: 0.5px; }
+
+    /* ── BUTTONS ── */
+    .btn-buy {
+      font-weight: 600; font-size: 13px; letter-spacing: 1.5px; text-transform: uppercase;
+      padding: 9px 18px; background: var(--gold); color: #fff; border: none; border-radius: 2px;
+      cursor: pointer; transition: background 0.2s; white-space: nowrap; text-decoration: none; display: inline-block;
+    }
+    .btn-buy:hover { background: var(--gold-light); }
+    .btn-buy.outline { background: transparent; border: 1px solid var(--gold); color: var(--gold-light); }
+    .btn-buy.outline:hover { background: var(--gold); color: #fff; }
+
+    /* ── PARTS GRID ── */
+    .parts-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; background: var(--border); }
+    .part-card { position: relative; background: var(--bg); padding: 24px; display: flex; flex-direction: column; gap: 8px; transition: background 0.2s; }
+    .part-card:hover { background: var(--surface); }
+    .part-img-wrap { aspect-ratio: 4 / 3; background: #fff; overflow: hidden; margin: -24px -24px 8px -24px; width: calc(100% + 48px); }
+    .part-img-wrap img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .part-img-placeholder { width: 100%; height: 100%; display: none; align-items: center; justify-content: center; color: #777; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; }
+    .part-img-wrap:not(:has(img)) .part-img-placeholder, .part-img-wrap.img-error .part-img-placeholder { display: flex; }
+    .part-source { display: inline-block; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold-light); border: 1px solid var(--gold); padding: 3px 8px; width: fit-content; }
+    .part-name { font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 19px; letter-spacing: 1.5px; color: var(--text); }
+    .part-desc { font-size: 12px; color: var(--muted); line-height: 1.6; flex: 1; }
+    .part-note { font-size: 11px; color: var(--muted); line-height: 1.5; }
+    .part-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; flex-wrap: wrap; gap: 8px; }
+    .part-price { font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 22px; letter-spacing: 1px; color: var(--gold-light); }
+    .part-stock { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; padding: 3px 10px; color: #888; border: 1px solid #444; }
+    .parts-empty { grid-column: 1 / -1; background: var(--surface); padding: 48px; text-align: center; color: var(--muted); font-size: 13px; }
+
+    /* ── PAGINATION ── */
+    .pagination { display: flex; align-items: center; justify-content: center; gap: 20px; padding: 20px; background: var(--surface); }
+    .pagination:empty { display: none; }
+    .page-btn {
+      background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 8px 18px;
+      font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 12px; letter-spacing: 1.5px;
+      text-transform: uppercase; cursor: pointer; transition: background 0.15s, color 0.15s;
+    }
+    .page-btn:hover:not(:disabled) { background: var(--gold); color: #fff; }
+    .page-btn:disabled { opacity: 0.35; cursor: default; }
+    .page-info { font-size: 12px; letter-spacing: 1px; color: var(--muted); white-space: nowrap; }
+
+    /* ── SEARCH ── */
+    .catalog-search-wrap { padding: 20px 32px; background: var(--surface); border-bottom: 1px solid var(--border); }
+    .catalog-search-inner { position: relative; max-width: 640px; margin: 0 auto; }
+    .catalog-search-icon { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: var(--muted); pointer-events: none; }
+    .catalog-search-wrap input { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 15px 16px 15px 48px; font-size: 15px; font-family: 'Inter', sans-serif; transition: border-color 0.15s, box-shadow 0.15s; }
+    .catalog-search-wrap input::placeholder { color: var(--muted); }
+    .catalog-search-wrap input:focus { outline: none; border-color: var(--gold-light); box-shadow: 0 0 0 3px rgba(200, 149, 26, 0.15); }
+
+    /* ── NOTIFY FORM (same pattern as shop.html's watch-request panel) ── */
+    .watch-form { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
+    .watch-form input { flex: 1; min-width: 100px; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; font-size: 13px; font-family: 'Inter', sans-serif; }
+    .watch-form input::placeholder { color: var(--muted); }
+    .watch-form-error { width: 100%; font-size: 12px; color: #d9534f; }
+    .watch-confirm { font-size: 12px; color: var(--success); }
+
+    .admin-bar.visible + .page-header { padding-top: 40px; }
+
+    @media (max-width: 900px) {
+      .shop-wrap { padding: 40px 20px; }
+      .parts-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 580px) {
+      .shop-wrap { padding: 32px 16px; }
+      .parts-grid { grid-template-columns: 1fr; }
+      .builds-header { padding: 20px; flex-direction: column; align-items: flex-start; }
+      .catalog-search-wrap { padding: 14px 16px; }
+      .category-pills { padding: 14px 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- AGE GATE -->
+  <div id="ageGate" class="age-gate">
+    <div class="age-gate-card">
+      <img src="images/logo.png" class="age-gate-logo" alt="Golden Valley Guns LLC" />
+      <h2>Age Verification Required</h2>
+      <p>You must be <strong>18 years of age or older</strong> to enter this site. Golden Valley Guns LLC is an FFL 07 licensed firearms manufacturer and dealer. By continuing, you confirm you meet the minimum age requirement under federal and Arizona law.</p>
+      <div class="age-gate-actions">
+        <button id="ageGateEnter" class="btn-primary">I'm 18 or Older</button>
+        <a href="https://www.google.com" class="btn-secondary">Exit</a>
+      </div>
+    </div>
+  </div>
+  <script>
+    if (localStorage.getItem('gvg_age_verified') === 'true') {
+      document.getElementById('ageGate').style.display = 'none';
+    } else {
+      document.body.style.overflow = 'hidden';
+    }
+  </script>
+
+  <!-- NAV -->
+  <nav class="nav">
+    <a href="index.html" class="nav-logo">
+      <img src="images/logo.png" class="nav-logo-img" alt="" />
+      <div class="nav-logo-text">
+        <span class="wordmark">Golden Valley Guns LLC</span>
+        <span class="sub">Golden Valley, Arizona<span class="sub-ffl"> · FFL 07 Manufacturer</span></span>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="services.html">Services</a></li>
+      <li><a href="intake.html">Ship to Us</a></li>
+      <li><a href="inshop.html">In Shop</a></li>
+      <li><a href="gallery.html">Gallery</a></li>
+      <li><a href="shop.html">Shop</a></li>
+      <li><a href="bulletin.html">What's Next</a></li>
+      <li><a href="contact.html">Contact</a></li>
+    </ul>
+    <a href="cart.html" class="nav-cart-icon" aria-label="Cart">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+      <span class="cart-badge" data-cart-count>0</span>
+    </a>
+    <a href="contact.html" class="nav-cta">Get In Touch</a>
+    <div class="hamburger" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </div>
+  </nav>
+
+  <!-- ADMIN BAR (shown only when logged in) -->
+  <div class="admin-bar" id="adminBar">
+    <span class="admin-bar-label">Admin Mode</span>
+    <div class="admin-bar-actions">
+      <a href="admin-dashboard.html">Dashboard</a>
+      <button onclick="adminSignOut()">Sign Out</button>
+    </div>
+  </div>
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div class="section-label">Golden Valley Guns</div>
+    <h1>Out of Stock</h1>
+    <p>Everything here is currently out of stock with our distributors. Browse or search, then ask to be notified the moment one comes back. <a href="shop.html" class="tel-link">Back to Shop</a>.</p>
+  </div>
+
+  <!-- SEARCH -->
+  <div class="catalog-search-wrap">
+    <div class="catalog-search-inner">
+      <svg class="catalog-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="catalogSearch" placeholder="Search by name, manufacturer, or caliber..." />
+    </div>
+  </div>
+
+  <!-- CATEGORY PILLS -->
+  <div class="category-pills" id="categoryPills"></div>
+
+  <!-- SHOP -->
+  <div class="shop-wrap">
+    <div class="builds-header">
+      <div>
+        <h2>Out of Stock Items</h2>
+        <p>These aren't purchasable right now - stock is pulled in from our distributors and changes throughout the day.</p>
+      </div>
+    </div>
+    <div class="results-bar" id="resultsBar"></div>
+    <div class="parts-grid" id="productGrid"></div>
+    <div class="pagination" id="productPagination"></div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <img src="images/logo.png" class="footer-logo-img" alt="Golden Valley Guns LLC" />
+        <div class="wordmark">Golden Valley Guns LLC</div>
+        <div class="sub">Golden Valley, Arizona</div>
+        <p>FFL 07 Manufacturer. Custom builds, gunsmithing, parts work, and transfers out of Golden Valley, AZ.</p>
+      </div>
+      <div class="footer-col">
+        <h5>Pages</h5>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="services.html">Services</a></li>
+          <li><a href="intake.html">Ship to Us</a></li>
+          <li><a href="inshop.html">In Shop</a></li>
+          <li><a href="gallery.html">Gallery</a></li>
+          <li><a href="shop.html">Shop</a></li>
+          <li><a href="bulletin.html">What's Next</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>Contact</h5>
+        <ul>
+          <li><a href="tel:9287270893">(928) 727-0893</a></li>
+          <li><a href="sms:9287270893">Text: (928) 727-0893</a></li>
+          <li><a href="mailto:goldenvalleyguns@gmail.com">goldenvalleyguns@gmail.com</a></li>
+          <li><a href="https://maps.google.com/?q=7088+W+Jupiter+Dr+Golden+Valley+AZ+86413" target="_blank">7088 W Jupiter Dr<br>Golden Valley, AZ 86413</a></li>
+          <li><a href="https://www.facebook.com/p/Golden-Valley-Guns-LLC-61565769817507/" target="_blank">Facebook</a></li>
+          <li><a href="https://www.youtube.com/channel/UCRIezIM_qIvuAnVeTpnjD0w" target="_blank">YouTube</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; <span id="copyYear">2025</span> Golden Valley Guns LLC. All rights reserved. &middot; <a href="privacy.html">Privacy Policy</a> &middot; <a href="terms.html">Terms of Service</a> &middot; <a href="shipping-returns.html">Shipping &amp; Returns</a></p>
+      <div class="payment-badges" aria-label="Accepted payment methods">
+        <span class="payment-badge">VISA</span>
+        <span class="payment-badge">MASTERCARD</span>
+        <span class="payment-badge">DISCOVER</span>
+        <span class="payment-badge">AMEX</span>
+      </div>
+      <span class="ffl-badge">FFL 07 · Golden Valley, AZ</span>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/main.js"></script>
+  <script>
+    const CATEGORY_LABELS = { all: 'All', firearms: 'Firearms', ammo: 'Ammo', parts: 'Parts & Accessories', other: 'Other' };
+    let selectedCategory = 'all';
+    let allItems = [];
+    let currentPage = 1;
+    const PAGE_SIZE = 24;
+
+    function imageHtml(url, alt) {
+      if (!url) return '<div class="part-img-wrap"><div class="part-img-placeholder">No Image</div></div>';
+      return `<div class="part-img-wrap">
+        <img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}" loading="lazy" onerror="this.parentElement.classList.add('img-error'); this.remove();">
+        <div class="part-img-placeholder">No Image</div>
+      </div>`;
+    }
+
+    function itemSearchText(item) {
+      return `${item.name} ${item.manufacturer || ''} ${item.caliber || ''}`.toLowerCase();
+    }
+
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    async function fetchAllRows(buildQuery) {
+      const pageSize = 1000;
+      let allRows = [];
+      let from = 0;
+      while (true) {
+        const { data, error } = await buildQuery().range(from, from + pageSize - 1);
+        if (error) return { data: allRows, error };
+        allRows = allRows.concat(data || []);
+        if (!data || data.length < pageSize) break;
+        from += pageSize;
+      }
+      return { data: allRows, error: null };
+    }
+
+    const CACHE_KEY = 'gvg_out_of_stock_v1';
+    const CACHE_TTL_MS = 3 * 60 * 1000;
+
+    function readCache() {
+      try {
+        const raw = sessionStorage.getItem(CACHE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (Date.now() - parsed.savedAt > CACHE_TTL_MS) return null;
+        return parsed.items;
+      } catch { return null; }
+    }
+    function writeCache(items) {
+      try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ savedAt: Date.now(), items })); } catch {}
+    }
+
+    async function loadItems() {
+      const grid = document.getElementById('productGrid');
+      grid.innerHTML = [1, 2, 3].map(() => `
+        <div class="part-card">
+          <div class="shimmer-block" style="height:20px;width:70%;margin-bottom:10px;"></div>
+          <div class="shimmer-block" style="height:10px;width:90%;margin-bottom:6px;"></div>
+          <div class="shimmer-block" style="height:10px;width:60%;"></div>
+        </div>
+      `).join('');
+
+      let items = readCache();
+      if (!items) {
+        // Filtered server-side (stock=eq.out) rather than fetching the whole
+        // ~25k-row catalog and filtering client-side like shop.html does -
+        // this page only ever cares about the out-of-stock subset, so there's
+        // no reason to pull the other ~11k in-stock rows across the wire too.
+        const { data, error } = await fetchAllRows(opts => supabase
+          .from('distributor_products_public')
+          .select('id,distributor,name,manufacturer,caliber,price,image_url,is_firearm,category', opts)
+          .eq('stock', 'out')
+          .order('name'));
+        items = error ? [] : (data || []);
+        writeCache(items);
+      }
+      allItems = shuffle(items);
+      renderCategoryPills();
+      render();
+    }
+
+    function getFilteredItems() {
+      const q = document.getElementById('catalogSearch').value.trim().toLowerCase();
+      return allItems.filter(item => {
+        if (selectedCategory !== 'all' && item.category !== selectedCategory) return false;
+        if (q && !itemSearchText(item).includes(q)) return false;
+        return true;
+      });
+    }
+
+    function renderCategoryPills() {
+      const counts = {};
+      allItems.forEach(i => { counts[i.category] = (counts[i.category] || 0) + 1; });
+      const container = document.getElementById('categoryPills');
+      container.innerHTML = ['all', 'firearms', 'ammo', 'parts', 'other'].map(cat => {
+        const count = cat === 'all' ? allItems.length : (counts[cat] || 0);
+        if (cat !== 'all' && !count) return '';
+        return `<button type="button" class="category-pill${selectedCategory === cat ? ' active' : ''}" data-cat="${cat}">${CATEGORY_LABELS[cat]} (${count})</button>`;
+      }).join('');
+      container.querySelectorAll('.category-pill').forEach(btn => {
+        btn.addEventListener('click', () => {
+          selectedCategory = btn.dataset.cat;
+          currentPage = 1;
+          render();
+          renderCategoryPills();
+        });
+      });
+    }
+
+    // ── NOTIFY FORM (per-card, same request flow as shop.html's watch panel) ──
+    let expandedId = null;
+    let submittedIds = new Set();
+    let formError = '';
+
+    function cardHtml(item) {
+      const price = parseFloat(item.price).toFixed(2);
+      const meta = [item.manufacturer, item.caliber].filter(Boolean).map(escapeHtml).join(' &middot; ');
+      const note = item.is_firearm ? '<div class="part-note">Transfers through Golden Valley Guns LLC. FFL required at pickup, once back in stock.</div>' : '';
+      const isExpanded = expandedId === item.id;
+      const isSubmitted = submittedIds.has(item.id);
+      const action = isSubmitted
+        ? `<span class="watch-confirm">We'll let you know</span>`
+        : `<button type="button" class="btn-buy outline" data-toggle="${escapeHtml(item.id)}">${isExpanded ? 'Cancel' : 'Notify Me'}</button>`;
+      const form = (isExpanded && !isSubmitted) ? `
+        <form class="watch-form" data-form="${escapeHtml(item.id)}">
+          <input type="text" name="name" placeholder="Your name" required />
+          <input type="email" name="email" placeholder="Email" required />
+          <input type="tel" name="phone" placeholder="Phone (optional)" />
+          <button type="submit" class="btn-buy" style="width:100%;">Submit</button>
+          ${formError ? `<div class="watch-form-error">${escapeHtml(formError)}</div>` : ''}
+        </form>` : '';
+      return `
+        <div class="part-card">
+          ${imageHtml(item.image_url, item.name)}
+          <span class="part-source">Distributor Stock</span>
+          <div class="part-name">${escapeHtml(item.name)}</div>
+          <div class="part-desc">${meta}</div>
+          ${note}
+          <div class="part-footer">
+            <span class="part-price">$${price}</span>
+            <span class="part-stock">Out of Stock</span>
+          </div>
+          ${action}
+          ${form}
+        </div>`;
+    }
+
+    function render() {
+      const filtered = getFilteredItems();
+      const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+      if (currentPage > totalPages) currentPage = totalPages;
+      const start = (currentPage - 1) * PAGE_SIZE;
+      const pageItems = filtered.slice(start, start + PAGE_SIZE);
+
+      document.getElementById('resultsBar').textContent =
+        filtered.length === 0 ? 'No items match.' : `Showing ${start + 1}-${Math.min(start + PAGE_SIZE, filtered.length)} of ${filtered.length}`;
+
+      const grid = document.getElementById('productGrid');
+      grid.innerHTML = pageItems.length
+        ? pageItems.map(cardHtml).join('')
+        : `<div class="parts-empty">Nothing matches that search right now.</div>`;
+
+      const pagination = document.getElementById('productPagination');
+      pagination.innerHTML = totalPages <= 1 ? '' : `
+        <button class="page-btn" id="prevPage" ${currentPage === 1 ? 'disabled' : ''}>&larr; Prev</button>
+        <span class="page-info">Page ${currentPage} of ${totalPages}</span>
+        <button class="page-btn" id="nextPage" ${currentPage === totalPages ? 'disabled' : ''}>Next &rarr;</button>
+      `;
+      const prevBtn = document.getElementById('prevPage');
+      const nextBtn = document.getElementById('nextPage');
+      if (prevBtn) prevBtn.addEventListener('click', () => { currentPage--; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); });
+      if (nextBtn) nextBtn.addEventListener('click', () => { currentPage++; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); });
+    }
+
+    document.getElementById('catalogSearch').addEventListener('input', () => {
+      currentPage = 1;
+      render();
+    });
+
+    document.getElementById('productGrid').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-toggle]');
+      if (!btn) return;
+      const id = btn.dataset.toggle;
+      expandedId = expandedId === id ? null : id;
+      formError = '';
+      render();
+    });
+
+    document.getElementById('productGrid').addEventListener('submit', async (e) => {
+      const form = e.target.closest('[data-form]');
+      if (!form) return;
+      e.preventDefault();
+      const id = form.dataset.form;
+      const item = allItems.find(i => i.id === id);
+      if (!item) return;
+
+      const name = form.name.value.trim();
+      const email = form.email.value.trim();
+      const phone = form.phone.value.trim();
+      if (!name || !email) {
+        formError = 'Please fill in your name and email.';
+        render();
+        return;
+      }
+
+      const submitBtn = form.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Sending...';
+      try {
+        const res = await fetch('/api/watch-request', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ distributorProductId: item.id, distributor: item.distributor, productName: item.name, name, email, phone })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'Something went wrong.');
+        submittedIds.add(id);
+        expandedId = null;
+        formError = '';
+      } catch (err) {
+        formError = err.message || 'Something went wrong. Please call us instead.';
+      }
+      render();
+    });
+
+    async function adminSignOut() {
+      await supabase.auth.signOut();
+      document.getElementById('adminBar').classList.remove('visible');
+    }
+
+    async function init() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) document.getElementById('adminBar').classList.add('visible');
+      loadItems();
+    }
+    init();
+  </script>
+</body>
+</html>

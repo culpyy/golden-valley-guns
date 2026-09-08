@@ -392,66 +392,15 @@
       box-shadow: 0 0 0 3px rgba(200, 149, 26, 0.15);
     }
 
-    /* ── WATCH REQUEST ── */
-    /* Folded into .catalog-search-wrap's own card (see markup) rather than a
-       separate full-width banded section - as its own section it read as a
-       stray caption wedged between the search bar and the catalog below,
-       not a real part of either. */
-    .watch-panel { max-width: 640px; margin: 14px auto 0; }
-    .watch-panel-toggle {
-      display: block;
-      width: 100%;
-      background: none;
-      border: none;
-      color: var(--muted);
-      font-family: 'Inter', sans-serif;
-      font-size: 13px;
-      text-align: center;
-      padding: 0;
-      cursor: pointer;
-    }
-    .watch-panel-toggle span { color: var(--gold-light); }
-    .watch-panel-toggle:hover span { text-decoration: underline; }
-    .watch-panel-body {
-      margin-top: 16px;
-      padding-top: 16px;
-      border-top: 1px solid var(--border);
-    }
-    .watch-search-inner { margin-bottom: 16px; }
-    .watch-result-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-      padding: 14px 0;
-      border-top: 1px solid var(--border);
-    }
-    .watch-result-info { flex: 1; min-width: 200px; }
-    .watch-result-name { font-weight: 600; font-size: 14px; }
-    .watch-result-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
-    .watch-empty-state { font-size: 13px; color: var(--muted); padding: 16px 0; text-align: center; }
-    .watch-form {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      width: 100%;
-      margin-top: 10px;
-      padding-top: 10px;
-      border-top: 1px dashed var(--border);
-    }
-    .watch-form input {
-      flex: 1;
-      min-width: 140px;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 9px 12px;
-      font-size: 13px;
-      font-family: 'Inter', sans-serif;
-    }
-    .watch-form input::placeholder { color: var(--muted); }
-    .watch-form-error { width: 100%; font-size: 12px; color: #d9534f; }
-    .watch-confirm { font-size: 12px; color: var(--success); }
+    /* ── WATCH REQUEST LINK ── */
+    /* Was an inline expandable search panel right here - moved to its own
+       page (out-of-stock.html) since a plain text-row list couldn't show
+       product photos, and a customer comparing a few out-of-stock options
+       against each other wanted more room than a folded-out strip under the
+       search bar could give. */
+    .watch-panel-link { max-width: 640px; margin: 14px auto 0; text-align: center; font-size: 13px; color: var(--muted); }
+    .watch-panel-link a { color: var(--gold-light); }
+    .watch-panel-link a:hover { text-decoration: underline; }
 
     /* ── BEST SELLERS ── */
     /* A curated strip above the full catalog wall - meant to be the first
@@ -644,26 +593,17 @@
     <p>Firearms, ammo, and parts we actually have. Looking for a custom build instead? <a href="services.html" class="tel-link">See what we build</a>.</p>
   </div>
 
-  <!-- CATALOG SEARCH (watch-request panel below is folded into the same
-       card, not a separate section - out-of-stock items are hidden from the
-       grid below, so this is where a customer finds one anyway and asks to
-       be notified when it's back) -->
+  <!-- CATALOG SEARCH (out-of-stock items are hidden from the grid below -
+       the link below points to out-of-stock.html, a separate page with real
+       product photos so a customer can browse/compare a few options, not
+       just a text-row list) -->
   <div class="catalog-search-wrap">
     <div class="catalog-search-inner">
       <svg class="catalog-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <input type="text" id="catalogSearch" placeholder="Search firearms, ammo, and parts by name, manufacturer, or caliber..." />
     </div>
-    <div class="watch-panel">
-      <button type="button" class="watch-panel-toggle" id="watchPanelToggle">
-        Can&rsquo;t find what you&rsquo;re looking for? <span>Search our full inventory, including things that are out of stock &#9662;</span>
-      </button>
-      <div class="watch-panel-body" id="watchPanelBody" hidden>
-        <div class="catalog-search-inner watch-search-inner">
-          <svg class="catalog-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" id="watchSearch" placeholder="Search by name, manufacturer, or caliber..." />
-        </div>
-        <div id="watchResults"></div>
-      </div>
+    <div class="watch-panel-link">
+      Can&rsquo;t find what you&rsquo;re looking for? <a href="out-of-stock.html">Browse everything out of stock &rarr;</a>
     </div>
   </div>
 
@@ -1446,7 +1386,7 @@
         // by far the biggest chunk of an otherwise-unused payload.
         const [prodRes, distRes] = await Promise.all([
           fetchAllRows(opts => supabase.from('products').select('id,name,price,image_url,category,badge,is_best_seller,description,stock', opts).order('name')),
-          fetchAllRows(opts => supabase.from('distributor_products_public').select('id,distributor,name,manufacturer,caliber,price,stock,image_url,is_firearm,category,firearm_type', opts).order('name'))
+          fetchAllRows(opts => supabase.from('distributor_products_public').select('id,name,manufacturer,caliber,price,stock,image_url,is_firearm,category,firearm_type', opts).order('name'))
         ]);
         products = prodRes.error ? null : prodRes.data;
         distItems = distRes.error ? null : distRes.data;
@@ -1498,127 +1438,6 @@
     }
     document.getElementById('productGrid').addEventListener('click', handleAddToCartClick);
     document.getElementById('bestSellersRow').addEventListener('click', handleAddToCartClick);
-
-    // ── WATCH REQUEST (search full inventory, including out-of-stock items,
-    // and ask to be notified when a specific one comes back) ──
-    document.getElementById('watchPanelToggle').addEventListener('click', () => {
-      const body = document.getElementById('watchPanelBody');
-      body.hidden = !body.hidden;
-      if (!body.hidden) document.getElementById('watchSearch').focus();
-    });
-
-    const WATCH_MIN_QUERY_LEN = 2;
-    const WATCH_MAX_RESULTS = 20;
-    let watchExpandedId = null;   // which result row currently has its form open
-    let watchSubmittedIds = new Set(); // rows already successfully submitted this page load
-    let watchError = '';          // error text for whichever row is expanded
-
-    function watchResultRowHtml(item) {
-      const isExpanded = watchExpandedId === item.id;
-      const isSubmitted = watchSubmittedIds.has(item.id);
-      const meta = [item.manufacturer, item.caliber].filter(Boolean).map(escapeHtml).join(' &middot; ');
-      let action;
-      if (isSubmitted) {
-        action = `<span class="watch-confirm">Request received</span>`;
-      } else {
-        action = `<button type="button" class="btn-buy outline" data-watch-toggle="${escapeHtml(item.id)}" style="padding:8px 14px;font-size:13px;">${isExpanded ? 'Cancel' : 'Notify Me'}</button>`;
-      }
-      const form = (isExpanded && !isSubmitted) ? `
-        <form class="watch-form" data-watch-form="${escapeHtml(item.id)}">
-          <input type="text" name="name" placeholder="Your name" required />
-          <input type="email" name="email" placeholder="Email" required />
-          <input type="tel" name="phone" placeholder="Phone (optional)" />
-          <button type="submit" class="btn-buy" style="padding:9px 16px;font-size:13px;">Submit</button>
-          ${watchError ? `<div class="watch-form-error">${escapeHtml(watchError)}</div>` : ''}
-        </form>` : '';
-      return `
-        <div class="watch-result-row">
-          <div class="watch-result-info">
-            <div class="watch-result-name">${escapeHtml(item.name)}</div>
-            ${meta ? `<div class="watch-result-meta">${meta}</div>` : ''}
-          </div>
-          ${action}
-          ${form}
-        </div>`;
-    }
-
-    function renderWatchResults() {
-      const q = document.getElementById('watchSearch').value.trim().toLowerCase();
-      const container = document.getElementById('watchResults');
-      if (q.length < WATCH_MIN_QUERY_LEN) {
-        container.innerHTML = '';
-        return;
-      }
-      // Sorted alphabetically here (unlike the main grid) - this is a small,
-      // explicit search result set, not a browse view, so a predictable
-      // order is more useful than the main grid's shuffle.
-      const matches = allItems.filter(item =>
-        !item._own && item.stock === 'out' && itemSearchText(item).includes(q)
-      ).sort((a, b) => a.name.localeCompare(b.name)).slice(0, WATCH_MAX_RESULTS);
-
-      if (matches.length === 0) {
-        container.innerHTML = `<div class="watch-empty-state">We couldn't find anything out of stock matching that search - it may already be available in the catalog above.</div>`;
-        return;
-      }
-      container.innerHTML = matches.map(watchResultRowHtml).join('');
-    }
-
-    document.getElementById('watchSearch').addEventListener('input', () => {
-      watchExpandedId = null;
-      watchError = '';
-      renderWatchResults();
-    });
-
-    document.getElementById('watchResults').addEventListener('click', (e) => {
-      const toggleBtn = e.target.closest('[data-watch-toggle]');
-      if (!toggleBtn) return;
-      const id = toggleBtn.dataset.watchToggle;
-      watchExpandedId = watchExpandedId === id ? null : id;
-      watchError = '';
-      renderWatchResults();
-    });
-
-    document.getElementById('watchResults').addEventListener('submit', async (e) => {
-      const form = e.target.closest('[data-watch-form]');
-      if (!form) return;
-      e.preventDefault();
-      const id = form.dataset.watchForm;
-      const item = allItems.find(i => i.id === id);
-      if (!item) return;
-
-      const name = form.name.value.trim();
-      const email = form.email.value.trim();
-      const phone = form.phone.value.trim();
-      if (!name || !email) {
-        watchError = 'Please fill in your name and email.';
-        renderWatchResults();
-        return;
-      }
-
-      const submitBtn = form.querySelector('button[type="submit"]');
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Sending...';
-      try {
-        const res = await fetch('/api/watch-request', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            distributorProductId: item.id,
-            distributor: item.distributor,
-            productName: item.name,
-            name, email, phone
-          })
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data.error || 'Something went wrong.');
-        watchSubmittedIds.add(id);
-        watchExpandedId = null;
-        watchError = '';
-      } catch (err) {
-        watchError = err.message || 'Something went wrong. Please call us instead.';
-      }
-      renderWatchResults();
-    });
 
     // admin sign out
     async function adminSignOut() {

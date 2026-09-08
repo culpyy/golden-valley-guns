@@ -1111,7 +1111,7 @@
       <div class="form-card open" style="border-left-color: var(--gold-light); margin-bottom: 24px;">
         <h3>Watch Requests</h3>
         <div style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:14px;">
-          Customers can search out-of-stock distributor items on the Shop page and ask to be notified when one comes back. Once the next sync finds real stock on a requested item, they're emailed automatically and it drops off this list.
+          Customers can search out-of-stock distributor items on the Shop page and ask to be notified when one comes back. Once a sync finds real stock on a requested item, they're emailed automatically and it's marked Notified below - delete anything you don't need to keep around.
         </div>
         <div id="watchRequestsTable"></div>
       </div>
@@ -3313,23 +3313,30 @@
       renderCatalogTable();
     }
 
-    // Pending only (notified_at is null) - once notifyStockWatchers
-    // (src/lib/catalogSync.js) emails a customer their item is back, it's no
-    // longer actionable here. Low expected volume, so no pagination.
+    // Shows both pending and already-notified requests (not just pending) -
+    // these accumulate forever otherwise with no way to prune them, since
+    // nothing ever deletes a row on its own. Low expected volume, so no
+    // pagination.
+    let watchRequestsAllRows = [];
+
     async function loadWatchRequests() {
-      const container = document.getElementById('watchRequestsTable');
       const { data, error } = await supabase
         .from('stock_watch_requests')
-        .select('id, distributor, product_name, customer_name, customer_email, customer_phone, created_at')
-        .is('notified_at', null)
+        .select('id, distributor, product_name, customer_name, customer_email, customer_phone, created_at, notified_at')
         .order('created_at', { ascending: false });
 
       if (error) {
-        container.innerHTML = `<div class="empty-state">Couldn't load watch requests: ${escapeHtml(error.message)}</div>`;
+        document.getElementById('watchRequestsTable').innerHTML = `<div class="empty-state">Couldn't load watch requests: ${escapeHtml(error.message)}</div>`;
         return;
       }
-      if (!data || data.length === 0) {
-        container.innerHTML = `<div class="empty-state">No one's waiting on an out-of-stock item right now.</div>`;
+      watchRequestsAllRows = data || [];
+      renderWatchRequestsTable();
+    }
+
+    function renderWatchRequestsTable() {
+      const container = document.getElementById('watchRequestsTable');
+      if (watchRequestsAllRows.length === 0) {
+        container.innerHTML = `<div class="empty-state">No watch requests yet.</div>`;
         return;
       }
       container.innerHTML = `
@@ -3341,20 +3348,33 @@
               <th>Customer</th>
               <th>Contact</th>
               <th>Requested</th>
+              <th>Status</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
-            ${data.map(r => `
+            ${watchRequestsAllRows.map(r => `
               <tr>
                 <td class="title">${escapeHtml(r.product_name)}</td>
                 <td>${escapeHtml(DISTRIBUTOR_LABELS[r.distributor] || r.distributor)}</td>
                 <td>${escapeHtml(r.customer_name)}</td>
                 <td>${escapeHtml(r.customer_email)}${r.customer_phone ? ' &middot; ' + escapeHtml(r.customer_phone) : ''}</td>
                 <td>${new Date(r.created_at).toLocaleDateString()}</td>
+                <td>${r.notified_at ? 'Notified ' + new Date(r.notified_at).toLocaleDateString() : 'Pending'}</td>
+                <td><button class="btn-edit" onclick="deleteWatchRequest('${r.id}')">Delete</button></td>
               </tr>
             `).join('')}
           </tbody>
         </table>`;
+    }
+
+    async function deleteWatchRequest(id) {
+      if (!confirm('Delete this watch request? This cannot be undone.')) return;
+      const { error } = await supabase.from('stock_watch_requests').delete().eq('id', id);
+      if (error) { showToast('Error: ' + error.message); return; }
+      watchRequestsAllRows = watchRequestsAllRows.filter(r => r.id !== id);
+      renderWatchRequestsTable();
+      showToast('Watch request deleted.');
     }
 
     async function loadCatalog() {

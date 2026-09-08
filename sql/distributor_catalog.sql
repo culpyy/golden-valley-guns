@@ -323,3 +323,13 @@ create policy "Admin read stock watch requests"
   on stock_watch_requests for select
   to authenticated
   using (is_admin());
+
+-- 13) STOCK WATCH REQUESTS: admin delete (2026-09-08)
+-- These accumulate forever otherwise (a customer submits a request and never
+-- follows up, or the item never actually restocks) - admin needs a way to
+-- prune them from the admin-dashboard.html Watch Requests panel, same
+-- reasoning/pattern as intake_submissions's own admin-delete policy.
+create policy "Admin delete stock watch requests"
+  on stock_watch_requests for delete
+  to authenticated
+  using (is_admin());
