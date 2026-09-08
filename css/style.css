@@ -272,7 +272,7 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
   background-image:
     radial-gradient(ellipse 70% 60% at 60% 50%, rgba(139,105,20,0.12) 0%, transparent 70%),
     linear-gradient(100deg, rgba(8,8,8,0.97) 0%, rgba(8,8,8,0.85) 32%, rgba(8,8,8,0.62) 62%, rgba(8,8,8,0.72) 100%),
-    url('../images/hero-mountains.jpg');
+    url('../images/hero-desert.jpg');
   background-size: auto, auto, 150% auto;
   background-position: center, center, center 20%;
   background-repeat: no-repeat, no-repeat, no-repeat;
