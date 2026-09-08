@@ -1250,23 +1250,68 @@
     }
 
     // Supabase caps a single select() at 1000 rows regardless of how many
-    // actually match. distributor_products_public alone runs to ~7,000, so a
-    // plain .select() silently truncated to the first 1000 rows by name -
-    // most manufacturers past early-alphabet names (GLOCK, Ruger, SIG, Smith
+    // actually match. distributor_products_public alone has grown past
+    // 25,000 rows (was ~7,000 when this was first written) - most
+    // manufacturers past early-alphabet names (GLOCK, Ruger, SIG, Smith
     // and Wesson, Taurus, Walther, Winchester...) never made it to the page
-    // at all. Page through with .range() until a page comes back short.
+    // at all without paging. Page through with .range() to get everything.
+    //
+    // The pages themselves are fetched in parallel, not one-at-a-time - at
+    // 25k+ rows a serial while-loop means 25+ sequential round trips (each
+    // waiting on the last), which was the actual cause of a slow shop page
+    // load, not the client-side filtering (that's instant, it's all just
+    // array ops against the already-fetched allItems). buildQuery is called
+    // with { count: 'exact' } on the first page only, to learn the true
+    // total up front and fire every remaining page at once.
     async function fetchAllRows(buildQuery) {
       const pageSize = 1000;
-      let allRows = [];
-      let from = 0;
-      while (true) {
-        const { data, error } = await buildQuery().range(from, from + pageSize - 1);
-        if (error) return { data: allRows, error };
-        allRows = allRows.concat(data || []);
-        if (!data || data.length < pageSize) break;
-        from += pageSize;
+      const first = await buildQuery({ count: 'exact' }).range(0, pageSize - 1);
+      if (first.error) return { data: [], error: first.error };
+      const rows = (first.data || []).slice();
+      const total = first.count ?? rows.length;
+      if (rows.length >= total) return { data: rows, error: null };
+
+      const offsets = [];
+      for (let from = pageSize; from < total; from += pageSize) offsets.push(from);
+      const pages = await Promise.all(
+        offsets.map(from => buildQuery().range(from, Math.min(from + pageSize - 1, total - 1)))
+      );
+      for (const page of pages) {
+        if (page.error) return { data: rows, error: page.error };
+        rows.push(...(page.data || []));
       }
-      return { data: allRows, error: null };
+      return { data: rows, error: null };
+    }
+
+    // Session-scoped cache of the full catalog fetch. Filtering/pagination
+    // already run entirely client-side against allItems (see getFilteredItems)
+    // so the only real network cost on this page is the initial fetch -
+    // caching it means clicking into a product's contact link and back, or
+    // opening shop.html in a second tab, doesn't re-pull the whole catalog.
+    // TTL kept short (3min) since stock/price can change as often as every
+    // 5min (see sql/distributor_catalog.sql's Inventory Quantity feed).
+    const CATALOG_CACHE_KEY = 'gvg_shop_catalog_v1';
+    const CATALOG_CACHE_TTL_MS = 3 * 60 * 1000;
+
+    function readCatalogCache() {
+      try {
+        const raw = sessionStorage.getItem(CATALOG_CACHE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (Date.now() - parsed.savedAt > CATALOG_CACHE_TTL_MS) return null;
+        return parsed;
+      } catch {
+        return null;
+      }
+    }
+
+    function writeCatalogCache(products, distItems) {
+      try {
+        sessionStorage.setItem(CATALOG_CACHE_KEY, JSON.stringify({ savedAt: Date.now(), products, distItems }));
+      } catch {
+        // sessionStorage full/unavailable (private browsing, quota) - fine
+        // to skip caching, next load just fetches fresh like before.
+      }
     }
 
     async function loadShop() {
@@ -1279,19 +1324,34 @@
         </div>
       `).join('');
 
-      // Distributor catalog re-enabled 2026-07-18 - Lipsey's approved the
-      // API access request (domain + relay/'s static IP), and images are
-      // now cached to our own R2 bucket instead of hotlinked, see
-      // src/lib/imageCache.js and src/worker.js's image backfill cron.
-      const [{ data: products, error: prodErr }, { data: distItems, error: distErr }] = await Promise.all([
-        fetchAllRows(() => supabase.from('products').select('*').order('name')),
-        fetchAllRows(() => supabase.from('distributor_products_public').select('*').order('name'))
-      ]);
+      let products, distItems;
+      const cached = readCatalogCache();
+      if (cached) {
+        products = cached.products;
+        distItems = cached.distItems;
+      } else {
+        // Distributor catalog re-enabled 2026-07-18 - Lipsey's approved the
+        // API access request (domain + relay/'s static IP), and images are
+        // now cached to our own R2 bucket instead of hotlinked, see
+        // src/lib/imageCache.js and src/worker.js's image backfill cron.
+        // Trimmed to columns the shop page actually renders (see partCardHtml/
+        // distCardHtml) - distributor_products_public's description column in
+        // particular is never shown on a distributor card but was still being
+        // pulled across the wire for every one of the ~9-25k rows, making it
+        // by far the biggest chunk of an otherwise-unused payload.
+        const [prodRes, distRes] = await Promise.all([
+          fetchAllRows(opts => supabase.from('products').select('id,name,price,image_url,category,badge,is_best_seller,description,stock', opts).order('name')),
+          fetchAllRows(opts => supabase.from('distributor_products_public').select('id,name,manufacturer,caliber,price,stock,image_url,is_firearm,category,firearm_type', opts).order('name'))
+        ]);
+        products = prodRes.error ? null : prodRes.data;
+        distItems = distRes.error ? null : distRes.data;
+        writeCatalogCache(products, distItems);
+      }
 
-      const dist = (distErr ? [] : (distItems || [])).slice();
+      const dist = (distItems || []).slice();
       // own products (Shawn's hand-curated parts) already carry category:
       // 'parts' from the table itself - just tag which template to use.
-      const ownParts = (prodErr || !products) ? [] : products.map(p => ({ ...p, _own: true }));
+      const ownParts = (products || []).map(p => ({ ...p, _own: true }));
       allItems = [...dist, ...ownParts].sort(byStockThenName);
 
       renderBestSellers(ownParts);
