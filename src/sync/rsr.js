@@ -211,7 +211,7 @@ export async function run(env) {
 
   const cycleComplete = cursor + CHUNK_SIZE >= dataLines.length;
 
-  await upsertDistributorProducts(supabase, 'rsr', filtered, syncTime, cycleComplete ? cycleStart : null);
+  await upsertDistributorProducts(supabase, 'rsr', filtered, syncTime, cycleComplete ? cycleStart : null, env);
 
   return filtered.length;
 }

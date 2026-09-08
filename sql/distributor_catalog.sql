@@ -289,3 +289,37 @@ select
   firearm_type
 from ranked
 where rn = 1;
+
+-- 12) STOCK WATCH REQUESTS (2026-09-08)
+-- Public shop.html now hides distributor items at quantity_available = 0
+-- from the main grid (customers were able to "Request This Item" on things
+-- Shawn couldn't actually get, since the button ignored stock entirely).
+-- This table is the replacement for out-of-stock items specifically: a
+-- customer can still search the full catalog (already loaded client-side -
+-- shop.html keeps the unfiltered fetch in memory, no extra query needed) and
+-- ask to be notified when a specific item comes back. No email fires at
+-- request time - src/lib/catalogSync.js's notifyStockWatchers, called after
+-- every distributor sync, emails Shawn only once the linked item's
+-- quantity_available is found > 0, then stamps notified_at so it only fires once.
+create table stock_watch_requests (
+  id                      uuid primary key default gen_random_uuid(),
+  distributor_product_id uuid not null references distributor_products(id) on delete cascade,
+  distributor             text not null,
+  product_name            text not null,
+  customer_name           text not null,
+  customer_email          text not null,
+  customer_phone          text,
+  created_at              timestamptz not null default now(),
+  notified_at             timestamptz
+);
+
+-- Same reasoning as contact_submissions/intake_submissions: this is customer
+-- PII, so no anon insert/select policy at all - POST /api/watch-request
+-- (src/api/watchRequest.js) writes via the service_role key from the Worker,
+-- RLS blocks anon entirely by default once enabled with no matching policy.
+alter table stock_watch_requests enable row level security;
+
+create policy "Admin read stock watch requests"
+  on stock_watch_requests for select
+  to authenticated
+  using (is_admin());

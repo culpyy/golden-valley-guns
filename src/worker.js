@@ -4,6 +4,7 @@ import { run as runDavidsons } from './sync/davidsons.js';
 import { run as runOrion, backfillOrionImages } from './sync/orion.js';
 import { handleCheckout } from './api/checkout.js';
 import { handleContact } from './api/contact.js';
+import { handleWatchRequest } from './api/watchRequest.js';
 import { handleIntake } from './api/intake.js';
 import { handleNotifyBuildStatus } from './api/notifyBuildStatus.js';
 import { handleUploadProductImage } from './api/uploadProductImage.js';
@@ -387,6 +388,18 @@ async function route(request, env) {
       return await handleContact(request, env);
     } catch (err) {
       console.error('Contact form submission failed:', err);
+      return new Response(JSON.stringify({ error: 'Something went wrong. Please call us instead.' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+  }
+
+  if (url.pathname === '/api/watch-request' && request.method === 'POST') {
+    try {
+      return await handleWatchRequest(request, env);
+    } catch (err) {
+      console.error('Watch request submission failed:', err);
       return new Response(JSON.stringify({ error: 'Something went wrong. Please call us instead.' }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' }

@@ -1,5 +1,6 @@
 // Shared by every sync/*.js job so each distributor integration only has to
 // implement auth + fetch + normalize.
+import { sendEmail } from './email.js';
 
 // Distributors don't spell the same brand identically - confirmed live
 // 2026-07-28 while auditing why so much of each catalog was being excluded:
@@ -154,7 +155,68 @@ export function filterByAllowList(items, allowList) {
 // Pass the cycle's start timestamp only once a full cursor cycle completes;
 // anything with last_synced_at older than that genuinely wasn't seen across
 // the *entire* cycle, which is what actually means delisted.
-export async function upsertDistributorProducts(supabase, distributor, items, syncTime, staleCleanupThreshold = null) {
+// Checks every pending (not yet notified) stock_watch_requests row against
+// distributor_products' *current* quantity_available - not just the items
+// batch this run just upserted, since a chunked sync only ever touches a
+// slice of the catalog per invocation (see getSyncCursor above). Re-checking
+// full current DB state every run means a watched item gets caught on
+// whichever sync run happens to next re-check it, regardless of whether
+// that run's own chunk included it. Cheap: the watch list is expected to
+// stay small (a handful of customer requests, not a distributor's full
+// catalog), so two extra queries per sync run is negligible.
+async function notifyStockWatchers(supabase, env, distributor) {
+  const { data: pending, error } = await supabase
+    .from('stock_watch_requests')
+    .select('id, distributor_product_id, product_name, customer_name, customer_email, customer_phone')
+    .eq('distributor', distributor)
+    .is('notified_at', null);
+  if (error) throw error;
+  if (!pending || pending.length === 0) return;
+
+  const ids = [...new Set(pending.map(r => r.distributor_product_id))];
+  const { data: stockRows, error: stockErr } = await supabase
+    .from('distributor_products')
+    .select('id, quantity_available')
+    .in('id', ids);
+  if (stockErr) throw stockErr;
+  const qtyById = new Map(stockRows.map(r => [r.id, r.quantity_available]));
+
+  for (const req of pending) {
+    const qty = qtyById.get(req.distributor_product_id) ?? 0;
+    if (qty <= 0) continue;
+    try {
+      await sendEmail(env, {
+        subject: `Back in stock: ${req.product_name}`,
+        source: 'stock_watch_requests',
+        relatedTable: 'stock_watch_requests',
+        relatedId: req.id,
+        text: [
+          `A customer asked to be notified when this item came back in stock, and it just did:`,
+          ``,
+          `Item: ${req.product_name}`,
+          `Distributor: ${distributor}`,
+          `Quantity now available: ${qty}`,
+          ``,
+          `Customer: ${req.customer_name}`,
+          `Email: ${req.customer_email}`,
+          `Phone: ${req.customer_phone || '(not provided)'}`
+        ].join('\n')
+      });
+      const { error: markError } = await supabase
+        .from('stock_watch_requests')
+        .update({ notified_at: new Date().toISOString() })
+        .eq('id', req.id);
+      if (markError) console.error('Failed to mark stock watch request notified (email did send):', req.id, markError);
+    } catch (err) {
+      // Leave notified_at null so the next sync run retries - better to risk
+      // a duplicate email later than to silently drop a customer who's
+      // waiting to hear their item is back.
+      console.error('Stock watch notify email failed for request', req.id, err);
+    }
+  }
+}
+
+export async function upsertDistributorProducts(supabase, distributor, items, syncTime, staleCleanupThreshold = null, env = null) {
   // "Sync nothing" (empty allow-list, or every item filtered out) must mean
   // exactly that - touch nothing. Without this guard, an empty `items` list
   // fell through to the stale-zero query below with no lower bound on
@@ -165,6 +227,20 @@ export async function upsertDistributorProducts(supabase, distributor, items, sy
       .from('distributor_products')
       .upsert(items, { onConflict: 'distributor,distributor_sku' });
     if (upsertError) throw upsertError;
+
+    // Deliberately not gated behind staleCleanupThreshold below - that only
+    // fires once a full cursor cycle completes (every couple of days for
+    // Lipsey's/Orion), which would make "notify when back in stock" far too
+    // slow. Every run's own chunk update is worth checking against right away.
+    if (env) {
+      try {
+        await notifyStockWatchers(supabase, env, distributor);
+      } catch (err) {
+        // A notify-check failure must never take down the sync run itself -
+        // the catalog data is already safely written above.
+        console.error(`notifyStockWatchers failed for ${distributor} (sync itself succeeded):`, err);
+      }
+    }
   }
 
   if (!staleCleanupThreshold) return;

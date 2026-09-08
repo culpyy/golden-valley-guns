@@ -392,6 +392,66 @@
       box-shadow: 0 0 0 3px rgba(200, 149, 26, 0.15);
     }
 
+    /* ── WATCH REQUEST ── */
+    .watch-panel {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .watch-panel-toggle {
+      display: block;
+      width: 100%;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      text-align: center;
+      padding: 12px 32px;
+      cursor: pointer;
+    }
+    .watch-panel-toggle span { color: var(--gold-light); }
+    .watch-panel-toggle:hover span { text-decoration: underline; }
+    .watch-panel-body {
+      padding: 0 32px 24px;
+      max-width: 640px;
+      margin: 0 auto;
+    }
+    .watch-search-inner { margin-bottom: 16px; }
+    .watch-result-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 14px 0;
+      border-top: 1px solid var(--border);
+    }
+    .watch-result-info { flex: 1; min-width: 200px; }
+    .watch-result-name { font-weight: 600; font-size: 14px; }
+    .watch-result-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .watch-empty-state { font-size: 13px; color: var(--muted); padding: 16px 0; text-align: center; }
+    .watch-form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      width: 100%;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px dashed var(--border);
+    }
+    .watch-form input {
+      flex: 1;
+      min-width: 140px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 9px 12px;
+      font-size: 13px;
+      font-family: 'Inter', sans-serif;
+    }
+    .watch-form input::placeholder { color: var(--muted); }
+    .watch-form-error { width: 100%; font-size: 12px; color: #d9534f; }
+    .watch-confirm { font-size: 12px; color: var(--success); }
+
     /* ── BEST SELLERS ── */
     /* A curated strip above the full catalog wall - meant to be the first
        thing a visitor's eye lands on, not buried in ~9,000 filterable items. */
@@ -591,6 +651,22 @@
     </div>
   </div>
 
+  <!-- WATCH REQUEST (out-of-stock items are hidden from the grid above -
+       this searches the full catalog including those, so a customer can
+       still ask to be notified when a specific one comes back) -->
+  <div class="watch-panel">
+    <button type="button" class="watch-panel-toggle" id="watchPanelToggle">
+      Can&rsquo;t find what you&rsquo;re looking for? <span>Search our full inventory, including out-of-stock items &#9662;</span>
+    </button>
+    <div class="watch-panel-body" id="watchPanelBody" hidden>
+      <div class="catalog-search-inner watch-search-inner">
+        <svg class="catalog-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="watchSearch" placeholder="Search by name, manufacturer, or caliber..." />
+      </div>
+      <div id="watchResults"></div>
+    </div>
+  </div>
+
   <!-- BEST SELLERS -->
   <div class="best-sellers-section" id="bestSellersSection" style="display:none;">
     <div class="best-sellers-heading">
@@ -732,6 +808,7 @@
     const PAGE_SIZE = 24;
     let allItems = [];
     let currentPage = 1;
+    let isAdmin = false;
 
     // Filter state - category and source are single-select (they're really
     // view switches), the rest are multi-select facets (OR within a group,
@@ -963,6 +1040,13 @@
     // excludeGroup can be a single group name or an array of them.
     function matchesFilters(item, excludeGroup) {
       const excluded = Array.isArray(excludeGroup) ? excludeGroup : [excludeGroup];
+      // Distributor items at 0 quantity are hidden from the main grid for
+      // everyone except a logged-in admin - a public "Request This Item"
+      // used to ignore stock entirely, letting customers request things
+      // Shawn couldn't actually get. The watch-request panel's own search
+      // (renderWatchResults, below) deliberately filters allItems directly
+      // rather than going through this function, so it still finds these.
+      if (!isAdmin && !item._own && item.stock === 'out') return false;
       const q = document.getElementById('catalogSearch').value.trim().toLowerCase();
       if (q && !itemSearchText(item).includes(q)) return false;
       if (!excluded.includes('category') && selectedCategory !== 'all' && item.category !== selectedCategory) return false;
@@ -1290,7 +1374,7 @@
     // opening shop.html in a second tab, doesn't re-pull the whole catalog.
     // TTL kept short (3min) since stock/price can change as often as every
     // 5min (see sql/distributor_catalog.sql's Inventory Quantity feed).
-    const CATALOG_CACHE_KEY = 'gvg_shop_catalog_v1';
+    const CATALOG_CACHE_KEY = 'gvg_shop_catalog_v2';
     const CATALOG_CACHE_TTL_MS = 3 * 60 * 1000;
 
     function readCatalogCache() {
@@ -1341,7 +1425,7 @@
         // by far the biggest chunk of an otherwise-unused payload.
         const [prodRes, distRes] = await Promise.all([
           fetchAllRows(opts => supabase.from('products').select('id,name,price,image_url,category,badge,is_best_seller,description,stock', opts).order('name')),
-          fetchAllRows(opts => supabase.from('distributor_products_public').select('id,name,manufacturer,caliber,price,stock,image_url,is_firearm,category,firearm_type', opts).order('name'))
+          fetchAllRows(opts => supabase.from('distributor_products_public').select('id,distributor,name,manufacturer,caliber,price,stock,image_url,is_firearm,category,firearm_type', opts).order('name'))
         ]);
         products = prodRes.error ? null : prodRes.data;
         distItems = distRes.error ? null : distRes.data;
@@ -1394,6 +1478,124 @@
     document.getElementById('productGrid').addEventListener('click', handleAddToCartClick);
     document.getElementById('bestSellersRow').addEventListener('click', handleAddToCartClick);
 
+    // ── WATCH REQUEST (search full inventory, including out-of-stock items,
+    // and ask to be notified when a specific one comes back) ──
+    document.getElementById('watchPanelToggle').addEventListener('click', () => {
+      const body = document.getElementById('watchPanelBody');
+      body.hidden = !body.hidden;
+      if (!body.hidden) document.getElementById('watchSearch').focus();
+    });
+
+    const WATCH_MIN_QUERY_LEN = 2;
+    const WATCH_MAX_RESULTS = 20;
+    let watchExpandedId = null;   // which result row currently has its form open
+    let watchSubmittedIds = new Set(); // rows already successfully submitted this page load
+    let watchError = '';          // error text for whichever row is expanded
+
+    function watchResultRowHtml(item) {
+      const isExpanded = watchExpandedId === item.id;
+      const isSubmitted = watchSubmittedIds.has(item.id);
+      const meta = [item.manufacturer, item.caliber].filter(Boolean).map(escapeHtml).join(' &middot; ');
+      let action;
+      if (isSubmitted) {
+        action = `<span class="watch-confirm">Request received</span>`;
+      } else {
+        action = `<button type="button" class="btn-buy outline" data-watch-toggle="${escapeHtml(item.id)}" style="padding:8px 14px;font-size:13px;">${isExpanded ? 'Cancel' : 'Notify Me'}</button>`;
+      }
+      const form = (isExpanded && !isSubmitted) ? `
+        <form class="watch-form" data-watch-form="${escapeHtml(item.id)}">
+          <input type="text" name="name" placeholder="Your name" required />
+          <input type="email" name="email" placeholder="Email" required />
+          <input type="tel" name="phone" placeholder="Phone (optional)" />
+          <button type="submit" class="btn-buy" style="padding:9px 16px;font-size:13px;">Submit</button>
+          ${watchError ? `<div class="watch-form-error">${escapeHtml(watchError)}</div>` : ''}
+        </form>` : '';
+      return `
+        <div class="watch-result-row">
+          <div class="watch-result-info">
+            <div class="watch-result-name">${escapeHtml(item.name)}</div>
+            ${meta ? `<div class="watch-result-meta">${meta}</div>` : ''}
+          </div>
+          ${action}
+          ${form}
+        </div>`;
+    }
+
+    function renderWatchResults() {
+      const q = document.getElementById('watchSearch').value.trim().toLowerCase();
+      const container = document.getElementById('watchResults');
+      if (q.length < WATCH_MIN_QUERY_LEN) {
+        container.innerHTML = '';
+        return;
+      }
+      const matches = allItems.filter(item =>
+        !item._own && item.stock === 'out' && itemSearchText(item).includes(q)
+      ).slice(0, WATCH_MAX_RESULTS);
+
+      if (matches.length === 0) {
+        container.innerHTML = `<div class="watch-empty-state">Nothing out-of-stock matches that search - it may already be available in the main catalog above.</div>`;
+        return;
+      }
+      container.innerHTML = matches.map(watchResultRowHtml).join('');
+    }
+
+    document.getElementById('watchSearch').addEventListener('input', () => {
+      watchExpandedId = null;
+      watchError = '';
+      renderWatchResults();
+    });
+
+    document.getElementById('watchResults').addEventListener('click', (e) => {
+      const toggleBtn = e.target.closest('[data-watch-toggle]');
+      if (!toggleBtn) return;
+      const id = toggleBtn.dataset.watchToggle;
+      watchExpandedId = watchExpandedId === id ? null : id;
+      watchError = '';
+      renderWatchResults();
+    });
+
+    document.getElementById('watchResults').addEventListener('submit', async (e) => {
+      const form = e.target.closest('[data-watch-form]');
+      if (!form) return;
+      e.preventDefault();
+      const id = form.dataset.watchForm;
+      const item = allItems.find(i => i.id === id);
+      if (!item) return;
+
+      const name = form.name.value.trim();
+      const email = form.email.value.trim();
+      const phone = form.phone.value.trim();
+      if (!name || !email) {
+        watchError = 'Please fill in your name and email.';
+        renderWatchResults();
+        return;
+      }
+
+      const submitBtn = form.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Sending...';
+      try {
+        const res = await fetch('/api/watch-request', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            distributorProductId: item.id,
+            distributor: item.distributor,
+            productName: item.name,
+            name, email, phone
+          })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'Something went wrong.');
+        watchSubmittedIds.add(id);
+        watchExpandedId = null;
+        watchError = '';
+      } catch (err) {
+        watchError = err.message || 'Something went wrong. Please call us instead.';
+      }
+      renderWatchResults();
+    });
+
     // admin sign out
     async function adminSignOut() {
       await supabase.auth.signOut();
@@ -1403,6 +1605,7 @@
     // check admin session then load
     async function init() {
       const { data: { session } } = await supabase.auth.getSession();
+      isAdmin = !!session;
       if (session) document.getElementById('adminBar').classList.add('visible');
       loadShop();
     }

@@ -232,7 +232,7 @@ export async function run(env) {
   // staleCleanupThreshold only passed on the run that completes a full
   // cycle - see upsertDistributorProducts for why a mid-cycle run can't
   // safely zero out items it simply hasn't reached yet.
-  await upsertDistributorProducts(supabase, 'lipseys', filtered, syncTime, cycleComplete ? cycleStart : null);
+  await upsertDistributorProducts(supabase, 'lipseys', filtered, syncTime, cycleComplete ? cycleStart : null, env);
 
   return filtered.length;
 }

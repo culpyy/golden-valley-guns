@@ -260,7 +260,7 @@ export async function run(env) {
 
   const cycleComplete = cursor + CHUNK_SIZE >= rawItems.length;
 
-  await upsertDistributorProducts(supabase, 'orion', filtered, syncTime, cycleComplete ? cycleStart : null);
+  await upsertDistributorProducts(supabase, 'orion', filtered, syncTime, cycleComplete ? cycleStart : null, env);
 
   // Deliberately NOT calling backfillOrionImages() inline here (unlike
   // lipseys.js, which does). Verified live 2026-07-24: on a cold start with
