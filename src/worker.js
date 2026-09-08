@@ -31,7 +31,6 @@ import { addSecurityHeaders } from './lib/securityHeaders.js';
 // instead of bundled in here with the others.
 const SYNC_JOBS = [
   ['lipseys', runLipseys],
-  ['rsr', runRsr],
 ];
 
 // Must match one entry in wrangler.jsonc's triggers.crons exactly - image
@@ -79,6 +78,15 @@ const ORION_SYNC_CRON = '15 */4 * * *';
 // catalog (~7 runs/cycle), 20 minutes means a full cycle finishes in ~2.3
 // hours instead of the ~28 hours it took sharing the 4-hour SYNC_JOBS cron.
 const DAVIDSONS_SYNC_CRON = '*/20 * * * *';
+
+// RSR built 2026-09-08 already off the shared SYNC_JOBS cron from the start,
+// rather than adding it there and waiting for the same "Too many
+// subrequests" failure that hit Orion and then Davidson's. Its start-of-
+// cycle run does a relay round trip that opens a real FTP connection and
+// downloads a multi-MB file (see sync/rsr.js) - a heavier operation than any
+// of Lipsey's/Orion/Davidson's own per-run fetches, so it gets the most
+// isolated budget of the four rather than sharing one.
+const RSR_SYNC_CRON = '5 */4 * * *';
 
 async function route(request, env) {
   const url = new URL(request.url);
@@ -546,6 +554,15 @@ export default {
         runDavidsons(env)
           .then(count => console.log(`davidsons sync complete: ${count ?? 0} items upserted.`))
           .catch(err => console.error('davidsons sync failed:', err))
+      );
+      return;
+    }
+
+    if (event.cron === RSR_SYNC_CRON) {
+      ctx.waitUntil(
+        runRsr(env)
+          .then(count => console.log(`rsr sync complete: ${count ?? 0} items upserted.`))
+          .catch(err => console.error('rsr sync failed:', err))
       );
       return;
     }

@@ -16,15 +16,18 @@
     "run_worker_first": true
   },
   "triggers": {
-    // "0 */4 * * *"  - full distributor catalog sync (all SYNC_JOBS: Lipsey's,
-    //                  RSR), 6x/day. Widened from once daily 2026-07-20: at
-    //                  1500 raw items/run (CHUNK_SIZE in sync/lipseys.js - see
-    //                  that file for why), once daily meant ~13 days to walk
-    //                  the full ~19,000-item catalog and unlock every row's
-    //                  image_source_name for backfillLipseysImages to act on.
-    //                  6x/day cuts that to ~2 days without changing the safe
-    //                  per-run chunk size. Davidson's moved off this shared
-    //                  cron 2026-08-07 - see "*/20 * * * *" below.
+    // "0 */4 * * *"  - full distributor catalog sync (all SYNC_JOBS: just
+    //                  Lipsey's now), 6x/day. Widened from once daily
+    //                  2026-07-20: at 1500 raw items/run (CHUNK_SIZE in
+    //                  sync/lipseys.js - see that file for why), once daily
+    //                  meant ~13 days to walk the full ~19,000-item catalog
+    //                  and unlock every row's image_source_name for
+    //                  backfillLipseysImages to act on. 6x/day cuts that to
+    //                  ~2 days without changing the safe per-run chunk size.
+    //                  Davidson's moved off this shared cron 2026-08-07 (see
+    //                  "*/20 * * * *" below); RSR was built 2026-09-08 already
+    //                  off it from day one (see "5 */4 * * *" below) rather
+    //                  than repeating that same fix a third time.
     // "*/10 * * * *" - Lipsey's + Orion image backfill only, see
     //                  IMAGE_BACKFILL_CRON in src/worker.js for why this
     //                  needs its own frequent schedule instead of waiting
@@ -58,7 +61,18 @@
     //                  ~10,550-row catalog (~7 runs/cycle), 20 minutes means
     //                  a full cycle finishes in ~2.3 hours instead of the
     //                  ~28 hours it took sharing the 4-hour cron.
-    "crons": ["0 */4 * * *", "*/10 * * * *", "15 */4 * * *", "*/20 * * * *"]
+    // "5 */4 * * *"   - RSR catalog sync (src/worker.js RSR_SYNC_CRON), built
+    //                  2026-09-08 with its own dedicated cron from the start
+    //                  (5 minutes offset from the Lipsey's cron above, so the
+    //                  two never overlap) rather than joining SYNC_JOBS and
+    //                  risking the same "Too many subrequests" failure that
+    //                  hit Orion and Davidson's when they shared it. RSR's
+    //                  feed is real FTP (see relay/rsr-server.js and
+    //                  sync/rsr.js), and its start-of-cycle run opens an FTP
+    //                  connection and downloads a multi-MB file through that
+    //                  relay - heavier than any of the other three's own
+    //                  per-run fetch.
+    "crons": ["0 */4 * * *", "*/10 * * * *", "15 */4 * * *", "*/20 * * * *", "5 */4 * * *"]
   },
   "r2_buckets": [
     {

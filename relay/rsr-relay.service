@@ -1,0 +1,15 @@
+[Unit]
+Description=RSR Group FTP-to-HTTPS relay
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/rsr-relay
+ExecStart=/usr/bin/node rsr-server.js
+Restart=always
+RestartSec=5
+EnvironmentFile=/opt/rsr-relay/.env
+User=rsrrelay
+
+[Install]
+WantedBy=multi-user.target
