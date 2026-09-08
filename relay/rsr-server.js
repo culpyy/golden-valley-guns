@@ -34,7 +34,16 @@ if (!SECRET) {
   process.exit(1);
 }
 
-const RSR_FTP_HOST = 'ftp.rsrgroup.com';
+// RSR's own "FTP Access request" reply (2026-09-08) specifies ftps.rsrgroup.com,
+// port 2222, explicit FTP over TLS - NOT plain ftp.rsrgroup.com:21 as first
+// assumed from the Dealer's Toolbox docs page. Passive data-port range per the
+// same reply is 64000-65535; that's a server-side PASV response, nothing to
+// configure client-side, but it does mean the relay VM's outbound egress needs
+// to allow that range (inbound iptables was locked to 22/80/443 per the
+// Lipsey's relay hardening pass - shouldn't matter since this is outbound, but
+// worth checking first if connections hang instead of erroring outright).
+const RSR_FTP_HOST = 'ftps.rsrgroup.com';
+const RSR_FTP_PORT = 2222;
 
 // Narrow allowlist of real RSR filenames (see rsrgroup.com/dealers-toolbox/
 // inventory-file-layout) - defense in depth on top of the shared secret,
@@ -77,7 +86,12 @@ const server = http.createServer(async (req, res) => {
 
   const client = new Client(30000);
   try {
-    await client.access({ host: RSR_FTP_HOST, user: ftpUser, password: ftpPass, secure: false });
+    await client.access({ host: RSR_FTP_HOST, port: RSR_FTP_PORT, user: ftpUser, password: ftpPass, secure: true });
+    // Inventory files live in /ftpdownloads per RSR's own "FTP Access
+    // request" reply email (2026-09-08) - cd here (before headers are sent)
+    // so a wrong/moved path surfaces as a normal 502 instead of silently
+    // truncating an already-200'd response.
+    await client.cd('ftpdownloads');
     res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
     // downloadTo accepts any Writable, including the raw HTTP response -
     // streams straight through rather than buffering the whole file (main

@@ -16,12 +16,15 @@
 // account) rather than guessed or taken from a third-party reference:
 //   - Unlike Lipsey's/Orion (a REST API) and Davidson's (turned out to be
 //     plain HTTPS despite an initial FTP assumption), RSR's feed really is
-//     old-school FTP (ftp.rsrgroup.com, passive mode) - there is no REST API
-//     at all. Cloudflare Workers can't speak FTP, so this goes through a
-//     small bridge on the same Oracle Cloud relay VM already built for
-//     Lipsey's static-IP requirement (see relay/rsr-server.js) - a different
-//     problem (no FTP client, not an IP allowlist), same "run it on a real
-//     VM and expose it over HTTPS" shape.
+//     old-school FTP - there is no REST API at all. Cloudflare Workers can't
+//     speak FTP, so this goes through a small bridge on the same Oracle Cloud
+//     relay VM already built for Lipsey's static-IP requirement (see
+//     relay/rsr-server.js) - a different problem (no FTP client, not an IP
+//     allowlist), same "run it on a real VM and expose it over HTTPS" shape.
+//     Real connection details per RSR's own "FTP Access request" reply email
+//     (2026-09-08, dealer login 70336): host ftps.rsrgroup.com, port 2222,
+//     explicit FTP over TLS, passive port range 64000-65535 - not plain
+//     ftp.rsrgroup.com:21 as first assumed from the public docs page.
 //   - rsrinventory-new.txt: ASCII text, semicolon-delimited, 77 fields, no
 //     quoting/escaping (unlike Davidson's CSV) - RSR's own docs don't
 //     document any escaping mechanism for a stray semicolon inside a
