@@ -1100,7 +1100,7 @@
         <h2>Distributor Catalog</h2>
       </div>
       <div style="font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:20px;max-width:640px;">
-        Items pulled in automatically from Lipsey's and Orion Wholesale. RSR Group and Davidson's aren't hooked up yet &mdash; they'll always show "Not synced yet" below until that's built. Prices shown to customers are dealer cost plus the markup set below. Hide anything you don't want listed on the Shop page &mdash; it stays hidden until you unhide it.
+        Items pulled in automatically from Lipsey's, Orion Wholesale, Davidson's, and RSR Group. Prices shown to customers are dealer cost plus the markup set below. Hide anything you don't want listed on the Shop page &mdash; it stays hidden until you unhide it.
       </div>
 
       <div class="form-card open" style="border-left-color: var(--gold-light); margin-bottom: 24px;">
@@ -1108,8 +1108,15 @@
         <div id="catalogSyncStatus" class="form-grid"></div>
       </div>
 
-      <div class="form-field" style="max-width: 360px; margin-bottom: 16px;">
-        <input type="text" id="catalogTableSearch" placeholder="Search by name or manufacturer..." />
+      <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom: 16px;">
+        <div class="form-field" style="max-width: 360px; flex: 1;">
+          <input type="text" id="catalogTableSearch" placeholder="Search by name or manufacturer..." />
+        </div>
+        <div class="form-field" style="max-width: 200px;">
+          <select id="catalogTableDistributor">
+            <option value="">All distributors</option>
+          </select>
+        </div>
       </div>
       <div id="catalogTable"></div>
       <div id="catalogTablePagination" style="display:flex; align-items:center; gap:16px; margin-top:16px;"></div>
@@ -3214,9 +3221,11 @@
       const container = document.getElementById('catalogTable');
       const paginationEl = document.getElementById('catalogTablePagination');
       const q = (document.getElementById('catalogTableSearch').value || '').trim().toLowerCase();
-      const filtered = q
+      const distFilter = document.getElementById('catalogTableDistributor').value;
+      let filtered = q
         ? catalogAllRows.filter(p => `${p.name} ${p.manufacturer || ''}`.toLowerCase().includes(q))
         : catalogAllRows;
+      if (distFilter) filtered = filtered.filter(p => p.distributor === distFilter);
 
       if (filtered.length === 0) {
         container.innerHTML = `<div class="empty-state">${catalogAllRows.length === 0 ? 'No distributor items synced yet.' : 'No items match your search.'}</div>`;
@@ -3273,6 +3282,14 @@
     }
 
     document.getElementById('catalogTableSearch').addEventListener('input', () => {
+      catalogPage = 1;
+      renderCatalogTable();
+    });
+    // Options are keyed off DISTRIBUTOR_LABELS (not queried from the data)
+    // so a distributor with zero synced rows still shows up in the dropdown.
+    document.getElementById('catalogTableDistributor').insertAdjacentHTML('beforeend',
+      Object.entries(DISTRIBUTOR_LABELS).map(([value, label]) => `<option value="${value}">${escapeHtml(label)}</option>`).join(''));
+    document.getElementById('catalogTableDistributor').addEventListener('change', () => {
       catalogPage = 1;
       renderCatalogTable();
     });
