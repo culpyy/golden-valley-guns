@@ -274,7 +274,7 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
     linear-gradient(100deg, rgba(8,8,8,0.97) 0%, rgba(8,8,8,0.85) 32%, rgba(8,8,8,0.62) 62%, rgba(8,8,8,0.72) 100%),
     url('../images/hero-desert.jpg');
   background-size: auto, auto, 150% auto;
-  background-position: center, center, center 20%;
+  background-position: center, center, center 68%;
   background-repeat: no-repeat, no-repeat, no-repeat;
 }
 
