@@ -656,7 +656,7 @@
        still ask to be notified when a specific one comes back) -->
   <div class="watch-panel">
     <button type="button" class="watch-panel-toggle" id="watchPanelToggle">
-      Can&rsquo;t find what you&rsquo;re looking for? <span>Search our full inventory, including out-of-stock items &#9662;</span>
+      Can&rsquo;t find what you&rsquo;re looking for? <span>Search our full inventory, including things that are out of stock &#9662;</span>
     </button>
     <div class="watch-panel-body" id="watchPanelBody" hidden>
       <div class="catalog-search-inner watch-search-inner">
@@ -800,9 +800,27 @@
     // Lower number = shown first. Actually-purchasable stock beats "call to
     // check", which beats "out of stock" - so real inventory always leads.
     const STOCK_ORDER = { in_stock: 0, limited: 1, call: 2, out: 3 };
-    function byStockThenName(a, b) {
-      const stockDiff = (STOCK_ORDER[a.stock] ?? 9) - (STOCK_ORDER[b.stock] ?? 9);
-      return stockDiff !== 0 ? stockDiff : a.name.localeCompare(b.name);
+
+    // Random per-visit order within each stock tier, not alphabetical - a
+    // plain name sort clustered every numeric-model-name item (Ruger's own
+    // "10/22 ...", "101 ...", "110 ..." naming, straight from the distributor
+    // feeds) at the very top of literally every page load, since digits sort
+    // before letters. Shuffling gives a representative spread of categories
+    // and manufacturers on the first page instead of the same fixed slice
+    // every time, while still keeping real availability first. Computed once
+    // per loadShop() call (not per render) so pagination stays stable while
+    // browsing this visit - reloading the page reshuffles.
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+    function shuffledByStockTier(items) {
+      const tiers = [[], [], [], []];
+      items.forEach(item => tiers[STOCK_ORDER[item.stock] ?? 3].push(item));
+      return tiers.flatMap(shuffle);
     }
 
     const PAGE_SIZE = 24;
@@ -1436,7 +1454,7 @@
       // own products (Shawn's hand-curated parts) already carry category:
       // 'parts' from the table itself - just tag which template to use.
       const ownParts = (products || []).map(p => ({ ...p, _own: true }));
-      allItems = [...dist, ...ownParts].sort(byStockThenName);
+      allItems = shuffledByStockTier([...dist, ...ownParts]);
 
       renderBestSellers(ownParts);
       renderShop();
@@ -1528,12 +1546,15 @@
         container.innerHTML = '';
         return;
       }
+      // Sorted alphabetically here (unlike the main grid) - this is a small,
+      // explicit search result set, not a browse view, so a predictable
+      // order is more useful than the main grid's shuffle.
       const matches = allItems.filter(item =>
         !item._own && item.stock === 'out' && itemSearchText(item).includes(q)
-      ).slice(0, WATCH_MAX_RESULTS);
+      ).sort((a, b) => a.name.localeCompare(b.name)).slice(0, WATCH_MAX_RESULTS);
 
       if (matches.length === 0) {
-        container.innerHTML = `<div class="watch-empty-state">Nothing out-of-stock matches that search - it may already be available in the main catalog above.</div>`;
+        container.innerHTML = `<div class="watch-empty-state">We couldn't find anything out of stock matching that search - it may already be available in the catalog above.</div>`;
         return;
       }
       container.innerHTML = matches.map(watchResultRowHtml).join('');
