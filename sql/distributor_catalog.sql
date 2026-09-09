@@ -290,6 +290,68 @@ select
 from ranked
 where rn = 1;
 
+-- 14) PRODUCT DETAIL PAGE: expose upc/msrp (2026-09-09)
+-- Both already existed on distributor_products and were computed into this
+-- view's other CTEs, but neither made it into the final select list - the
+-- view was built for shop.html's card grid, which never needed them. The
+-- new product.html detail page shows them as real facts (a UPC customers
+-- can look up themselves, MSRP as a comparison point against our price),
+-- so they need to actually be public. Same markup/dedup logic as block 11 -
+-- just widening the final select, not changing what rows qualify.
+create or replace view distributor_products_public as
+with markup as (
+  select coalesce(
+    (select value::numeric from site_content where key = 'catalog_markup_pct'),
+    0
+  ) as pct
+),
+priced as (
+  select
+    dp.*,
+    greatest(
+      round(dp.dealer_cost * (1 + markup.pct / 100.0), 2),
+      coalesce(dp.retail_map, 0)
+    ) as computed_price
+  from distributor_products dp
+  cross join markup
+  where dp.is_hidden = false
+),
+ranked as (
+  select
+    p.*,
+    row_number() over (
+      partition by coalesce(nullif(trim(p.upc), ''), p.id::text)
+      order by
+        (p.quantity_available > 0) desc,
+        p.computed_price asc,
+        (p.image_url is not null) desc,
+        p.id
+    ) as rn
+  from priced p
+)
+select
+  id,
+  distributor,
+  name,
+  manufacturer,
+  category,
+  caliber,
+  description,
+  upc,
+  msrp,
+  computed_price as price,
+  case
+    when quantity_available > 5 then 'in_stock'
+    when quantity_available > 0 then 'limited'
+    else 'out'
+  end as stock,
+  image_url,
+  is_firearm,
+  last_synced_at,
+  firearm_type
+from ranked
+where rn = 1;
+
 -- 12) STOCK WATCH REQUESTS (2026-09-08)
 -- Public shop.html now hides distributor items at quantity_available = 0
 -- from the main grid (customers were able to "Request This Item" on things

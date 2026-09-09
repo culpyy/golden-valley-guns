@@ -246,6 +246,13 @@
       transition: background 0.2s;
     }
     .part-card:hover { background: var(--surface); }
+    /* Stretched-link pattern: an invisible anchor covers the whole card so
+       clicking anywhere (image, name, description) opens product.html, while
+       the CTA button/link stays independently clickable by sitting above it
+       in z-index rather than needing separate click handling or nested
+       interactive elements (an <a> can't contain a <button> validly anyway). */
+    .part-card-link { position: absolute; inset: 0; z-index: 1; }
+    .part-card .btn-buy { position: relative; z-index: 2; }
     /* Distributor photos are inconsistent - some are shot on white, some on
        transparent. A dark card background made the transparent ones blend in
        and the white ones look like a mistake sitting next to them. Forcing
@@ -916,6 +923,7 @@
         : '';
       return `
         <div class="part-card">
+          <a class="part-card-link" href="product.html?type=own&id=${encodeURIComponent(p.id)}" aria-label="View details for ${escapeHtml(p.name)}"></a>
           ${p.is_best_seller ? BEST_SELLER_RIBBON : ''}
           ${imageHtml(p.image_url, p.name)}
           ${badge}
@@ -938,6 +946,7 @@
       const requestUrl = `contact.html?product=${encodeURIComponent(item.name)}&price=${price}&subject=order`;
       return `
         <div class="part-card">
+          <a class="part-card-link" href="product.html?type=dist&id=${encodeURIComponent(item.id)}" aria-label="View details for ${escapeHtml(item.name)}"></a>
           ${imageHtml(item.image_url, item.name)}
           <span class="part-source">Distributor Stock</span>
           <div class="part-name">${escapeHtml(item.name)}</div>

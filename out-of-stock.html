@@ -71,6 +71,9 @@
     .parts-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; background: var(--border); }
     .part-card { position: relative; background: var(--bg); padding: 24px; display: flex; flex-direction: column; gap: 8px; transition: background 0.2s; }
     .part-card:hover { background: var(--surface); }
+    /* Stretched-link pattern - same as shop.html's, see its comment for why. */
+    .part-card-link { position: absolute; inset: 0; z-index: 1; }
+    .part-card .btn-buy, .part-card .watch-form { position: relative; z-index: 2; }
     .part-img-wrap { aspect-ratio: 4 / 3; background: #fff; overflow: hidden; margin: -24px -24px 8px -24px; width: calc(100% + 48px); }
     .part-img-wrap img { width: 100%; height: 100%; object-fit: contain; display: block; }
     .part-img-placeholder { width: 100%; height: 100%; display: none; align-items: center; justify-content: center; color: #777; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; }
@@ -390,6 +393,7 @@
         </form>` : '';
       return `
         <div class="part-card">
+          <a class="part-card-link" href="product.html?type=dist&id=${encodeURIComponent(item.id)}" aria-label="View details for ${escapeHtml(item.name)}"></a>
           ${imageHtml(item.image_url, item.name)}
           <span class="part-source">Distributor Stock</span>
           <div class="part-name">${escapeHtml(item.name)}</div>
