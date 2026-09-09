@@ -741,25 +741,36 @@
     // check", which beats "out of stock" - so real inventory always leads.
     const STOCK_ORDER = { in_stock: 0, limited: 1, call: 2, out: 3 };
 
-    // Random per-visit order within each stock tier, not alphabetical - a
+    // Random-but-stable order within each stock tier, not alphabetical - a
     // plain name sort clustered every numeric-model-name item (Ruger's own
     // "10/22 ...", "101 ...", "110 ..." naming, straight from the distributor
     // feeds) at the very top of literally every page load, since digits sort
     // before letters. Shuffling (js/main.js's shared shuffle()) gives a
     // representative spread of categories and manufacturers on the first
     // page instead of the same fixed slice every time, while still keeping
-    // real availability first. Computed once per loadShop() call (not per
-    // render) so pagination stays stable while browsing this visit -
-    // reloading the page reshuffles.
+    // real availability first.
+    //
+    // Seeded via js/main.js's sessionShuffleSeed rather than plain
+    // Math.random() - same order on every loadShop() call within the seed's
+    // TTL, not just within one script execution, so paging to page 2,
+    // navigating away, and coming back (a same-tab reload, or a browser
+    // back/forward that doesn't restore from bfcache) shows the same items
+    // instead of a fresh shuffle every time.
+    const SHUFFLE_SEED_TTL_MS = 3 * 60 * 1000;
     function shuffledByStockTier(items) {
+      const rng = mulberry32(sessionShuffleSeed('gvg_shop_shuffle_seed', SHUFFLE_SEED_TTL_MS));
       const tiers = [[], [], [], []];
       items.forEach(item => tiers[STOCK_ORDER[item.stock] ?? 3].push(item));
-      return tiers.flatMap(shuffle);
+      return tiers.flatMap(tier => shuffle(tier, rng));
     }
 
     const PAGE_SIZE = 24;
     let allItems = [];
-    let currentPage = 1;
+    // Restored from sessionStorage (see renderResultsAndGrid's write) so a
+    // same-tab reload or a browser back/forward that doesn't restore from
+    // bfcache lands back on the same page instead of resetting to page 1.
+    const PAGE_STORAGE_KEY = 'gvg_shop_page';
+    let currentPage = parseInt(sessionStorage.getItem(PAGE_STORAGE_KEY), 10) || 1;
     let isAdmin = false;
 
     // Filter state - category and source are single-select (they're really
@@ -1226,6 +1237,7 @@
       const items = getFilteredItems();
       const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
       if (currentPage > totalPages) currentPage = totalPages;
+      try { sessionStorage.setItem(PAGE_STORAGE_KEY, String(currentPage)); } catch {}
       const start = (currentPage - 1) * PAGE_SIZE;
       const pageItems = items.slice(start, start + PAGE_SIZE);
 
@@ -1302,37 +1314,17 @@
       return { data: rows, error: null };
     }
 
-    // Session-scoped cache of the full catalog fetch. Filtering/pagination
-    // already run entirely client-side against allItems (see getFilteredItems)
-    // so the only real network cost on this page is the initial fetch -
-    // caching it means clicking into a product's contact link and back, or
-    // opening shop.html in a second tab, doesn't re-pull the whole catalog.
-    // TTL kept short (3min) since stock/price can change as often as every
-    // 5min (see sql/distributor_catalog.sql's Inventory Quantity feed).
-    const CATALOG_CACHE_KEY = 'gvg_shop_catalog_v2';
-    const CATALOG_CACHE_TTL_MS = 3 * 60 * 1000;
-
-    function readCatalogCache() {
-      try {
-        const raw = sessionStorage.getItem(CATALOG_CACHE_KEY);
-        if (!raw) return null;
-        const parsed = JSON.parse(raw);
-        if (Date.now() - parsed.savedAt > CATALOG_CACHE_TTL_MS) return null;
-        return parsed;
-      } catch {
-        return null;
-      }
-    }
-
-    function writeCatalogCache(products, distItems) {
-      try {
-        sessionStorage.setItem(CATALOG_CACHE_KEY, JSON.stringify({ savedAt: Date.now(), products, distItems }));
-      } catch {
-        // sessionStorage full/unavailable (private browsing, quota) - fine
-        // to skip caching, next load just fetches fresh like before.
-      }
-    }
-
+    // Fetches the full catalog fresh on every load - a session-scoped
+    // sessionStorage cache used to sit here (meant to save re-pulling the
+    // catalog on a same-tab back/reload), but a live probe found the
+    // shuffled ~26k-item payload serializes to ~8.2MB, well past
+    // sessionStorage's real-world quota, so that write was silently
+    // throwing and failing on every single call - the cache never actually
+    // held anything in production. Removed rather than fixed via a bigger
+    // store (IndexedDB, say): the thing that actually needed to survive a
+    // reload was browse *order* stability, not the data itself, and
+    // shuffledByStockTier's seeded shuffle (see js/main.js) now handles
+    // that on its own without needing to cache ~26k rows at all.
     async function loadShop() {
       const grid = document.getElementById('productGrid');
       grid.innerHTML = [1, 2, 3].map(() => `
@@ -1343,30 +1335,21 @@
         </div>
       `).join('');
 
-      let products, distItems;
-      const cached = readCatalogCache();
-      if (cached) {
-        products = cached.products;
-        distItems = cached.distItems;
-      } else {
-        // Distributor catalog re-enabled 2026-07-18 - Lipsey's approved the
-        // API access request (domain + relay/'s static IP), and images are
-        // now cached to our own R2 bucket instead of hotlinked, see
-        // src/lib/imageCache.js and src/worker.js's image backfill cron.
-        // Trimmed to columns the shop page actually renders (see partCardHtml/
-        // distCardHtml) - distributor_products_public's description column in
-        // particular is never shown on a distributor card but was still being
-        // pulled across the wire for every one of the ~9-25k rows, making it
-        // by far the biggest chunk of an otherwise-unused payload.
-        const [prodRes, distRes] = await Promise.all([
-          fetchAllRows(opts => supabase.from('products').select('id,name,price,image_url,category,badge,is_best_seller,description,stock', opts).order('name')),
-          fetchAllRows(opts => supabase.from('distributor_products_public').select('id,name,manufacturer,caliber,price,stock,image_url,is_firearm,category,firearm_type', opts).order('name'))
-        ]);
-        products = prodRes.error ? null : prodRes.data;
-        distItems = distRes.error ? null : distRes.data;
-        writeCatalogCache(products, distItems);
-      }
-
+      // Distributor catalog re-enabled 2026-07-18 - Lipsey's approved the
+      // API access request (domain + relay/'s static IP), and images are
+      // now cached to our own R2 bucket instead of hotlinked, see
+      // src/lib/imageCache.js and src/worker.js's image backfill cron.
+      // Trimmed to columns the shop page actually renders (see partCardHtml/
+      // distCardHtml) - distributor_products_public's description column in
+      // particular is never shown on a distributor card but was still being
+      // pulled across the wire for every one of the ~9-25k rows, making it
+      // by far the biggest chunk of an otherwise-unused payload.
+      const [prodRes, distRes] = await Promise.all([
+        fetchAllRows(opts => supabase.from('products').select('id,name,price,image_url,category,badge,is_best_seller,description,stock', opts).order('name')),
+        fetchAllRows(opts => supabase.from('distributor_products_public').select('id,name,manufacturer,caliber,price,stock,image_url,is_firearm,category,firearm_type', opts).order('name'))
+      ]);
+      const products = prodRes.error ? null : prodRes.data;
+      const distItems = distRes.error ? null : distRes.data;
       const dist = (distItems || []).slice();
       // own products (Shawn's hand-curated parts) already carry category:
       // 'parts' from the table itself - just tag which template to use.

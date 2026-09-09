@@ -46,13 +46,54 @@ function itemSearchText(item) {
 // Fisher-Yates - used for browse-order variety (see shop.html's
 // shuffledByStockTier) rather than sorting alphabetically, which clustered
 // every numeric-model-name item (Ruger's "10/22 ...", "101 ...") at the top
-// of every single page load.
-function shuffle(arr) {
+// of every single page load. rng defaults to Math.random but accepts a
+// seeded generator (see mulberry32/sessionShuffleSeed below) so the same
+// order can be reproduced across reloads within a browsing session.
+function shuffle(arr, rng = Math.random) {
   for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(rng() * (i + 1));
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
   return arr;
+}
+
+// Small, fast, deterministic PRNG seeded from a single integer - real bug
+// found live: shop.html/out-of-stock.html originally reshuffled with plain
+// Math.random() on every loadShop() call, including a same-tab reload or a
+// browser back/forward that doesn't restore from bfcache. A customer who
+// paged to page 2, navigated away, and came back landed on a completely
+// different page 1/2 with no way to find what they'd been looking at.
+// Caching the shuffled item array itself isn't viable as the fix - a live
+// probe on shop.html's ~26k-item catalog found it serializes to ~8.2MB,
+// well past sessionStorage's real-world quota (throws QuotaExceededError),
+// so that write was silently failing 100% of the time already. A tiny
+// persisted seed avoids that entirely: reusing it reproduces the identical
+// shuffle order deterministically without storing any item data at all.
+function mulberry32(seed) {
+  return function () {
+    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// Returns the same numeric seed for storageKey until ttlMs elapses (so
+// browse order still refreshes periodically, matching the original
+// freshness goal), generating and persisting a new one otherwise. Falls
+// back to an unpersisted seed if sessionStorage is unavailable (private
+// browsing, quota) - shuffle order just won't survive a reload in that case.
+function sessionShuffleSeed(storageKey, ttlMs) {
+  try {
+    const raw = sessionStorage.getItem(storageKey);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Date.now() - parsed.savedAt < ttlMs) return parsed.seed;
+    }
+  } catch {}
+  const seed = Math.floor(Math.random() * 2 ** 31) || 1;
+  try { sessionStorage.setItem(storageKey, JSON.stringify({ seed, savedAt: Date.now() })); } catch {}
+  return seed;
 }
 
 // Build pipeline stages - single source of truth, shared by index.html
