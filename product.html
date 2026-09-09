@@ -30,6 +30,16 @@
     .product-meta { font-size: 14px; color: var(--muted); margin-top: 8px; }
     .product-footer { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin: 22px 0; }
     .product-price { font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 32px; letter-spacing: 1px; color: var(--gold-light); }
+    /* Manufacturer's suggested price, shown as a standard retail "was"
+       comparison rather than a raw "MSRP" spec fact - a customer (and
+       Braeden, reviewing the page 2026-09-09) read a bare "MSRP: $X" next
+       to a lower price as a possible compliance problem. It isn't - what
+       distributor agreements actually protect is MAP (a separate, usually
+       lower, floor the pricing formula already enforces), not MSRP, which
+       is a non-binding suggestion. Framing it as "Compare at" makes the
+       same fact read as a selling point instead of a red flag, and only
+       renders at all when it's actually above our price (a real discount). */
+    .product-compare-at { font-size: 15px; color: var(--muted); text-decoration: line-through; }
     .product-stock { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; padding: 4px 12px; }
     .stock-in_stock  { color: var(--success); border: 1px solid var(--success-border); }
     .stock-limited   { color: #C8951A; border: 1px solid #8B6914; }
@@ -304,6 +314,7 @@
             <div class="product-meta">${[item.manufacturer, item.caliber].filter(Boolean).map(escapeHtml).join(' &middot; ')}</div>
             <div class="product-footer">
               <span class="product-price">$${price}</span>
+              ${item.msrp && parseFloat(item.msrp) > parseFloat(price) ? `<span class="product-compare-at">Compare at $${parseFloat(item.msrp).toFixed(2)}</span>` : ''}
               <span class="product-stock stock-${item.stock}">${STOCK_LABELS[item.stock] || item.stock}</span>
             </div>
             ${note}
@@ -313,7 +324,6 @@
               ${specRow('Type', item.firearm_type)}
               ${specRow('Category', item.category)}
               ${specRow('UPC', upc)}
-              ${item.msrp ? specRow('MSRP', '$' + parseFloat(item.msrp).toFixed(2)) : ''}
             </dl>
             <div class="product-description">
               <h3>Description</h3>
