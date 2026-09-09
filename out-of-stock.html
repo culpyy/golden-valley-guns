@@ -215,6 +215,10 @@
         <p>These aren't purchasable right now - stock is pulled in from our distributors and changes throughout the day.</p>
       </div>
     </div>
+    <div class="legal-notice" id="banStateNotice" style="display:none;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <p><strong>Firearm sales restriction:</strong> Golden Valley Guns LLC does not sell, ship, transfer, or source firearms for customers in California, New York, New Jersey, Massachusetts, Connecticut, Illinois, Maryland, Hawaii, Rhode Island, or Washington D.C. due to state and local law. All firearm transfers require a valid FFL and compliance with applicable federal, state, and local requirements.</p>
+    </div>
     <div class="results-bar" id="resultsBar"></div>
     <div class="parts-grid" id="productGrid"></div>
     <div class="pagination" id="productPagination"></div>
@@ -415,6 +419,12 @@
       try { sessionStorage.setItem(PAGE_STORAGE_KEY, String(currentPage)); } catch {}
       const start = (currentPage - 1) * PAGE_SIZE;
       const pageItems = filtered.slice(start, start + PAGE_SIZE);
+
+      // Same condition as shop.html's own #banStateNotice toggle - this
+      // catalog is real firearm listings same as the main Shop grid, and
+      // had no version of this notice anywhere on the page until now.
+      document.getElementById('banStateNotice').style.display =
+        (selectedCategory === 'all' || selectedCategory === 'firearms') ? '' : 'none';
 
       document.getElementById('resultsBar').textContent =
         filtered.length === 0 ? 'No items match.' : `Showing ${start + 1}-${Math.min(start + PAGE_SIZE, filtered.length)} of ${filtered.length}`;

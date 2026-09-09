@@ -224,6 +224,18 @@
       return p.stock === 'in_stock' || p.stock === 'limited';
     }
 
+    // Same wording as shop.html/out-of-stock.html's #banStateNotice - a
+    // customer could land directly on a product page (a shared link, or an
+    // own-product page turning up in search since those are indexed) without
+    // ever seeing the catalog page's version of this notice, so a firearm
+    // item needs its own copy here too, not just on the grid it came from.
+    function banStateNoticeHtml() {
+      return `<div class="legal-notice">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <p><strong>Firearm sales restriction:</strong> Golden Valley Guns LLC does not sell, ship, transfer, or source firearms for customers in California, New York, New Jersey, Massachusetts, Connecticut, Illinois, Maryland, Hawaii, Rhode Island, or Washington D.C. due to state and local law. All firearm transfers require a valid FFL and compliance with applicable federal, state, and local requirements.</p>
+      </div>`;
+    }
+
     function specRow(label, value) {
       if (!value) return '';
       return `<div class="product-spec"><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(String(value))}</dd></div>`;
@@ -258,6 +270,7 @@
               <span class="product-stock stock-${p.stock}">${STOCK_LABELS[p.stock] || p.stock}</span>
             </div>
             ${note}
+            ${isFirearm ? banStateNoticeHtml() : ''}
             <dl class="product-specs">
               ${specRow('Category', p.category)}
             </dl>
@@ -318,6 +331,7 @@
               <span class="product-stock stock-${item.stock}">${STOCK_LABELS[item.stock] || item.stock}</span>
             </div>
             ${note}
+            ${item.is_firearm ? banStateNoticeHtml() : ''}
             <dl class="product-specs">
               ${specRow('Manufacturer', item.manufacturer)}
               ${specRow('Caliber', item.caliber)}
