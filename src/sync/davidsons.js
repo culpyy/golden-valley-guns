@@ -122,11 +122,23 @@ async function login(env) {
   // is whether a follow-up request to an account-only page actually shows
   // account content instead of the login form. This same request also
   // conveniently gets the form_key needed for the download POST below.
+  //
+  // Diagnosed live 2026-09-09: a real outage (not just this error message's
+  // literal "check the secrets" guess) - login POST correctly redirects to
+  // /customer/address/index/ (not bounced back to the login page), meaning
+  // the credentials themselves are fine, but the account is stuck in
+  // Magento's "required customer attribute missing" state, which then
+  // redirects any other authenticated page request (confirmed via
+  // res.url/res.redirected) straight to the plain homepage instead of the
+  // inventory-download page. This is account-side, not code-side or a
+  // credentials problem - needs a real browser login to
+  // davidsonsinc.com to complete whatever profile/address field Davidson's
+  // is now requiring before the account can do anything else.
   res = await fetch(INVENTORY_PAGE_URL, { headers: { Cookie: cookieHeader(jar) } });
   jar = mergeCookies(jar, res);
   const html = await res.text();
   if (html.includes('form-login') || !html.includes('Inventory Download')) {
-    throw new Error("Davidson's login failed - check DAVIDSONS_USERNAME/DAVIDSONS_PASSWORD secrets.");
+    throw new Error("Davidson's login failed - check DAVIDSONS_USERNAME/DAVIDSONS_PASSWORD secrets, or log into davidsonsinc.com in a real browser and complete any required account/address prompt (see comment above - confirmed 2026-09-09 this is what actually broke it, not bad credentials).");
   }
   const formKey = extractFormKey(html);
   if (!formKey) throw new Error("Davidson's inventory-download page: form_key not found.");
