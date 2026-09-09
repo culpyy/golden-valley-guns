@@ -745,18 +745,12 @@
     // plain name sort clustered every numeric-model-name item (Ruger's own
     // "10/22 ...", "101 ...", "110 ..." naming, straight from the distributor
     // feeds) at the very top of literally every page load, since digits sort
-    // before letters. Shuffling gives a representative spread of categories
-    // and manufacturers on the first page instead of the same fixed slice
-    // every time, while still keeping real availability first. Computed once
-    // per loadShop() call (not per render) so pagination stays stable while
-    // browsing this visit - reloading the page reshuffles.
-    function shuffle(arr) {
-      for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-      }
-      return arr;
-    }
+    // before letters. Shuffling (js/main.js's shared shuffle()) gives a
+    // representative spread of categories and manufacturers on the first
+    // page instead of the same fixed slice every time, while still keeping
+    // real availability first. Computed once per loadShop() call (not per
+    // render) so pagination stays stable while browsing this visit -
+    // reloading the page reshuffles.
     function shuffledByStockTier(items) {
       const tiers = [[], [], [], []];
       items.forEach(item => tiers[STOCK_ORDER[item.stock] ?? 3].push(item));
@@ -889,21 +883,6 @@
       });
     });
 
-    // Missing/broken images fall back to a plain placeholder instead of a
-    // broken-image icon - distributor feeds frequently have gaps or dead
-    // links. Placeholder div is always rendered (hidden by CSS by default)
-    // rather than injected via onerror, since building nested-quote HTML
-    // inside an inline event-handler attribute is a real corruption risk -
-    // a stray unescaped quote there closes the attribute early and can
-    // prematurely close the surrounding .part-card itself.
-    function imageHtml(url, alt) {
-      if (!url) return '<div class="part-img-wrap"><div class="part-img-placeholder">No Image</div></div>';
-      return `<div class="part-img-wrap">
-        <img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}" loading="lazy" onerror="this.parentElement.classList.add('img-error'); this.remove();">
-        <div class="part-img-placeholder">No Image</div>
-      </div>`;
-    }
-
     // Any of Shawn's own products with real purchasable stock can go in the
     // cart, including firearms - paying online reserves it, but it's never
     // shipped: NICS/Form 4473 happen in person at pickup (see checkout.html's
@@ -968,10 +947,6 @@
       return item._own ? productCardHtml(item) : distCardHtml(item);
     }
 
-    function itemSearchText(item) {
-      return `${item.name} ${item.manufacturer || ''} ${item.caliber || ''}`.toLowerCase();
-    }
-
     // Matches the bucket order sync/lipseys.js's mapFirearmType() produces -
     // most-shopped-for first, "Other" (the catch-all) always last rather than
     // wherever it happens to land alphabetically. Anything unrecognized falls
@@ -1004,9 +979,8 @@
       // Distributor items at 0 quantity are hidden from the main grid for
       // everyone except a logged-in admin - a public "Request This Item"
       // used to ignore stock entirely, letting customers request things
-      // Shawn couldn't actually get. The watch-request panel's own search
-      // (renderWatchResults, below) deliberately filters allItems directly
-      // rather than going through this function, so it still finds these.
+      // Shawn couldn't actually get. out-of-stock.html is where a customer
+      // finds these instead (full card grid with images, not a text list).
       if (!isAdmin && !item._own && item.stock === 'out') return false;
       const q = document.getElementById('catalogSearch').value.trim().toLowerCase();
       if (q && !itemSearchText(item).includes(q)) return false;

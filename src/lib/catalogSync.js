@@ -156,14 +156,23 @@ export function filterByAllowList(items, allowList) {
 // anything with last_synced_at older than that genuinely wasn't seen across
 // the *entire* cycle, which is what actually means delisted.
 // Checks every pending (not yet notified) stock_watch_requests row against
-// distributor_products' *current* quantity_available - not just the items
-// batch this run just upserted, since a chunked sync only ever touches a
-// slice of the catalog per invocation (see getSyncCursor above). Re-checking
-// full current DB state every run means a watched item gets caught on
-// whichever sync run happens to next re-check it, regardless of whether
-// that run's own chunk included it. Cheap: the watch list is expected to
-// stay small (a handful of customer requests, not a distributor's full
-// catalog), so two extra queries per sync run is negligible.
+// distributor_products_public - not the raw distributor_products table - for
+// two reasons found in review: (1) distributor_products has no is_hidden
+// filter, so a hidden item's stock recovering would otherwise email a
+// customer about something still invisible/unpurchasable everywhere on the
+// actual site; (2) the public view's UPC dedup (sql/distributor_catalog.sql
+// block 11) means a watched row that's been demoted to a losing duplicate
+// just won't appear here at all, so it correctly never fires rather than
+// firing on a technicality - the safe failure mode when the exact watched
+// row isn't itself the one customers can currently buy.
+// Re-checks full current DB state every run (not just this run's own synced
+// items) - not just the items batch this run just upserted, since a chunked
+// sync only ever touches a slice of the catalog per invocation (see
+// getSyncCursor above). This means a watched item gets caught on whichever
+// sync run happens to next re-check it, regardless of whether that run's own
+// chunk included it. Cheap: the watch list is expected to stay small (a
+// handful of customer requests, not a distributor's full catalog), so two
+// extra queries per sync run is negligible.
 async function notifyStockWatchers(supabase, env, distributor) {
   const { data: pending, error } = await supabase
     .from('stock_watch_requests')
@@ -175,15 +184,15 @@ async function notifyStockWatchers(supabase, env, distributor) {
 
   const ids = [...new Set(pending.map(r => r.distributor_product_id))];
   const { data: stockRows, error: stockErr } = await supabase
-    .from('distributor_products')
-    .select('id, quantity_available')
+    .from('distributor_products_public')
+    .select('id, stock')
     .in('id', ids);
   if (stockErr) throw stockErr;
-  const qtyById = new Map(stockRows.map(r => [r.id, r.quantity_available]));
+  const stockById = new Map(stockRows.map(r => [r.id, r.stock]));
 
   for (const req of pending) {
-    const qty = qtyById.get(req.distributor_product_id) ?? 0;
-    if (qty <= 0) continue;
+    const stock = stockById.get(req.distributor_product_id);
+    if (!stock || stock === 'out') continue;
     try {
       await sendEmail(env, {
         subject: `Back in stock: ${req.product_name}`,
@@ -195,17 +204,20 @@ async function notifyStockWatchers(supabase, env, distributor) {
           ``,
           `Item: ${req.product_name}`,
           `Distributor: ${distributor}`,
-          `Quantity now available: ${qty}`,
           ``,
           `Customer: ${req.customer_name}`,
           `Email: ${req.customer_email}`,
           `Phone: ${req.customer_phone || '(not provided)'}`
         ].join('\n')
       });
+      // notified_at IS NULL guard - a second overlapping sync run for the
+      // same distributor (a manual test firing during a live cron, say)
+      // could otherwise re-send after the first run already marked this row.
       const { error: markError } = await supabase
         .from('stock_watch_requests')
         .update({ notified_at: new Date().toISOString() })
-        .eq('id', req.id);
+        .eq('id', req.id)
+        .is('notified_at', null);
       if (markError) console.error('Failed to mark stock watch request notified (email did send):', req.id, markError);
     } catch (err) {
       // Leave notified_at null so the next sync run retries - better to risk

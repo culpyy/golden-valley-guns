@@ -1,9 +1,12 @@
 // FTP-to-HTTP bridge for RSR Group's dealer inventory feed. Cloudflare
 // Workers have no FTP client (only HTTP/TCP-socket primitives), and
 // rsrgroup.com's Dealer's Toolbox only offers this data via a real FTP
-// server (ftp.rsrgroup.com, confirmed via RSR's own Dealer's Toolbox >
-// Available Downloads page 2026-09-08 - unlike Davidson's, which turned out
-// to be plain HTTPS despite an initial FTP assumption, RSR really is FTP).
+// server - unlike Davidson's, which turned out to be plain HTTPS despite an
+// initial FTP assumption, RSR really is FTP. Real connection details per
+// RSR's own "FTP Access request" reply email (2026-09-08, dealer login
+// 70336): host ftps.rsrgroup.com, port 2222, explicit FTP over TLS (see
+// RSR_FTP_HOST/RSR_FTP_PORT below) - not plain ftp.rsrgroup.com:21 as first
+// assumed from the public Dealer's Toolbox docs page.
 // This runs on the same Oracle Cloud box as the Lipsey's relay (see
 // server.js) and does nothing but open an FTP connection, download one file,
 // and stream it back over HTTPS.

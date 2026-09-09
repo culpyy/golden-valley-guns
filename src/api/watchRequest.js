@@ -35,29 +35,53 @@ export async function handleWatchRequest(request, env) {
     return jsonResponse({ error: 'Too many requests sent. Please try again later or call us directly.' }, 429, { 'Retry-After': String(retryAfterSeconds) });
   }
 
-  const { distributorProductId, distributor, productName, name, email, phone } = payload || {};
-  if (!distributorProductId || !distributor || !productName || !name || !email) {
+  const { distributorProductId, productName, name, email, phone } = payload || {};
+  if (!distributorProductId || !productName || !name || !email) {
     return jsonResponse({ error: 'Please fill in all required fields.' }, 400);
   }
 
   const supabase = getSupabaseAdmin(env);
+
+  // The distributor is looked up server-side rather than trusted from the
+  // client payload - a mismatched/stale value would silently orphan the
+  // request forever, since notifyStockWatchers filters its per-sync check by
+  // distributor and would never match a wrong one. This doubles as the
+  // existence check the old FK-violation catch below used to rely on.
+  const { data: productRow, error: lookupError } = await supabase
+    .from('distributor_products')
+    .select('distributor')
+    .eq('id', distributorProductId)
+    .maybeSingle();
+  if (lookupError) throw lookupError;
+  if (!productRow) {
+    return jsonResponse({ error: 'That item is no longer available to watch - please refresh and try again.' }, 409);
+  }
+
+  // Skip the insert if this customer already has a pending (not yet
+  // notified) request on this exact item - a double-click or a page reload
+  // resubmitting shouldn't create a second row that later sends a duplicate
+  // "back in stock" email.
+  const { data: existing, error: existingError } = await supabase
+    .from('stock_watch_requests')
+    .select('id')
+    .eq('distributor_product_id', distributorProductId)
+    .eq('customer_email', email)
+    .is('notified_at', null)
+    .maybeSingle();
+  if (existingError) throw existingError;
+  if (existing) {
+    return jsonResponse({ success: true });
+  }
+
   const { error: insertError } = await supabase.from('stock_watch_requests').insert({
     distributor_product_id: distributorProductId,
-    distributor,
+    distributor: productRow.distributor,
     product_name: productName,
     customer_name: name,
     customer_email: email,
     customer_phone: phone || null
   });
-  // A bad/stale distributorProductId (item removed from distributor_products
-  // between page load and submit) trips the foreign key - a normal enough
-  // occurrence on a 30k-row catalog synced every few hours, not worth a 500.
-  if (insertError) {
-    if (insertError.code === '23503') {
-      return jsonResponse({ error: 'That item is no longer available to watch - please refresh and try again.' }, 409);
-    }
-    throw insertError;
-  }
+  if (insertError) throw insertError;
 
   return jsonResponse({ success: true });
 }

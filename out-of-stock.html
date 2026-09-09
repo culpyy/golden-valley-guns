@@ -273,38 +273,30 @@
     let currentPage = 1;
     const PAGE_SIZE = 24;
 
-    function imageHtml(url, alt) {
-      if (!url) return '<div class="part-img-wrap"><div class="part-img-placeholder">No Image</div></div>';
-      return `<div class="part-img-wrap">
-        <img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}" loading="lazy" onerror="this.parentElement.classList.add('img-error'); this.remove();">
-        <div class="part-img-placeholder">No Image</div>
-      </div>`;
-    }
+    // imageHtml/itemSearchText/shuffle now live in js/main.js, shared with
+    // shop.html - see that file for the design notes on each.
 
-    function itemSearchText(item) {
-      return `${item.name} ${item.manufacturer || ''} ${item.caliber || ''}`.toLowerCase();
-    }
-
-    function shuffle(arr) {
-      for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-      }
-      return arr;
-    }
-
+    // Fires every remaining page in parallel once the first page reports the
+    // real total, rather than paging sequentially one round-trip at a time -
+    // same pattern as shop.html's own fetchAllRows.
     async function fetchAllRows(buildQuery) {
       const pageSize = 1000;
-      let allRows = [];
-      let from = 0;
-      while (true) {
-        const { data, error } = await buildQuery().range(from, from + pageSize - 1);
-        if (error) return { data: allRows, error };
-        allRows = allRows.concat(data || []);
-        if (!data || data.length < pageSize) break;
-        from += pageSize;
+      const first = await buildQuery({ count: 'exact' }).range(0, pageSize - 1);
+      if (first.error) return { data: [], error: first.error };
+      const rows = (first.data || []).slice();
+      const total = first.count ?? rows.length;
+      if (rows.length >= total) return { data: rows, error: null };
+
+      const offsets = [];
+      for (let from = pageSize; from < total; from += pageSize) offsets.push(from);
+      const pages = await Promise.all(
+        offsets.map(from => buildQuery().range(from, Math.min(from + pageSize - 1, total - 1)))
+      );
+      for (const page of pages) {
+        if (page.error) return { data: rows, error: page.error };
+        rows.push(...(page.data || []));
       }
-      return { data: allRows, error: null };
+      return { data: rows, error: null };
     }
 
     const CACHE_KEY = 'gvg_out_of_stock_v1';
@@ -341,7 +333,7 @@
         // no reason to pull the other ~11k in-stock rows across the wire too.
         const { data, error } = await fetchAllRows(opts => supabase
           .from('distributor_products_public')
-          .select('id,distributor,name,manufacturer,caliber,price,image_url,is_firearm,category', opts)
+          .select('id,name,manufacturer,caliber,price,image_url,is_firearm,category', opts)
           .eq('stock', 'out')
           .order('name'));
         items = error ? [] : (data || []);
@@ -483,7 +475,7 @@
         const res = await fetch('/api/watch-request', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ distributorProductId: item.id, distributor: item.distributor, productName: item.name, name, email, phone })
+          body: JSON.stringify({ distributorProductId: item.id, productName: item.name, name, email, phone })
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data.error || 'Something went wrong.');

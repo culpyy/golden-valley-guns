@@ -19,6 +19,42 @@ function escapeHtml(str) {
   }[c]));
 }
 
+// Shared by shop.html and out-of-stock.html (both render the same
+// .part-card grid over the same distributor_products_public rows) - was
+// duplicated verbatim across both files until a code review flagged the
+// drift risk of fixing a bug in one copy and not the other.
+//
+// Missing/broken images fall back to a plain placeholder instead of a
+// broken-image icon - distributor feeds frequently have gaps or dead links.
+// Placeholder div is always rendered (hidden by CSS by default) rather than
+// injected via onerror, since building nested-quote HTML inside an inline
+// event-handler attribute is a real corruption risk - a stray unescaped
+// quote there closes the attribute early and can prematurely close the
+// surrounding .part-card itself.
+function imageHtml(url, alt) {
+  if (!url) return '<div class="part-img-wrap"><div class="part-img-placeholder">No Image</div></div>';
+  return `<div class="part-img-wrap">
+    <img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}" loading="lazy" onerror="this.parentElement.classList.add('img-error'); this.remove();">
+    <div class="part-img-placeholder">No Image</div>
+  </div>`;
+}
+
+function itemSearchText(item) {
+  return `${item.name} ${item.manufacturer || ''} ${item.caliber || ''}`.toLowerCase();
+}
+
+// Fisher-Yates - used for browse-order variety (see shop.html's
+// shuffledByStockTier) rather than sorting alphabetically, which clustered
+// every numeric-model-name item (Ruger's "10/22 ...", "101 ...") at the top
+// of every single page load.
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
 // Build pipeline stages - single source of truth, shared by index.html
 // (homepage build preview), admin-dashboard.html, and track.html so the
 // stage list and progress math can't drift between them.
