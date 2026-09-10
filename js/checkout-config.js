@@ -5,8 +5,7 @@
 // src/lib/authorizeNet.js) and must never appear here.
 //
 // Real values set 2026-09-10 from Account > Settings > Security Settings >
-// API Credentials & Keys, on the new Payroc-linked Authorize.net gateway
-// (replacing the old NABEPX-processor credentials). Keep
+// API Credentials & Keys, on the Payroc-linked Authorize.net gateway. Keep
 // AUTHORIZENET_ENVIRONMENT here in sync with the same-named var in
 // wrangler.jsonc.
 
