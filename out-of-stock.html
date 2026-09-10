@@ -122,7 +122,17 @@
     }
     @media (max-width: 580px) {
       .shop-wrap { padding: 32px 16px; }
-      .parts-grid { grid-template-columns: 1fr; }
+      /* Two columns instead of one long scrolling list - cards get a
+         tighter, compacted layout below to fit ~170-190px each without
+         wrapping/overflowing (see shop.html for the same pattern). */
+      .parts-grid { grid-template-columns: repeat(2, 1fr); gap: 1px; }
+      .part-card { padding: 14px; gap: 5px; }
+      .part-img-wrap { margin: -14px -14px 6px -14px; width: calc(100% + 28px); }
+      .part-name { font-size: 14px; letter-spacing: 1px; }
+      .part-desc { font-size: 11px; line-height: 1.5; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+      .part-price { font-size: 16px; }
+      .part-footer { gap: 6px; }
+      .part-card .btn-buy { display: block; width: 100%; white-space: normal; font-size: 10.5px; letter-spacing: 1px; padding: 8px 6px; }
       .builds-header { padding: 20px; flex-direction: column; align-items: flex-start; }
       .catalog-search-wrap { padding: 14px 16px; }
       .category-pills { padding: 14px 16px; }
