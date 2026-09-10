@@ -4,10 +4,12 @@
 // the Transaction Key, which stays a server-only secret (see
 // src/lib/authorizeNet.js) and must never appear here.
 //
-// Real values set 2026-07-18 from Account > Settings > Security Settings >
-// API Credentials & Keys. Keep AUTHORIZENET_ENVIRONMENT here in sync with
-// the same-named var in wrangler.jsonc.
+// Real values set 2026-09-10 from Account > Settings > Security Settings >
+// API Credentials & Keys, on the new Payroc-linked Authorize.net gateway
+// (replacing the old NABEPX-processor credentials). Keep
+// AUTHORIZENET_ENVIRONMENT here in sync with the same-named var in
+// wrangler.jsonc.
 
 const AUTHORIZENET_ENVIRONMENT = 'production'; // 'sandbox' | 'production' - keep in sync with wrangler.jsonc
-const AUTHORIZENET_API_LOGIN_ID = '4TtBp36JF9';
-const AUTHORIZENET_CLIENT_KEY = '4S3nzJC5Ed362vnZgCyFfZj24A5hBHB4NGL866pEbnqSH8SZhcRq8NmZf8e9DV76';
+const AUTHORIZENET_API_LOGIN_ID = '96hzbKEEw6G';
+const AUTHORIZENET_CLIENT_KEY = '9H8U57P2fJpnDFRqPPY94fFh2g4eVg3cX4nVDkxxr79nk8uDbz9aTzB8va4574Tc';
