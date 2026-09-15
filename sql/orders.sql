@@ -28,11 +28,9 @@ create table orders (
 
 -- RLS: no anon access at all (this is customer PII + transaction data). The
 -- Worker writes with the service-role key, which bypasses RLS entirely, so no
--- insert policy is needed for that path. The one policy below just lets
--- Shawn's logged-in admin session read orders for a future admin-dashboard tab.
+-- insert policy is needed for that path. Read/update are admin-only - see
+-- sql/admin_dashboard_orders_messages.sql, which superseded the original
+-- overly-broad "Authenticated users can view orders" (using (true)) policy
+-- this file used to create. Kept here only as a historical note; that
+-- migration is what actually runs against the live database now.
 alter table orders enable row level security;
-
-create policy "Authenticated users can view orders"
-  on orders for select
-  to authenticated
-  using (true);

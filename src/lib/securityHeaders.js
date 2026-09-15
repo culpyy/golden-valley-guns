@@ -52,5 +52,6 @@ export function addSecurityHeaders(response) {
   headers.set('X-Frame-Options', 'DENY');
   headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   headers.set('Permissions-Policy', 'geolocation=(), camera=(), microphone=(), payment=(self)');
+  headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
   return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
 }
