@@ -1183,7 +1183,7 @@
       <div class="code-modal-eyebrow">Special Order Created</div>
       <div class="code-modal-title">Payment Link</div>
       <div class="tracking-code-display" id="payLinkDisplay" style="font-size:13px;word-break:break-all;"></div>
-      <p class="code-modal-sub">We tried emailing this to the customer automatically, but email it or text it yourself too in case that didn't land - <strong>send it to them however works</strong>, the link itself is what matters.</p>
+      <p class="code-modal-sub" id="payLinkEmailStatus"></p>
       <div class="code-modal-actions">
         <button class="btn-save" id="copyPayLinkBtn">Copy Link</button>
         <button class="btn-cancel" id="closePayLinkModalBtn">Done</button>
@@ -2450,6 +2450,13 @@
         resetSpecialOrderForm();
 
         document.getElementById('payLinkDisplay').textContent = data.payUrl;
+        // Only push Shawn toward manually copying/texting the link when the
+        // automatic email genuinely failed - a blanket "send it yourself
+        // too, just in case" every time is what actually risked a
+        // mistyped/garbled link, not the email system itself.
+        document.getElementById('payLinkEmailStatus').innerHTML = data.emailSent
+          ? `&#10003; Emailed automatically to <strong>${escapeHtml(customerEmail)}</strong> - no need to send it yourself.`
+          : `&#9888; The automatic email failed to send. Copy the link below and text or email it to the customer directly.`;
         document.getElementById('payLinkModalOverlay').classList.add('open');
         lockBodyScroll();
         loadOrders();

@@ -165,7 +165,12 @@ export async function handleCreateSpecialOrder(request, env) {
 
   // Best-effort - Shawn gets the link back in the dashboard response either
   // way (see admin-dashboard.html), so an email failure here doesn't strand
-  // him without a way to reach the customer.
+  // him without a way to reach the customer. emailSent is reported back so
+  // the dashboard only tells him to manually relay the link when the
+  // automatic send genuinely failed, instead of always hedging "just in
+  // case" - that blanket hedge was the actual source of the misinput risk
+  // (a manually retyped/copied link breaking), not the email system itself.
+  let emailSent = false;
   try {
     const firstName = customerName.split(' ')[0];
     await sendEmail(env, {
@@ -204,9 +209,10 @@ export async function handleCreateSpecialOrder(request, env) {
         emailFooterNote()
       ].join(''))
     });
+    emailSent = true;
   } catch (err) {
     console.error(`Special order ${orderNumber} created, but the payment-link email failed to send:`, err);
   }
 
-  return jsonResponse({ success: true, orderNumber, payUrl });
+  return jsonResponse({ success: true, orderNumber, payUrl, emailSent });
 }
