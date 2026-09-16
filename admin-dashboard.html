@@ -2657,7 +2657,7 @@
               <th>Code</th>
               <th>Name</th>
               <th>Service</th>
-              <th>Type / Caliber</th>
+              <th>Kit / Type / Caliber</th>
               <th>Contact</th>
               <th></th>
             </tr>
@@ -2669,7 +2669,7 @@
                 <td style="font-family:'Courier New',monospace;font-size:12px;color:var(--gold-light);letter-spacing:1px;">${escapeHtml(i.intake_code) || '—'}</td>
                 <td class="title">${i.is_read ? '' : '<span class="unread-dot"></span>'}${escapeHtml(i.name)}${i.is_nfa ? ' <span class="part-badge-pill" style="position:static;display:inline-block;">NFA</span>' : ''}</td>
                 <td>${escapeHtml(INTAKE_SERVICE_LABELS[i.service] || i.service)}</td>
-                <td style="font-size:12px;">${escapeHtml(i.firearm_type || '—')}${i.caliber ? ' · ' + escapeHtml(i.caliber) : ''}</td>
+                <td style="font-size:12px;">${i.kit_type ? `<strong>${escapeHtml(i.kit_type)}</strong> — ` : ''}${escapeHtml(i.firearm_type || '—')}${i.caliber ? ' · ' + escapeHtml(i.caliber) : ''}</td>
                 <td style="font-size:12px;">${i.email ? escapeHtml(i.email) : ''}${i.phone ? (i.email ? '<br>' : '') + escapeHtml(i.phone) : ''}</td>
                 <td>
                   <div class="row-actions">
@@ -2721,10 +2721,11 @@
     }
 
     // Pre-fills the Add Build form with everything structured the intake
-    // submission actually gives us (contact info, type, caliber, NFA flag) -
-    // deliberately does NOT touch the build's title or public-facing notes,
-    // since those need Shawn's own judgment about what the customer
-    // actually sent, not a guess assembled from form fields.
+    // submission actually gives us (contact info, type, caliber, kit_type,
+    // NFA flag). Title is pre-filled from kit_type when the customer gave
+    // one (it's their own structured answer, not a guess) - still fully
+    // editable, and left blank like before when kit_type is empty, since a
+    // blank title still needs Shawn's own judgment call from the notes.
     function createBuildFromIntake(id) {
       const intake = intakeAllRows.find(i => i.id === id);
       if (!intake) return;
@@ -2738,7 +2739,7 @@
 
       openBuildForm({
         id: '',
-        title: '',
+        title: intake.kit_type || '',
         type,
         caliber: intake.caliber || '',
         status: 'intake',

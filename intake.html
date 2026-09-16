@@ -352,6 +352,11 @@
                   <input type="text" id="i-caliber" placeholder="7.62x39mm" />
                 </div>
               </div>
+              <div class="form-group">
+                <label for="i-kit-type">Kit / Platform (optional)</label>
+                <input type="text" id="i-kit-type" placeholder="PM12, HK33, AK-47, Suomi, etc." />
+                <p class="form-note" style="margin-top:4px;">If this is a specific parts kit or platform, telling us here helps us track it accurately - especially if you're sending more than one thing.</p>
+              </div>
               <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
                 <input type="checkbox" id="i-nfa" style="width:16px;height:16px;accent-color:var(--gold-light);cursor:pointer;" />
                 <label for="i-nfa" style="text-transform:none;letter-spacing:normal;font-size:13px;cursor:pointer;">This is an NFA item (suppressor, SBR, SBS)</label>
@@ -403,6 +408,7 @@
             <div class="slip-row"><span>Service</span><span id="slipService">&mdash;</span></div>
             <div class="slip-row"><span>Firearm Type</span><span id="slipType">&mdash;</span></div>
             <div class="slip-row"><span>Caliber</span><span id="slipCaliber">&mdash;</span></div>
+            <div class="slip-row" id="slipKitTypeRow" style="display:none;"><span>Kit / Platform</span><span id="slipKitType">&mdash;</span></div>
             <div class="slip-row"><span>NFA Item</span><span id="slipNfa">&mdash;</span></div>
             <div class="slip-row" id="slipNotesRow" style="display:none;flex-direction:column;align-items:flex-start;gap:6px;">
               <span>Notes</span><span id="slipNotes" style="text-align:left;"></span>
@@ -592,6 +598,7 @@
       const service = document.getElementById('i-service').value;
       const type    = document.getElementById('i-type').value;
       const caliber = document.getElementById('i-caliber').value.trim();
+      const kitType = document.getElementById('i-kit-type').value.trim();
       const isNfa   = document.getElementById('i-nfa').checked;
       const notes   = document.getElementById('i-notes').value.trim();
       const gotcha  = document.getElementById('i-gotcha').value;
@@ -615,7 +622,7 @@
         const res = await fetch('/api/intake', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ _gotcha: gotcha, name, email, phone, service, firearmType: type, caliber, isNfa, notes }),
+          body: JSON.stringify({ _gotcha: gotcha, name, email, phone, service, firearmType: type, caliber, kitType, isNfa, notes }),
           signal: controller.signal
         });
         clearTimeout(timeout);
@@ -649,6 +656,10 @@
       document.getElementById('slipService').textContent = SERVICE_LABELS[service] || service;
       document.getElementById('slipType').textContent = type;
       document.getElementById('slipCaliber').textContent = caliber || '—';
+      if (kitType) {
+        document.getElementById('slipKitTypeRow').style.display = '';
+        document.getElementById('slipKitType').textContent = kitType;
+      }
       document.getElementById('slipNfa').textContent = isNfa ? 'Yes' : 'No';
 
       const notesRow = document.getElementById('slipNotesRow');

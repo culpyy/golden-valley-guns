@@ -71,7 +71,7 @@ export async function handleIntake(request, env) {
     return jsonResponse({ error: 'Too many submissions. Please try again later or call us directly.' }, 429, { 'Retry-After': String(retryAfterSeconds) });
   }
 
-  const { name, email, phone, service, firearmType, caliber, isNfa, notes } = payload || {};
+  const { name, email, phone, service, firearmType, caliber, kitType, isNfa, notes } = payload || {};
   if (!name || !service || (!email && !phone)) {
     return jsonResponse({ error: 'Please add your name, a service type, and at least an email or phone number.' }, 400);
   }
@@ -92,6 +92,7 @@ export async function handleIntake(request, env) {
       service,
       firearm_type: firearmType || null,
       caliber: caliber || null,
+      kit_type: kitType || null,
       is_nfa: !!isNfa,
       notes: notes || null,
       intake_code: intakeCode
@@ -117,6 +118,7 @@ export async function handleIntake(request, env) {
         `Service: ${serviceLabel}`,
         firearmType ? `Firearm Type: ${firearmType}` : '',
         caliber ? `Caliber: ${caliber}` : '',
+        kitType ? `Kit / Platform: ${kitType}` : '',
         isNfa ? `NFA item: yes` : '',
         ``,
         notes ? `Notes:\n${notes}` : '',
@@ -138,7 +140,7 @@ export async function handleIntake(request, env) {
   if (email) {
     try {
       const firstName = name.split(' ')[0];
-      const pdfBytes = await buildIntakeSlipPdf({ name, phone, email, intakeCode, serviceLabel, firearmType, caliber, isNfa, notes });
+      const pdfBytes = await buildIntakeSlipPdf({ name, phone, email, intakeCode, serviceLabel, firearmType, caliber, kitType, isNfa, notes });
       await sendEmail(env, {
         to: email,
         subject: `Your shipping reference code: ${intakeCode} - Golden Valley Guns`,
