@@ -41,7 +41,9 @@ const CSP = [
   // youtube-nocookie.com is the privacy-enhanced embed domain (no tracking
   // cookies until the viewer actually interacts with the player) - used by
   // bulletin.html's in-page video modal instead of linking out to youtube.com.
-  "frame-src https://*.authorize.net https://www.youtube-nocookie.com",
+  // www.facebook.com is Facebook's own video.php embed (Reels and regular
+  // video posts) - same in-page-modal treatment as the YouTube videos.
+  "frame-src https://*.authorize.net https://www.youtube-nocookie.com https://www.facebook.com",
   "object-src 'none'",
   "frame-ancestors 'none'",
   "base-uri 'self'",

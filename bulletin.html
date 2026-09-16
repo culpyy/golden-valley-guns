@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="48x48" href="favicon-48.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="favicon-192.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="favicon-180.png" />
   <title>What's Next | Golden Valley Guns LLC | Golden Valley, AZ</title>
   <meta name="description" content="Build ideas, recent builds, and what's new from the shop on Facebook and YouTube." />
   <link rel="stylesheet" href="css/style.css" />
@@ -100,6 +103,8 @@
     }
     .post-modal-close:hover { color: var(--gold-light); }
     .post-modal-img { width: 100%; max-height: 50vh; object-fit: contain; background: #000; display: block; }
+    .post-modal-video-wrap { position: relative; width: 100%; aspect-ratio: 9/16; max-height: 70vh; background: #000; }
+    .post-modal-video-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
     .post-modal-body { padding: 22px 26px; overflow-y: auto; }
     .post-modal-text { color: var(--text); font-size: 14px; line-height: 1.75; white-space: pre-wrap; }
     .post-modal-footer {
@@ -197,6 +202,11 @@
     <div class="post-modal-box">
       <button type="button" class="post-modal-close" onclick="closePostModal()" aria-label="Close post">&times;</button>
       <img id="postModalImage" class="post-modal-img" src="" alt="" />
+      <div id="postModalVideoWrap" class="post-modal-video-wrap" hidden>
+        <iframe id="postModalVideoIframe" src="" title="Facebook video player"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+          allowfullscreen></iframe>
+      </div>
       <div class="post-modal-body">
         <div id="postModalText" class="post-modal-text"></div>
         <div class="post-modal-footer">
@@ -321,6 +331,7 @@
             fullMessage: p.message || '',
             image: p.image,
             url: p.url,
+            isVideo: !!p.isVideo,
             badge: 'Facebook'
           });
         }
@@ -347,7 +358,7 @@
         } else if (isPost) {
           interactionAttrs = `onclick="openPostModal(${index})" role="button" tabindex="0" onkeydown="if(event.key==='Enter')openPostModal(${index})"`;
         }
-        const playButton = isVideo
+        const playButton = (isVideo || item.isVideo)
           ? '<div class="activity-play"><svg viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg></div>'
           : '';
         const imageBlock = item.image
@@ -391,9 +402,20 @@
       const item = (window.__activityItems || [])[index];
       if (!item) return;
       const img = document.getElementById('postModalImage');
-      img.hidden = !item.image;
-      img.src = item.image || '';
-      img.alt = item.title || '';
+      const videoWrap = document.getElementById('postModalVideoWrap');
+      const videoIframe = document.getElementById('postModalVideoIframe');
+      if (item.isVideo && item.url) {
+        img.hidden = true;
+        img.src = '';
+        videoWrap.hidden = false;
+        videoIframe.src = `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(item.url)}&show_text=false&autoplay=true`;
+      } else {
+        videoWrap.hidden = true;
+        videoIframe.src = '';
+        img.hidden = !item.image;
+        img.src = item.image || '';
+        img.alt = item.title || '';
+      }
       document.getElementById('postModalText').textContent = item.fullMessage || item.title || '';
       document.getElementById('postModalDate').textContent = formatActivityDate(item.date);
       const link = document.getElementById('postModalLink');
@@ -405,6 +427,7 @@
 
     function closePostModal() {
       document.getElementById('postModal').hidden = true;
+      document.getElementById('postModalVideoIframe').src = '';
       document.body.style.overflow = '';
     }
 

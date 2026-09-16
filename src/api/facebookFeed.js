@@ -20,7 +20,7 @@ export async function handleFacebookFeed(request, env) {
     });
   }
 
-  const fields = 'message,created_time,full_picture,permalink_url';
+  const fields = 'message,created_time,full_picture,permalink_url,attachments{media_type}';
   const graphUrl = `https://graph.facebook.com/${GRAPH_VERSION}/me/posts?fields=${fields}&limit=10&access_token=${env.FACEBOOK_PAGE_ACCESS_TOKEN}`;
 
   const res = await fetch(graphUrl);
@@ -40,7 +40,11 @@ export async function handleFacebookFeed(request, env) {
       message: p.message || '',
       image: p.full_picture || '',
       published: p.created_time,
-      url: p.permalink_url || ''
+      url: p.permalink_url || '',
+      // Reels and regular video posts both come back as media_type
+      // "video" on the first attachment - used client-side to embed
+      // Facebook's video player instead of a static photo.
+      isVideo: p.attachments?.data?.[0]?.media_type === 'video'
     }));
 
   return new Response(JSON.stringify({ posts }), {
