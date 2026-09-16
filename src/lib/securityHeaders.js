@@ -38,7 +38,10 @@ const CSP = [
   // loading the script itself, connect-src is separately required for the
   // beacon's own fetch/beacon call or it's blocked just as silently.
   "connect-src 'self' https://tyqgvpiunplgqzkygnii.supabase.co https://*.authorize.net https://cloudflareinsights.com",
-  "frame-src https://*.authorize.net",
+  // youtube-nocookie.com is the privacy-enhanced embed domain (no tracking
+  // cookies until the viewer actually interacts with the player) - used by
+  // bulletin.html's in-page video modal instead of linking out to youtube.com.
+  "frame-src https://*.authorize.net https://www.youtube-nocookie.com",
   "object-src 'none'",
   "frame-ancestors 'none'",
   "base-uri 'self'",

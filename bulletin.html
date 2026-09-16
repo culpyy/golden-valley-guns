@@ -21,12 +21,12 @@
       text-decoration: none;
       color: inherit;
     }
-    a.activity-card { cursor: pointer; }
-    a.activity-card:hover { border-color: var(--gold); }
+    .activity-card.clickable { cursor: pointer; }
+    .activity-card.clickable:hover { border-color: var(--gold); }
 
     .activity-img-wrap { position: relative; aspect-ratio: 16/10; overflow: hidden; background: var(--surface2); }
     .activity-img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .35s ease; }
-    a.activity-card:hover .activity-img { transform: scale(1.05); }
+    .activity-card.clickable:hover .activity-img { transform: scale(1.05); }
 
     .activity-badge {
       position: absolute; top: 10px; left: 10px;
@@ -68,6 +68,20 @@
 
     .activity-empty, .activity-loading { text-align: center; padding: 60px 20px; color: var(--muted); grid-column: 1 / -1; }
     .activity-cta { text-align: center; margin-top: 48px; }
+
+    .video-modal { position: fixed; inset: 0; z-index: 999; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .video-modal[hidden] { display: none; }
+    .video-modal-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.88); }
+    .video-modal-box { position: relative; width: 100%; max-width: 920px; }
+    .video-modal-frame { position: relative; width: 100%; aspect-ratio: 16/9; background: #000; box-shadow: 0 20px 60px rgba(0,0,0,.6); }
+    .video-modal-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+    .video-modal-close {
+      position: absolute; top: -44px; right: 0;
+      background: none; border: none; color: #fff;
+      font-family: 'Big Shoulders Display', sans-serif; font-size: 34px; line-height: 1;
+      cursor: pointer; padding: 4px 8px;
+    }
+    .video-modal-close:hover { color: var(--gold-light); }
   </style>
 </head>
 <body>
@@ -134,6 +148,19 @@
     </div>
     <div class="activity-cta">
       <a href="contact.html" class="btn-primary">Ask About One of These &#8594;</a>
+    </div>
+  </div>
+
+  <!-- VIDEO MODAL -->
+  <div id="videoModal" class="video-modal" hidden>
+    <div class="video-modal-backdrop" onclick="closeVideoModal()"></div>
+    <div class="video-modal-box">
+      <button type="button" class="video-modal-close" onclick="closeVideoModal()" aria-label="Close video">&times;</button>
+      <div class="video-modal-frame">
+        <iframe id="videoModalIframe" src="" title="YouTube video player"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen></iframe>
+      </div>
     </div>
   </div>
 
@@ -235,6 +262,7 @@
             desc: '',
             image: v.thumbnail,
             url: v.url,
+            videoId: v.videoId,
             badge: 'YouTube'
           });
         }
@@ -262,9 +290,19 @@
       items.sort((a, b) => new Date(b.date) - new Date(a.date));
 
       grid.innerHTML = items.map(item => {
-        const tag = item.url ? 'a' : 'div';
-        const linkAttrs = item.url ? `href="${escapeHtml(item.url)}" target="_blank" rel="noopener"` : '';
-        const playButton = item.type === 'video'
+        const isVideo = item.type === 'video' && item.videoId;
+        // Videos play in the in-page modal (no navigating away); Facebook
+        // posts still open in a new tab since there's no post-level embed
+        // here; build ideas have nowhere to link to.
+        const tag = isVideo ? 'div' : (item.url ? 'a' : 'div');
+        const clickable = isVideo || item.url;
+        let interactionAttrs = '';
+        if (isVideo) {
+          interactionAttrs = `onclick="openVideoModal('${escapeHtml(item.videoId)}')" role="button" tabindex="0" onkeydown="if(event.key==='Enter')openVideoModal('${escapeHtml(item.videoId)}')"`;
+        } else if (item.url) {
+          interactionAttrs = `href="${escapeHtml(item.url)}" target="_blank" rel="noopener"`;
+        }
+        const playButton = isVideo
           ? '<div class="activity-play"><svg viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg></div>'
           : '';
         const imageBlock = item.image
@@ -276,7 +314,7 @@
           : '';
         const inlineBadge = item.image ? '' : `<span class="activity-badge-inline ${item.type}">${escapeHtml(item.badge)}</span>`;
         return `
-          <${tag} class="activity-card" ${linkAttrs}>
+          <${tag} class="activity-card${clickable ? ' clickable' : ''}" ${interactionAttrs}>
             ${imageBlock}
             <div class="activity-body ${item.image ? '' : 'no-image'}">
               <div class="activity-title">${inlineBadge}${escapeHtml(item.title)}</div>
@@ -287,6 +325,26 @@
         `;
       }).join('');
     })();
+
+    function openVideoModal(videoId) {
+      const modal = document.getElementById('videoModal');
+      const iframe = document.getElementById('videoModalIframe');
+      iframe.src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}?autoplay=1&rel=0`;
+      modal.hidden = false;
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeVideoModal() {
+      const modal = document.getElementById('videoModal');
+      const iframe = document.getElementById('videoModalIframe');
+      modal.hidden = true;
+      iframe.src = '';
+      document.body.style.overflow = '';
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeVideoModal();
+    });
   </script>
 </body>
 </html>
