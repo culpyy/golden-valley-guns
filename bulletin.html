@@ -82,6 +82,33 @@
       cursor: pointer; padding: 4px 8px;
     }
     .video-modal-close:hover { color: var(--gold-light); }
+
+    .post-modal { position: fixed; inset: 0; z-index: 999; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .post-modal[hidden] { display: none; }
+    .post-modal-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.88); }
+    .post-modal-box {
+      position: relative; width: 100%; max-width: 640px; max-height: 88vh;
+      background: var(--surface); border: 1px solid var(--border);
+      display: flex; flex-direction: column; overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,.6);
+    }
+    .post-modal-close {
+      position: absolute; top: -44px; right: 0;
+      background: none; border: none; color: #fff;
+      font-family: 'Big Shoulders Display', sans-serif; font-size: 34px; line-height: 1;
+      cursor: pointer; padding: 4px 8px;
+    }
+    .post-modal-close:hover { color: var(--gold-light); }
+    .post-modal-img { width: 100%; max-height: 50vh; object-fit: contain; background: #000; display: block; }
+    .post-modal-body { padding: 22px 26px; overflow-y: auto; }
+    .post-modal-text { color: var(--text); font-size: 14px; line-height: 1.75; white-space: pre-wrap; }
+    .post-modal-footer {
+      color: var(--muted); font-size: 11px; letter-spacing: .8px; text-transform: uppercase;
+      margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
+    }
+    .post-modal-link { color: var(--gold-light); font-size: 11px; text-decoration: none; white-space: nowrap; }
+    .post-modal-link:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -160,6 +187,22 @@
         <iframe id="videoModalIframe" src="" title="YouTube video player"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
           allowfullscreen></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- POST MODAL -->
+  <div id="postModal" class="post-modal" hidden>
+    <div class="post-modal-backdrop" onclick="closePostModal()"></div>
+    <div class="post-modal-box">
+      <button type="button" class="post-modal-close" onclick="closePostModal()" aria-label="Close post">&times;</button>
+      <img id="postModalImage" class="post-modal-img" src="" alt="" />
+      <div class="post-modal-body">
+        <div id="postModalText" class="post-modal-text"></div>
+        <div class="post-modal-footer">
+          <span id="postModalDate"></span>
+          <a id="postModalLink" href="#" target="_blank" rel="noopener" class="post-modal-link">View original on Facebook &#8599;</a>
+        </div>
       </div>
     </div>
   </div>
@@ -275,6 +318,7 @@
             date: p.published,
             title: truncate(p.message, 70) || 'New post from Golden Valley Guns',
             desc: p.message && p.message.length > 70 ? truncate(p.message, 220) : '',
+            fullMessage: p.message || '',
             image: p.image,
             url: p.url,
             badge: 'Facebook'
@@ -288,19 +332,20 @@
       }
 
       items.sort((a, b) => new Date(b.date) - new Date(a.date));
+      window.__activityItems = items;
 
-      grid.innerHTML = items.map(item => {
+      grid.innerHTML = items.map((item, index) => {
         const isVideo = item.type === 'video' && item.videoId;
-        // Videos play in the in-page modal (no navigating away); Facebook
-        // posts still open in a new tab since there's no post-level embed
-        // here; build ideas have nowhere to link to.
-        const tag = isVideo ? 'div' : (item.url ? 'a' : 'div');
-        const clickable = isVideo || item.url;
+        const isPost = item.type === 'post';
+        // Videos and Facebook posts both open in an in-page modal (no
+        // navigating away); build ideas have nowhere to link to.
+        const tag = 'div';
+        const clickable = isVideo || isPost;
         let interactionAttrs = '';
         if (isVideo) {
           interactionAttrs = `onclick="openVideoModal('${escapeHtml(item.videoId)}')" role="button" tabindex="0" onkeydown="if(event.key==='Enter')openVideoModal('${escapeHtml(item.videoId)}')"`;
-        } else if (item.url) {
-          interactionAttrs = `href="${escapeHtml(item.url)}" target="_blank" rel="noopener"`;
+        } else if (isPost) {
+          interactionAttrs = `onclick="openPostModal(${index})" role="button" tabindex="0" onkeydown="if(event.key==='Enter')openPostModal(${index})"`;
         }
         const playButton = isVideo
           ? '<div class="activity-play"><svg viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg></div>'
@@ -342,8 +387,32 @@
       document.body.style.overflow = '';
     }
 
+    function openPostModal(index) {
+      const item = (window.__activityItems || [])[index];
+      if (!item) return;
+      const img = document.getElementById('postModalImage');
+      img.hidden = !item.image;
+      img.src = item.image || '';
+      img.alt = item.title || '';
+      document.getElementById('postModalText').textContent = item.fullMessage || item.title || '';
+      document.getElementById('postModalDate').textContent = formatActivityDate(item.date);
+      const link = document.getElementById('postModalLink');
+      link.hidden = !item.url;
+      link.href = item.url || '#';
+      document.getElementById('postModal').hidden = false;
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closePostModal() {
+      document.getElementById('postModal').hidden = true;
+      document.body.style.overflow = '';
+    }
+
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeVideoModal();
+      if (e.key === 'Escape') {
+        closeVideoModal();
+        closePostModal();
+      }
     });
   </script>
 </body>
