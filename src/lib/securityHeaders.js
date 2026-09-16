@@ -24,7 +24,10 @@ const CSP = [
   // auto-injects into every HTML response at the edge (turned on in the
   // dashboard, not in this repo's own code) - without it in script-src the
   // beacon script itself is CSP-blocked before it can even run.
-  "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://*.authorize.net https://static.cloudflareinsights.com",
+  // connect.facebook.net is Meta's Page Plugin loader (bulletin.html embeds
+  // Shawn's Facebook Page timeline) - loads the widget's JS, which then
+  // renders into an iframe covered by frame-src below.
+  "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://*.authorize.net https://static.cloudflareinsights.com https://connect.facebook.net",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com",
   // blob: needed for admin-dashboard.html's pre-upload photo previews
@@ -38,7 +41,10 @@ const CSP = [
   // loading the script itself, connect-src is separately required for the
   // beacon's own fetch/beacon call or it's blocked just as silently.
   "connect-src 'self' https://tyqgvpiunplgqzkygnii.supabase.co https://*.authorize.net https://cloudflareinsights.com",
-  "frame-src https://*.authorize.net",
+  // www.facebook.com/web.facebook.com renders the Page Plugin itself;
+  // staticxx.facebook.com is Meta's own cross-domain messaging iframe the
+  // widget opens alongside it - both silently break the embed if missing.
+  "frame-src https://*.authorize.net https://www.facebook.com https://web.facebook.com https://staticxx.facebook.com",
   "object-src 'none'",
   "frame-ancestors 'none'",
   "base-uri 'self'",
