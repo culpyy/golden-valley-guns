@@ -5,53 +5,69 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <title>What's Next | Golden Valley Guns LLC | Golden Valley, AZ</title>
-  <meta name="description" content="Build types and ideas we're excited about next." />
+  <meta name="description" content="Build ideas, recent builds, and what's new from the shop on Facebook and YouTube." />
   <link rel="stylesheet" href="css/style.css" />
   <style>
-    .bulletin-wrap { max-width: 1000px; margin: 0 auto; padding: 0 20px 80px; }
-    .bulletin-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
-    @media (max-width: 700px) { .bulletin-grid { grid-template-columns: 1fr; } }
-    .bulletin-card {
+    .activity-wrap { max-width: 1180px; margin: 0 auto; padding: 0 20px 80px; }
+    .activity-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    @media (max-width: 900px) { .activity-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 620px) { .activity-grid { grid-template-columns: 1fr; } }
+
+    .activity-card {
+      display: flex; flex-direction: column;
       background: var(--surface);
       border: 1px solid var(--border);
       overflow: hidden;
+      text-decoration: none;
+      color: inherit;
     }
-    .bulletin-card-img { width: 100%; aspect-ratio: 16/10; object-fit: cover; display: block; background: var(--surface2); }
-    .bulletin-card-body { padding: 20px 24px; }
-    .bulletin-card-title {
-      font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
-      font-size: 19px;
-      letter-spacing: 1px;
-      color: var(--text);
-      margin-bottom: 10px;
-    }
-    .bulletin-card-desc { color: var(--muted); font-size: 13px; line-height: 1.7; }
-    .bulletin-empty { text-align: center; padding: 60px 20px; color: var(--muted); }
-    .bulletin-cta { text-align: center; margin-top: 48px; }
+    a.activity-card { cursor: pointer; }
+    a.activity-card:hover { border-color: var(--gold); }
 
-    .activity-section { max-width: 1000px; margin: 88px auto 0; padding: 0 20px; }
-    .activity-header { margin-bottom: 28px; }
-    .activity-grid { display: grid; grid-template-columns: 1.25fr 1fr; gap: 32px; align-items: start; }
-    @media (max-width: 860px) { .activity-grid { grid-template-columns: 1fr; } }
-    .activity-col h3 {
+    .activity-img-wrap { position: relative; aspect-ratio: 16/10; overflow: hidden; background: var(--surface2); }
+    .activity-img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .35s ease; }
+    a.activity-card:hover .activity-img { transform: scale(1.05); }
+
+    .activity-badge {
+      position: absolute; top: 10px; left: 10px;
+      padding: 4px 9px;
       font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
-      font-size: 15px; letter-spacing: 1.5px; text-transform: uppercase;
-      color: var(--gold-light); margin-bottom: 16px;
+      font-size: 10.5px; letter-spacing: 1px; text-transform: uppercase;
+      background: rgba(10,10,10,.82);
+      border: 1px solid var(--border);
     }
-    .yt-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
-    @media (max-width: 480px) { .yt-grid { grid-template-columns: 1fr; } }
-    .yt-card { display: block; background: var(--surface); border: 1px solid var(--border); text-decoration: none; color: inherit; }
-    .yt-thumb-wrap { position: relative; aspect-ratio: 16/9; overflow: hidden; background: var(--surface2); }
-    .yt-thumb { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .35s ease; }
-    .yt-card:hover .yt-thumb { transform: scale(1.06); }
-    .yt-play {
+    .activity-badge.idea { color: var(--gold-light); }
+    .activity-badge.video { color: #ff6b6b; }
+    .activity-badge.post { color: #6ba6ff; }
+
+    .activity-play {
       position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-      background: linear-gradient(rgba(0,0,0,0), rgba(0,0,0,.35));
+      background: linear-gradient(rgba(0,0,0,0), rgba(0,0,0,.3));
     }
-    .yt-play svg { width: 38px; height: 38px; filter: drop-shadow(0 2px 6px rgba(0,0,0,.6)); }
-    .yt-title { padding: 10px 12px; font-size: 12.5px; line-height: 1.45; color: var(--text); }
-    .yt-empty, .yt-loading { color: var(--muted); font-size: 13px; padding: 12px 0; grid-column: 1 / -1; }
-    .fb-embed-wrap { background: var(--surface); border: 1px solid var(--border); padding: 10px; }
+    .activity-play svg { width: 38px; height: 38px; filter: drop-shadow(0 2px 6px rgba(0,0,0,.6)); }
+
+    .activity-body { padding: 18px 20px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+    .activity-body.no-image { padding-top: 20px; }
+    .activity-title {
+      font-family: 'Big Shoulders Display', sans-serif; font-weight: 800;
+      font-size: 17px; letter-spacing: .5px; line-height: 1.25;
+      color: var(--text);
+    }
+    .activity-desc { color: var(--muted); font-size: 12.5px; line-height: 1.65; flex: 1; }
+    .activity-date {
+      color: var(--muted); font-size: 10.5px; letter-spacing: .8px; text-transform: uppercase;
+      margin-top: auto; padding-top: 10px; border-top: 1px solid var(--border);
+    }
+    .activity-badge-inline {
+      display: inline-block; font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
+      font-weight: 700; margin-right: 8px;
+    }
+    .activity-badge-inline.idea { color: var(--gold-light); }
+    .activity-badge-inline.video { color: #ff6b6b; }
+    .activity-badge-inline.post { color: #6ba6ff; }
+
+    .activity-empty, .activity-loading { text-align: center; padding: 60px 20px; color: var(--muted); grid-column: 1 / -1; }
+    .activity-cta { text-align: center; margin-top: 48px; }
   </style>
 </head>
 <body>
@@ -108,49 +124,16 @@
   <!-- PAGE HEADER -->
   <div class="page-header">
     <div class="section-label">On the Horizon</div>
-    <h1>What We're Building Next</h1>
-    <p>Build types and ideas we're excited about - see something you want? Get in touch.</p>
+    <h1>What's Next At The Shop</h1>
+    <p>New build ideas, recent posts, and the latest videos - all in one feed, newest first.</p>
   </div>
 
-  <div class="bulletin-wrap">
-    <div id="bulletinGrid" class="bulletin-grid"></div>
-    <div id="bulletinEmpty" class="bulletin-empty" style="display:none;">
-      <p>Nothing posted yet - check back soon.</p>
+  <div class="activity-wrap">
+    <div id="activityGrid" class="activity-grid">
+      <div class="activity-loading">Loading&hellip;</div>
     </div>
-    <div class="bulletin-cta">
+    <div class="activity-cta">
       <a href="contact.html" class="btn-primary">Ask About One of These &#8594;</a>
-    </div>
-  </div>
-
-  <!-- LATEST ACTIVITY -->
-  <div class="activity-section">
-    <div class="activity-header">
-      <div class="section-label">Follow Along</div>
-      <h2>Latest From the Shop</h2>
-    </div>
-    <div class="activity-grid">
-      <div class="activity-col">
-        <h3>YouTube</h3>
-        <div id="ytGrid" class="yt-grid">
-          <div class="yt-loading">Loading recent videos&hellip;</div>
-        </div>
-      </div>
-      <div class="activity-col">
-        <h3>Facebook</h3>
-        <div class="fb-embed-wrap">
-          <div id="fb-root"></div>
-          <div class="fb-page"
-               data-href="https://www.facebook.com/p/Golden-Valley-Guns-LLC-61565769817507/"
-               data-tabs="timeline"
-               data-width=""
-               data-height="640"
-               data-small-header="true"
-               data-adapt-container-width="true"
-               data-hide-cover="false"
-               data-show-facepile="false">
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -200,7 +183,6 @@
     </div>
   </footer>
 
-  <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=v19.0"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase.js"></script>
   <script src="js/main.js"></script>
@@ -208,51 +190,102 @@
   <script>
     document.getElementById('copyYear').textContent = new Date().getFullYear();
 
-    (async () => {
-      const ytGrid = document.getElementById('ytGrid');
-      try {
-        const res = await fetch('/api/youtube-feed');
-        const data = await res.json();
-        if (!data.videos || data.videos.length === 0) {
-          ytGrid.innerHTML = '<div class="yt-empty">No videos yet - check back soon.</div>';
-        } else {
-          ytGrid.innerHTML = data.videos.map(v => `
-            <a class="yt-card" href="${escapeHtml(v.url)}" target="_blank" rel="noopener">
-              <div class="yt-thumb-wrap">
-                <img class="yt-thumb" src="${escapeHtml(v.thumbnail)}" alt="${escapeHtml(v.title)}" loading="lazy" />
-                <div class="yt-play">
-                  <svg viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg>
-                </div>
-              </div>
-              <div class="yt-title">${escapeHtml(v.title)}</div>
-            </a>
-          `).join('');
-        }
-      } catch (err) {
-        ytGrid.innerHTML = '<div class="yt-empty">Couldn\'t load videos right now.</div>';
-      }
-    })();
+    function formatActivityDate(iso) {
+      const d = new Date(iso);
+      if (isNaN(d)) return '';
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    function truncate(str, max) {
+      if (!str) return '';
+      return str.length > max ? str.slice(0, max).trim() + '…' : str;
+    }
 
     (async () => {
-      const { data, error } = await supabase.from('bulletin_ideas')
-        .select('*')
-        .eq('is_visible', true)
-        .order('position', { ascending: true })
-        .order('created_at', { ascending: false });
-      const grid = document.getElementById('bulletinGrid');
-      if (error || !data || data.length === 0) {
-        document.getElementById('bulletinEmpty').style.display = 'block';
+      const grid = document.getElementById('activityGrid');
+
+      const [ideasResult, ytResult, fbResult] = await Promise.allSettled([
+        supabase.from('bulletin_ideas').select('*').eq('is_visible', true),
+        fetch('/api/youtube-feed').then(r => r.json()),
+        fetch('/api/facebook-feed').then(r => r.json())
+      ]);
+
+      const items = [];
+
+      if (ideasResult.status === 'fulfilled' && ideasResult.value.data) {
+        for (const idea of ideasResult.value.data) {
+          items.push({
+            type: 'idea',
+            date: idea.created_at,
+            title: idea.title,
+            desc: idea.description || '',
+            image: idea.image_url || '',
+            url: '',
+            badge: 'Build Idea'
+          });
+        }
+      }
+
+      if (ytResult.status === 'fulfilled' && ytResult.value.videos) {
+        for (const v of ytResult.value.videos) {
+          items.push({
+            type: 'video',
+            date: v.published,
+            title: v.title,
+            desc: '',
+            image: v.thumbnail,
+            url: v.url,
+            badge: 'YouTube'
+          });
+        }
+      }
+
+      if (fbResult.status === 'fulfilled' && fbResult.value.posts) {
+        for (const p of fbResult.value.posts) {
+          items.push({
+            type: 'post',
+            date: p.published,
+            title: truncate(p.message, 70) || 'New post from Golden Valley Guns',
+            desc: p.message && p.message.length > 70 ? truncate(p.message, 220) : '',
+            image: p.image,
+            url: p.url,
+            badge: 'Facebook'
+          });
+        }
+      }
+
+      if (items.length === 0) {
+        grid.innerHTML = '<div class="activity-empty">Nothing posted yet - check back soon.</div>';
         return;
       }
-      grid.innerHTML = data.map(idea => `
-        <div class="bulletin-card">
-          ${idea.image_url ? `<img class="bulletin-card-img" src="${escapeHtml(idea.image_url)}" alt="${escapeHtml(idea.title)}" />` : ''}
-          <div class="bulletin-card-body">
-            <div class="bulletin-card-title">${escapeHtml(idea.title)}</div>
-            ${idea.description ? `<div class="bulletin-card-desc">${escapeHtml(idea.description)}</div>` : ''}
-          </div>
-        </div>
-      `).join('');
+
+      items.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      grid.innerHTML = items.map(item => {
+        const tag = item.url ? 'a' : 'div';
+        const linkAttrs = item.url ? `href="${escapeHtml(item.url)}" target="_blank" rel="noopener"` : '';
+        const playButton = item.type === 'video'
+          ? '<div class="activity-play"><svg viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg></div>'
+          : '';
+        const imageBlock = item.image
+          ? `<div class="activity-img-wrap">
+               <img class="activity-img" src="${escapeHtml(item.image)}" alt="${escapeHtml(item.title)}" loading="lazy" />
+               <div class="activity-badge ${item.type}">${escapeHtml(item.badge)}</div>
+               ${playButton}
+             </div>`
+          : '';
+        const inlineBadge = item.image ? '' : `<span class="activity-badge-inline ${item.type}">${escapeHtml(item.badge)}</span>`;
+        return `
+          <${tag} class="activity-card" ${linkAttrs}>
+            ${imageBlock}
+            <div class="activity-body ${item.image ? '' : 'no-image'}">
+              <div class="activity-title">${inlineBadge}${escapeHtml(item.title)}</div>
+              ${item.desc ? `<div class="activity-desc">${escapeHtml(item.desc)}</div>` : ''}
+              <div class="activity-date">${formatActivityDate(item.date)}</div>
+            </div>
+          </${tag}>
+        `;
+      }).join('');
     })();
   </script>
 </body>

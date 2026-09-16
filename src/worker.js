@@ -19,6 +19,7 @@ import { handleGetReview, handlePostReview } from './api/reviews.js';
 import { handleSendReviewInvite } from './api/sendReviewInvite.js';
 import { handleAddTracking } from './api/addTracking.js';
 import { handleYoutubeFeed } from './api/youtubeFeed.js';
+import { handleFacebookFeed } from './api/facebookFeed.js';
 import { checkRateLimit } from './lib/rateLimit.js';
 import { addSecurityHeaders } from './lib/securityHeaders.js';
 
@@ -548,6 +549,28 @@ async function route(request, env) {
     } catch (err) {
       console.error('YouTube feed fetch failed:', err);
       return new Response(JSON.stringify({ error: 'Failed to load videos.' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+  }
+
+  if (url.pathname === '/api/facebook-feed' && request.method === 'GET') {
+    // Same reasoning as /api/youtube-feed's GET.
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    const { allowed, retryAfterSeconds } = await checkRateLimit(env, `facebook-feed:${ip}`, { limit: 60, windowSeconds: 600 });
+    if (!allowed) {
+      return new Response(JSON.stringify({ error: 'Too many requests.' }), {
+        status: 429,
+        headers: { 'Content-Type': 'application/json', 'Retry-After': String(retryAfterSeconds) }
+      });
+    }
+
+    try {
+      return await handleFacebookFeed(request, env);
+    } catch (err) {
+      console.error('Facebook feed fetch failed:', err);
+      return new Response(JSON.stringify({ error: 'Failed to load posts.' }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' }
       });
