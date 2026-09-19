@@ -22,6 +22,7 @@ import { handleYoutubeFeed } from './api/youtubeFeed.js';
 import { handleFacebookFeed } from './api/facebookFeed.js';
 import { handleResendWebhook } from './api/resendWebhook.js';
 import { handleCheckSettlement } from './api/checkSettlement.js';
+import { handleResendOrderEmail } from './api/resendOrderEmail.js';
 import { syncPendingSettlements } from './lib/settlementSync.js';
 import { checkRateLimit } from './lib/rateLimit.js';
 import { addSecurityHeaders } from './lib/securityHeaders.js';
@@ -320,6 +321,27 @@ async function route(request, env) {
     } catch (err) {
       console.error('Payment diagnostics failed:', err);
       return new Response(JSON.stringify({ error: 'Diagnostics failed.' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+  }
+
+  if (url.pathname === '/api/admin/resend-order-email' && request.method === 'POST') {
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    const { allowed, retryAfterSeconds } = await checkRateLimit(env, `resend-order-email:${ip}`, { limit: 20, windowSeconds: 600 });
+    if (!allowed) {
+      return new Response(JSON.stringify({ error: 'Too many requests.' }), {
+        status: 429,
+        headers: { 'Content-Type': 'application/json', 'Retry-After': String(retryAfterSeconds) }
+      });
+    }
+
+    try {
+      return await handleResendOrderEmail(request, env);
+    } catch (err) {
+      console.error('Resend order email failed:', err);
+      return new Response(JSON.stringify({ error: 'Resend failed.' }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' }
       });

@@ -2269,6 +2269,7 @@
                   <div class="row-actions">
                     <button class="btn-edit" onclick="toggleOrderItems('${o.id}')">Items</button>
                     ${o.source === 'special_order' && o.pay_token ? `<button class="btn-edit" onclick="copyPayLink('${o.pay_token}')">Copy Link</button>` : ''}
+                    ${canResendOrderEmail(o) ? `<button class="btn-edit" onclick="resendOrderEmail('${o.id}', '${escapeHtml(o.order_number)}')">Resend Email</button>` : ''}
                     ${o.status === 'paid' && o.authorize_net_transaction_id ? `<button class="btn-delete" onclick="refundOrder('${o.id}', '${escapeHtml(o.order_number)}')">Refund</button>` : ''}
                   </div>
                 </td>
@@ -2358,6 +2359,33 @@
     // later retry succeeded or failed differently; this is what makes that
     // reason a permanent, checkable fact instead of something only visible
     // in the moment it happened. See sql/payment_attempts.sql.
+    // Matches exactly what src/api/resendOrderEmail.js can actually send -
+    // a pending order only has something to resend if it's a special order
+    // with a real pay link; cancelled/failed orders never had a customer
+    // confirmation to resend in the first place.
+    function canResendOrderEmail(o) {
+      if (!o.customer_email) return false;
+      if (o.status === 'pending') return !!o.pay_token;
+      return o.status === 'paid' || o.status === 'refunded';
+    }
+
+    async function resendOrderEmail(orderId, orderNumber) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const res = await fetch('/api/admin/resend-order-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token || ''}` },
+          body: JSON.stringify({ orderId })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Resend failed.');
+        showToast(`Order ${orderNumber}: email resent.`);
+        loadOrders();
+      } catch (err) {
+        showToast('Error: ' + err.message);
+      }
+    }
+
     function declinedAttemptCount(o) {
       return (ordersPaymentAttempts[o.id] || []).filter(a => !a.approved).length;
     }
