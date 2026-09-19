@@ -15,14 +15,17 @@ import { getSupabaseAdmin } from '../lib/supabaseAdmin.js';
 import { sendEmail } from '../lib/email.js';
 
 // Sources where a bounce/complaint means a real person - customer or Shawn -
-// never got payment-critical information. A bounce on these gets Shawn an
-// immediate heads-up so he can call/text instead of finding out when the
-// customer complains. Not every email source needs this (a bounced review
-// invite isn't urgent), so this stays a deliberate allow-list.
-const PAYMENT_CRITICAL_SOURCES = new Set([
+// never got a genuinely time-sensitive update. A bounce on these gets Shawn
+// an immediate heads-up so he can call/text instead of finding out when the
+// customer complains (or, for build_status, never finding out at all,
+// since a build update failing silently was the exact gap Shawn hit
+// 2026-09-19). Not every email source needs this (a bounced review invite
+// isn't urgent), so this stays a deliberate allow-list.
+const URGENT_ALERT_SOURCES = new Set([
   'order_confirmation',
   'order_admin_notice',
-  'special_order_payment_link'
+  'special_order_payment_link',
+  'build_status'
 ]);
 
 function base64ToBytes(b64) {
@@ -119,12 +122,12 @@ export async function handleResendWebhook(request, env) {
   }
 
   const row = updatedRows?.[0];
-  if (row && (deliveryStatus === 'bounced' || deliveryStatus === 'complained') && PAYMENT_CRITICAL_SOURCES.has(row.source)) {
+  if (row && (deliveryStatus === 'bounced' || deliveryStatus === 'complained') && URGENT_ALERT_SOURCES.has(row.source)) {
     try {
       await sendEmail(env, {
         subject: `Email ${deliveryStatus} - ${row.subject || row.source}`,
         text: [
-          `A payment-related email genuinely failed to reach its recipient - this needs a phone call or text, not just a resend.`,
+          `An email genuinely failed to reach its recipient - this needs a phone call or text, not just a resend.`,
           ``,
           `To: ${row.sent_to}`,
           `Subject: ${row.subject || '(none)'}`,
