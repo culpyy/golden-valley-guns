@@ -863,6 +863,13 @@ h2.section-title {
   outline: none;
   transition: border-color 0.2s;
   width: 100%;
+  /* Text inputs default to a browser-set intrinsic min-content width
+     (confirmed live at ~349px for a plain text input) that "width: 100%"
+     alone doesn't override inside a flex/grid ancestor - without this, a
+     field refuses to shrink below that floor and forces its container
+     (and on pay.html/checkout.html, the whole page) wider than the mobile
+     viewport instead of respecting 100%. */
+  min-width: 0;
 }
 
 .form-group input:focus,
@@ -898,6 +905,15 @@ h2.section-title {
 .checkout-form-panel {
   background: var(--bg);
   padding: 28px;
+  /* Grid items default to min-width: auto (their content's own min-content
+     width), not 0 - without this, a long unbreakable string anywhere inside
+     (fulfillment option text, an error message, the raw card number) forces
+     this column wider than the viewport instead of wrapping. Combined with
+     html/body's overflow-x:hidden below, that overflow doesn't even show as
+     a scrollbar - it just gets silently clipped off the right edge, which
+     is exactly what made a real payment decline reason unreadable on
+     mobile. */
+  min-width: 0;
 }
 .checkout-summary { background: var(--surface); }
 .summary-line {
@@ -931,6 +947,10 @@ h2.section-title {
 }
 .card-fields { display: flex; flex-direction: column; gap: 14px; margin-top: 6px; }
 .card-fields-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+/* Same min-width:auto grid-item issue as .checkout-form-panel above, one
+   level deeper - the expiration/CVV .form-groups need it too or they hold
+   this row (and the page) open past the mobile viewport. */
+.card-fields-row > .form-group { min-width: 0; }
 .checkout-error {
   display: none;
   background: rgba(139, 20, 20, 0.15);

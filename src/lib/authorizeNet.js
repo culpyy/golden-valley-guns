@@ -219,6 +219,40 @@ export async function runDiagnosticTestCharge(env, { amount = 1.00 } = {}) {
   };
 }
 
+// getTransactionDetailsRequest - Authorize.net's own record of what actually
+// happened to a transaction, including transactionStatus (e.g.
+// "capturedPendingSettlement" the moment it's charged, "settledSuccessfully"
+// once the nightly batch actually processes it, or "settlementError" if that
+// batch step fails). "approved" at charge time only ever meant Authorize.net
+// accepted the auth+capture request - this is the only way to confirm the
+// money actually made it through settlement, used by
+// src/lib/settlementSync.js.
+export async function getTransactionDetails(env, transactionId) {
+  if (!env.AUTHORIZENET_API_LOGIN_ID || !env.AUTHORIZENET_TRANSACTION_KEY) {
+    throw new Error('Authorize.net is not configured yet - set AUTHORIZENET_API_LOGIN_ID and AUTHORIZENET_TRANSACTION_KEY (wrangler secret put).');
+  }
+  const body = {
+    getTransactionDetailsRequest: {
+      merchantAuthentication: {
+        name: env.AUTHORIZENET_API_LOGIN_ID,
+        transactionKey: env.AUTHORIZENET_TRANSACTION_KEY
+      },
+      transId: transactionId
+    }
+  };
+  const res = await fetch(endpointFor(env), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) throw new Error(`Authorize.net request failed: ${res.status}`);
+  const data = await parseAuthNetResponse(res);
+  return {
+    transactionStatus: data.transaction?.transactionStatus || null,
+    raw: data
+  };
+}
+
 async function submitTransaction(env, transactionRequest) {
   const body = {
     createTransactionRequest: {

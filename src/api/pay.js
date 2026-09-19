@@ -10,6 +10,7 @@
 
 import { getSupabaseAdmin } from '../lib/supabaseAdmin.js';
 import { chargeCreditCard } from '../lib/authorizeNet.js';
+import { logPaymentAttempt } from '../lib/paymentAttempts.js';
 import { sendEmail } from '../lib/email.js';
 import { emailShell, emailGreeting, emailParagraph, emailInfoBox, emailFooterNote } from '../lib/emailTemplate.js';
 import { buildInvoicePdf, bytesToBase64 } from '../lib/pdf.js';
@@ -203,6 +204,12 @@ export async function handlePayOrder(request, env) {
     await supabase.from('orders').update({ status: 'pending' }).eq('id', claimed.id);
     return jsonResponse({ error: 'Payment failed. Please try again or contact us.' }, 500);
   }
+
+  // Logged before the orders update below so a full history survives even
+  // if that update itself fails - see sql/payment_attempts.sql, this is
+  // what makes a retry's outcome stop erasing the previous attempt's real
+  // reason.
+  await logPaymentAttempt(env, { orderId: claimed.id, result });
 
   // Declined - revert to 'pending' (not left stuck in 'processing') so the
   // customer can retry with a different card using the same link.

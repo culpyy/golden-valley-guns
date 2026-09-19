@@ -20,6 +20,9 @@ import { handleSendReviewInvite } from './api/sendReviewInvite.js';
 import { handleAddTracking } from './api/addTracking.js';
 import { handleYoutubeFeed } from './api/youtubeFeed.js';
 import { handleFacebookFeed } from './api/facebookFeed.js';
+import { handleResendWebhook } from './api/resendWebhook.js';
+import { handleCheckSettlement } from './api/checkSettlement.js';
+import { syncPendingSettlements } from './lib/settlementSync.js';
 import { checkRateLimit } from './lib/rateLimit.js';
 import { addSecurityHeaders } from './lib/securityHeaders.js';
 
@@ -90,6 +93,15 @@ const DAVIDSONS_SYNC_CRON = '*/20 * * * *';
 // of Lipsey's/Orion/Davidson's own per-run fetches, so it gets the most
 // isolated budget of the four rather than sharing one.
 const RSR_SYNC_CRON = '5 */4 * * *';
+
+// Settlement checking piggybacks on the existing 4-hour SYNC_JOBS cron
+// ('0 */4 * * *', fires at 0/4/8/12/16/20 UTC) rather than registering its
+// own trigger - Workers Free caps an account at 5 cron triggers total and
+// this project is already at that limit (image backfill, Orion, Davidson's,
+// RSR, plus this shared one). Once daily is plenty anyway (Authorize.net's
+// settlement batch only runs once a day) - 12 UTC is 5am Arizona (no DST),
+// comfortably after an overnight batch would have closed.
+const SETTLEMENT_CHECK_HOUR_UTC = 12;
 
 async function route(request, env) {
   const url = new URL(request.url);
@@ -308,6 +320,42 @@ async function route(request, env) {
     } catch (err) {
       console.error('Payment diagnostics failed:', err);
       return new Response(JSON.stringify({ error: 'Diagnostics failed.' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+  }
+
+  if (url.pathname === '/api/admin/check-settlement' && request.method === 'POST') {
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    const { allowed, retryAfterSeconds } = await checkRateLimit(env, `check-settlement:${ip}`, { limit: 20, windowSeconds: 600 });
+    if (!allowed) {
+      return new Response(JSON.stringify({ error: 'Too many requests.' }), {
+        status: 429,
+        headers: { 'Content-Type': 'application/json', 'Retry-After': String(retryAfterSeconds) }
+      });
+    }
+
+    try {
+      return await handleCheckSettlement(request, env);
+    } catch (err) {
+      console.error('Settlement check failed:', err);
+      return new Response(JSON.stringify({ error: 'Settlement check failed.' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+  }
+
+  if (url.pathname === '/api/webhooks/resend' && request.method === 'POST') {
+    // No IP rate limit here - this is Resend calling us, not a public form,
+    // and the real gate is the Svix signature check inside the handler
+    // itself (401 on anything that doesn't verify).
+    try {
+      return await handleResendWebhook(request, env);
+    } catch (err) {
+      console.error('Resend webhook handling failed:', err);
+      return new Response(JSON.stringify({ error: 'Webhook handling failed.' }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' }
       });
@@ -626,6 +674,17 @@ export default {
           .catch(err => console.error('rsr sync failed:', err))
       );
       return;
+    }
+
+    // Rides the shared 4-hour SYNC_JOBS cron (see SETTLEMENT_CHECK_HOUR_UTC
+    // above for why this isn't its own trigger) but only actually runs once
+    // a day, on the tick whose UTC hour matches.
+    if (new Date(event.scheduledTime).getUTCHours() === SETTLEMENT_CHECK_HOUR_UTC) {
+      ctx.waitUntil(
+        syncPendingSettlements(env)
+          .then(r => console.log(`settlement check complete: ${r.checked} checked, ${r.settled} settled, ${r.pending} pending, ${r.failed} failed, ${r.errored} errored.`))
+          .catch(err => console.error('settlement check failed:', err))
+      );
     }
 
     for (const [name, run] of SYNC_JOBS) {

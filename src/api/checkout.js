@@ -36,6 +36,7 @@
 
 import { getSupabaseAdmin } from '../lib/supabaseAdmin.js';
 import { chargeCreditCard } from '../lib/authorizeNet.js';
+import { logPaymentAttempt } from '../lib/paymentAttempts.js';
 import { sendEmail } from '../lib/email.js';
 import { insertOrderWithNumber } from '../lib/orderNumber.js';
 import { reserveStock, releaseStock } from '../lib/stock.js';
@@ -283,6 +284,11 @@ export async function handleCheckout(request, env) {
   if (!result.approved) {
     await Promise.all(priced.map(item => releaseStock(supabase, item.id, item.qty)));
   }
+
+  // Logged before the orders update below - see sql/payment_attempts.sql,
+  // this is what keeps a full attempt history instead of a retry silently
+  // erasing the previous decline's real reason.
+  await logPaymentAttempt(env, { orderId: orderRow.id, result });
 
   const { error: updateError } = await supabase.from('orders').update({
     status: result.approved ? 'paid' : 'failed',

@@ -224,7 +224,19 @@
             </div>
             <div class="form-group">
               <label for="cardCode">CVV</label>
-              <input type="text" id="cardCode" inputmode="numeric" autocomplete="cc-csc" maxlength="4" placeholder="123" required />
+              <!-- autocomplete deliberately NOT "cc-csc" - password managers
+                   like 1Password DO store and autofill CVV (native browser/
+                   OS Keychain autofill never does, but third-party managers
+                   aren't bound by that PCI-driven convention). Confirmed
+                   live 2026-09-18: the exact same card/expiration/CVV
+                   declined when 1Password autofilled this field on mobile,
+                   then approved when typed manually with no autofill - the
+                   autofilled value reaching the server didn't match what
+                   was actually typed/displayed (exact mechanism unconfirmed,
+                   not a stale/reissued-card CVV as first assumed). "off"
+                   discourages managers from touching this field at all, so
+                   it's always typed fresh instead of trusting autofill here. -->
+              <input type="text" id="cardCode" inputmode="numeric" autocomplete="off" maxlength="4" placeholder="123" required />
             </div>
           </div>
         </div>

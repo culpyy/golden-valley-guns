@@ -219,7 +219,13 @@
             </div>
             <div class="form-group">
               <label for="cardCode">CVV</label>
-              <input type="text" id="cardCode" inputmode="numeric" autocomplete="cc-csc" maxlength="4" placeholder="123" required />
+              <!-- See pay.html's cardCode field for why this is "off" and
+                   not "cc-csc" - the same card/expiration/CVV declined when
+                   1Password autofilled this field on mobile and approved
+                   when typed manually, confirmed live 2026-09-18 (not a
+                   stale/reissued-card CVV, the autofilled value just didn't
+                   match what was actually typed). -->
+              <input type="text" id="cardCode" inputmode="numeric" autocomplete="off" maxlength="4" placeholder="123" required />
             </div>
           </div>
         </div>

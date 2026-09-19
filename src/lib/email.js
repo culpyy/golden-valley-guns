@@ -14,7 +14,7 @@ const SEND_FROM = 'noreply@goldenvalleygunsllc.com';
 // Best-effort and fully isolated from the actual send: a logging hiccup
 // must never mask the real Resend error or make a successful send look
 // like it failed, so this never throws.
-async function logEmailAttempt(env, { to, subject, source, relatedTable, relatedId, status, errorMessage }) {
+async function logEmailAttempt(env, { to, subject, source, relatedTable, relatedId, status, errorMessage, resendId }) {
   try {
     const supabase = getSupabaseAdmin(env);
     await supabase.from('email_log').insert({
@@ -24,7 +24,8 @@ async function logEmailAttempt(env, { to, subject, source, relatedTable, related
       status,
       error_message: errorMessage || null,
       related_table: relatedTable || null,
-      related_id: relatedId || null
+      related_id: relatedId || null,
+      resend_id: resendId || null
     });
   } catch (err) {
     console.error('email_log insert failed (send itself is unaffected):', err);
@@ -61,5 +62,9 @@ export async function sendEmail(env, { to = 'goldenvalleyguns@gmail.com', subjec
     throw new Error(`Resend API error (${res.status}): ${errBody}`);
   }
 
-  await logEmailAttempt(env, { to, subject, source, relatedTable, relatedId, status: 'sent' });
+  // Resend's response id is what src/api/resendWebhook.js later matches
+  // delivered/bounced/complained events back to this row by - without it,
+  // "sent" is a dead end with no way to learn what happened after.
+  const sentBody = await res.json().catch(() => null);
+  await logEmailAttempt(env, { to, subject, source, relatedTable, relatedId, status: 'sent', resendId: sentBody?.id });
 }
