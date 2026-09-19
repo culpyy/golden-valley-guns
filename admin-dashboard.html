@@ -590,47 +590,46 @@
       .tab-nav { padding: 0 16px; }
       .tab-btn { padding: 12px 14px; font-size: 12px; }
 
-      /* Horizontal scroll wrapper only turns on here (see the comment by
-         .data-table above for why) - and since that overflow-x:auto makes
-         this wrapper its own scroll container, sticky headers can't resolve
-         against the page anymore inside it. Turning sticky off on mobile
-         instead of leaving it to silently misbehave; horizontal scroll room
-         matters more here anyway, and mobile shows fewer rows per screen so
-         losing track of a column is less of a problem than on desktop.
-         Full-detail columns are already trimmed further below too. */
-      #buildsTable, #completedBuildsTable, #galleryPhotosTable, #productsTable, #ordersTable, #messagesTable, #intakeTable, #catalogTable {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
+      /* Real gap found 2026-09-19: every admin table used to just hide a
+         couple of "least important" columns and let the rest scroll
+         horizontally - swiping sideways to find Status or an action button
+         is exactly the "can't read everything" problem Shawn hit, not
+         actually fixed by trimming one or two columns. Every .data-table
+         (Builds, Orders, Gallery, Messages, Intake, Reviews, Bulletin,
+         Products, Distributor Catalog - all of them, since they all share
+         this one class) now stacks into a card per row instead: the header
+         row hides, and each cell shows its own column header as a label
+         above the value via the data-label attribute that
+         labelDataTableCells() (see the script below) sets automatically
+         from each table's real <th> text - so a table's mobile layout
+         can't drift out of sync with a header that gets renamed later, and
+         no per-table CSS is needed here at all. An unlabeled cell (the
+         trailing actions column's <th></th> is always empty, and an
+         expansion/detail row's single colspan cell) just renders as plain
+         block content since it never gets a data-label to show. */
+      .data-table thead { display: none; }
+      .data-table, .data-table tbody, .data-table tr { display: block; width: 100%; }
+      .data-table tr {
+        border: 1px solid var(--border);
+        border-radius: 3px;
+        margin-bottom: 10px;
+        padding: 10px 14px;
       }
-      .data-table th { position: static; }
-
-      /* Every table here fits fine on a desktop-width screen but is
-         genuinely too wide for a phone even with the overflow-x scroll
-         wrapper - that just moves the problem to "swipe through 7 columns
-         to find the one you need" instead of fixing it. Dropping the
-         columns that are least useful for a quick glance (already
-         redundant with something else on-screen, or just not what Shawn's
-         actually scanning for on mobile) cuts real scrolling distance
-         instead of only making the scroll itself smoother. Full detail is
-         still one tap away via Edit. */
-      #buildsTable .data-table th:nth-child(1),
-      #buildsTable .data-table td:nth-child(1),
-      #buildsTable .data-table th:nth-child(5),
-      #buildsTable .data-table td:nth-child(5) { display: none; }
-
-      #completedBuildsTable .data-table th:nth-child(1),
-      #completedBuildsTable .data-table td:nth-child(1) { display: none; }
-
-      #ordersTable .data-table th:nth-child(6),
-      #ordersTable .data-table td:nth-child(6) { display: none; }
-
-      #productsTable .data-table th:nth-child(2),
-      #productsTable .data-table td:nth-child(2) { display: none; }
-
-      #catalogTable .data-table th:nth-child(2),
-      #catalogTable .data-table td:nth-child(2),
-      #catalogTable .data-table th:nth-child(3),
-      #catalogTable .data-table td:nth-child(3) { display: none; }
+      .data-table td {
+        display: block;
+        padding: 5px 0;
+        border-bottom: none;
+        text-align: left;
+      }
+      .data-table td[data-label]::before {
+        content: attr(data-label);
+        display: block;
+        font-size: 10px;
+        letter-spacing: 0.6px;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 2px;
+      }
 
       /* Real measured bug (2026-09-02): a table auto-sizes every column to
          its widest row, so as soon as ONE row needs a 3rd action button
@@ -1257,6 +1256,39 @@
       await supabase.auth.signOut();
       window.location.href = 'admin.html';
     });
+
+    // ── RESPONSIVE DATA TABLES ──
+    // Reads each .data-table's own <th> text and stamps it onto every <td>
+    // in the same column as a data-label attribute, which the mobile CSS
+    // (see the @media (max-width: 700px) block above) shows as a label
+    // above that cell's value once the table stacks into cards. One shared
+    // pass instead of hand-writing mobile labels in every render*Table()
+    // function - added once here, applies to every current and future
+    // admin table automatically, and can't drift out of sync with a header
+    // that gets renamed later since it reads the real header text live.
+    function labelDataTableCells(table) {
+      const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
+      table.querySelectorAll('tbody tr').forEach(tr => {
+        // A detail/expansion row (order Items, payment attempts, build
+        // email history, ...) is a single <td colspan> with nothing to
+        // pair with a per-column label - leave it as plain block content.
+        if (tr.children.length === 1 && tr.children[0].hasAttribute('colspan')) return;
+        Array.from(tr.children).forEach((td, i) => {
+          if (headers[i]) td.setAttribute('data-label', headers[i]);
+        });
+      });
+    }
+
+    // Every render*Table() function just replaces a container's innerHTML
+    // directly - observing the whole document once here catches all of
+    // them (including ones added later) instead of needing an explicit
+    // labelDataTableCells() call added to each one individually.
+    new MutationObserver(() => {
+      document.querySelectorAll('.data-table:not([data-labeled])').forEach(table => {
+        labelDataTableCells(table);
+        table.setAttribute('data-labeled', '1');
+      });
+    }).observe(document.body, { childList: true, subtree: true });
 
     // ── TOAST ──
     function showToast(msg) {
