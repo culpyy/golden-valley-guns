@@ -170,8 +170,28 @@
       color: var(--gold-light);
       margin-bottom: 6px;
     }
+    /* Cover video mirrors .gallery-item img's sizing exactly - same
+       contain/letterbox treatment so a video cover doesn't visually stand
+       out from photo covers in the grid. */
+    .gallery-item video { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .video-play-badge {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 46px; height: 46px;
+      background: rgba(0,0,0,0.6);
+      border: 1px solid rgba(255,255,255,0.4);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1;
+      pointer-events: none;
+    }
+    .lightbox video { max-width: 90vw; max-height: 85vh; object-fit: contain; border: 1px solid var(--border); }
     @media (max-width: 580px) {
       .lightbox-nav { font-size: 28px; padding: 8px 10px; }
+      .lightbox video { max-width: 95vw; max-height: 75vh; }
     }
   </style>
 </head>
@@ -274,6 +294,7 @@
     <button class="lightbox-close" aria-label="Close">&times;</button>
     <button class="lightbox-nav prev" id="lightboxPrev" aria-label="Previous photo">&#8249;</button>
     <img class="lb-img" src="" alt="" />
+    <video class="lb-video" controls playsinline style="display:none;"></video>
     <button class="lightbox-nav next" id="lightboxNext" aria-label="Next photo">&#8250;</button>
     <div class="lightbox-caption">
       <span class="lb-photo-label"></span>
@@ -375,8 +396,20 @@
       const lb = document.getElementById('lightbox');
       const photo = lbPhotos[lbIndex];
       const img = lb.querySelector('.lb-img');
-      img.src = photo.photo_url;
-      img.alt = lbTitle;
+      const video = lb.querySelector('.lb-video');
+      video.pause();
+      if (photo.media_type === 'video') {
+        video.src = photo.photo_url;
+        video.style.display = '';
+        img.style.display = 'none';
+        img.src = '';
+      } else {
+        img.src = photo.photo_url;
+        img.alt = lbTitle;
+        img.style.display = '';
+        video.style.display = 'none';
+        video.src = '';
+      }
       lb.querySelector('.lb-title').textContent = lbTitle;
       lb.querySelector('.lb-sub').textContent = lbSub;
       const labelEl = lb.querySelector('.lb-photo-label');
@@ -440,11 +473,24 @@
 
       const inner = document.createElement('div');
       inner.className = 'gallery-item-inner';
-      const img = document.createElement('img');
-      img.src = cover.photo_url;
-      img.alt = entry.title || '';
-      img.loading = 'lazy';
-      inner.appendChild(img);
+      if (cover.media_type === 'video') {
+        const video = document.createElement('video');
+        video.src = cover.photo_url;
+        video.muted = true;
+        video.playsInline = true;
+        video.preload = 'metadata';
+        inner.appendChild(video);
+        const playBadge = document.createElement('div');
+        playBadge.className = 'video-play-badge';
+        playBadge.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg>';
+        item.appendChild(playBadge);
+      } else {
+        const img = document.createElement('img');
+        img.src = cover.photo_url;
+        img.alt = entry.title || '';
+        img.loading = 'lazy';
+        inner.appendChild(img);
+      }
       item.appendChild(inner);
 
       const overlay = document.createElement('div');
@@ -476,12 +522,12 @@
 
       const builds = (buildsRes.error ? [] : (buildsRes.data || [])).map(b => ({
         title: b.title, type: b.type, caliber: b.caliber, is_showcase: b.is_showcase,
-        updated_at: b.updated_at, photos: [{ photo_url: b.photo_url, label: null }]
+        updated_at: b.updated_at, photos: [{ photo_url: b.photo_url, label: null, media_type: 'image' }]
       }));
       const projects = (projectsRes.error ? [] : (projectsRes.data || [])).map(p => ({
         title: p.title, type: p.type, caliber: p.caliber, is_showcase: p.is_showcase,
         updated_at: p.created_at,
-        photos: (p.gallery_project_photos || []).slice().sort((a, b) => a.position - b.position).map(ph => ({ photo_url: ph.photo_url, label: ph.label }))
+        photos: (p.gallery_project_photos || []).slice().sort((a, b) => a.position - b.position).map(ph => ({ photo_url: ph.photo_url, label: ph.label, media_type: ph.media_type || 'image' }))
       })).filter(p => p.photos.length > 0);
       const data = [...builds, ...projects].sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
 

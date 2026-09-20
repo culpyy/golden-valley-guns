@@ -185,6 +185,10 @@ if (lightbox) {
   const closeLb = () => {
     lightbox.classList.remove('open');
     document.body.style.overflow = '';
+    // gallery.html's project showcase can include a video item - stop
+    // playback on close so it doesn't keep running silently offscreen.
+    const lbVideo = lightbox.querySelector('.lb-video');
+    if (lbVideo) lbVideo.pause();
   };
 
   lightbox.querySelector('.lightbox-close').addEventListener('click', closeLb);

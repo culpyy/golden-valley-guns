@@ -860,10 +860,10 @@
             <label for="qg-is-showcase" style="cursor:pointer;font-size:11px;letter-spacing:1.5px;">Always showcase in gallery (skips the normal rotation)</label>
           </div>
           <div class="form-field full">
-            <label>Photos</label>
-            <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Add as many as this project needs - a single shot, or a full Before/After/During set. Drag order isn't supported yet; photos display in the order added. Label each one if it matters (e.g. "Before", "After").</div>
+            <label>Photos &amp; Video</label>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Add as many photos as this project needs - a single shot, or a full Before/After/During set. You can also add a test-fire video - it'll show last in the lightbox. Drag order isn't supported yet; media displays in the order added. Label each one if it matters (e.g. "Before", "After", "Test Fire"). Works fine from your phone - videos over 100MB won't upload.</div>
             <div id="qg-photos-list" style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px;"></div>
-            <input type="file" id="qg-image-files" accept="image/jpeg,image/png,image/webp,image/gif" multiple />
+            <input type="file" id="qg-image-files" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/quicktime,video/webm" multiple />
           </div>
         </div>
         <div class="form-actions">
@@ -1512,8 +1512,10 @@
     let editingGalleryProjectId = null;
     // Each entry: { photoId: existing gallery_project_photos.id or null,
     // file: File (new, unsaved) or null, photoUrl: existing URL or null,
-    // previewUrl: for <img src>, label: string }. Rendered in array order -
-    // that order becomes each photo's `position` on save.
+    // previewUrl: for <img src>/<video src>, label: string,
+    // mediaType: 'image' or 'video' }. Rendered in array order - that
+    // order becomes each item's `position` on save (a video should
+    // generally be added last so it closes out the showcase).
     let qgPhotos = [];
 
     function renderQgPhotos() {
@@ -1540,8 +1542,10 @@
       // onto its own line there, independent of the input's sizing.
       list.innerHTML = qgPhotos.map((p, i) => `
         <div class="qg-photo-row" style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;background:var(--bg);border:1px solid var(--border);padding:8px;min-width:0;">
-          <img src="${escapeHtml(p.previewUrl)}" style="width:56px;height:56px;object-fit:cover;flex-shrink:0;" />
-          <input type="text" placeholder="Label (optional) - Before, After..." value="${escapeHtml(p.label)}" oninput="qgPhotos[${i}].label = this.value" style="flex:1;min-width:120px;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:8px 10px;font-size:16px;" />
+          ${p.mediaType === 'video'
+            ? `<video src="${escapeHtml(p.previewUrl)}" muted preload="metadata" style="width:56px;height:56px;object-fit:cover;flex-shrink:0;background:#000;"></video>`
+            : `<img src="${escapeHtml(p.previewUrl)}" style="width:56px;height:56px;object-fit:cover;flex-shrink:0;" />`}
+          <input type="text" placeholder="Label (optional) - Before, After, Test Fire..." value="${escapeHtml(p.label)}" oninput="qgPhotos[${i}].label = this.value" style="flex:1;min-width:120px;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:8px 10px;font-size:16px;" />
           <button type="button" class="btn-delete" onclick="removeQgPhoto(${i})">Remove</button>
         </div>
       `).join('');
@@ -1565,7 +1569,7 @@
         ? project.gallery_project_photos
             .slice()
             .sort((a, b) => a.position - b.position)
-            .map(p => ({ photoId: p.id, file: null, photoUrl: p.photo_url, previewUrl: p.photo_url, label: p.label || '' }))
+            .map(p => ({ photoId: p.id, file: null, photoUrl: p.photo_url, previewUrl: p.photo_url, label: p.label || '', mediaType: p.media_type || 'image' }))
         : [];
       renderQgPhotos();
       document.getElementById('saveQuickGalleryBtn').textContent = project ? 'Save Project' : 'Add Project';
@@ -1582,7 +1586,8 @@
 
     document.getElementById('qg-image-files').addEventListener('change', (e) => {
       for (const file of e.target.files) {
-        qgPhotos.push({ photoId: null, file, photoUrl: null, previewUrl: URL.createObjectURL(file), label: '' });
+        const mediaType = file.type.startsWith('video/') ? 'video' : 'image';
+        qgPhotos.push({ photoId: null, file, photoUrl: null, previewUrl: URL.createObjectURL(file), label: '', mediaType });
       }
       e.target.value = '';
       renderQgPhotos();
@@ -1643,7 +1648,7 @@
         projectId = data.id;
       }
 
-      const photoRows = qgPhotos.map((p, i) => ({ project_id: projectId, photo_url: p.photoUrl, label: p.label || null, position: i }));
+      const photoRows = qgPhotos.map((p, i) => ({ project_id: projectId, photo_url: p.photoUrl, label: p.label || null, position: i, media_type: p.mediaType || 'image' }));
       const { error: photosErr } = await supabase.from('gallery_project_photos').insert(photoRows);
 
       saveBtn.disabled = false;
@@ -1678,7 +1683,9 @@
           <tbody>
             ${data.map(proj => {
               const photos = (proj.gallery_project_photos || []).slice().sort((a, b) => a.position - b.position);
-              const thumbs = photos.slice(0, 4).map(p => `<img src="${escapeHtml(p.photo_url)}" alt="" style="width:36px;height:36px;object-fit:cover;border:1px solid var(--border);margin-right:4px;" />`).join('');
+              const thumbs = photos.slice(0, 4).map(p => p.media_type === 'video'
+                ? `<video src="${escapeHtml(p.photo_url)}" muted style="width:36px;height:36px;object-fit:cover;border:1px solid var(--border);margin-right:4px;background:#000;"></video>`
+                : `<img src="${escapeHtml(p.photo_url)}" alt="" style="width:36px;height:36px;object-fit:cover;border:1px solid var(--border);margin-right:4px;" />`).join('');
               const extra = photos.length > 4 ? `<span style="font-size:11px;color:var(--muted);">+${photos.length - 4}</span>` : '';
               return `
               <tr>

@@ -33,6 +33,12 @@ const CSP = [
   // catchable error, just a broken-image icon. Same origin either way,
   // since blob: URLs are only ever created by our own inline scripts.
   "img-src 'self' data: blob: https:",
+  // media-src isn't inherited from img-src - without it, `default-src
+  // 'self'` alone blocks admin-dashboard.html's blob: pre-upload video
+  // preview the same way img-src needed blob: added for photo previews
+  // above. Served gallery video itself is same-origin (/gallery-images/)
+  // so 'self' alone covers actual playback.
+  "media-src 'self' blob:",
   // cloudflareinsights.com (no static. prefix) is where the beacon script
   // above actually reports each pageview to - script-src only allows
   // loading the script itself, connect-src is separately required for the

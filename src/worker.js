@@ -151,18 +151,30 @@ async function route(request, env) {
   }
 
   if (url.pathname.startsWith('/gallery-images/')) {
-    // Photos Shawn uploads via the standalone Gallery tab
+    // Photos AND video Shawn uploads via the standalone Gallery tab
     // (uploadGalleryImage.js) - not attached to any build, own R2 key
-    // prefix so it can never collide with /build-images/.
+    // prefix so it can never collide with /build-images/. Range support
+    // (unlike the other /*-images/ routes above, which only ever serve
+    // small photos) matters here specifically because this route now also
+    // serves test-fire video clips - without it, a phone browser has to
+    // download the entire clip before playback starts and can't scrub.
     const key = 'gallery/' + url.pathname.slice('/gallery-images/'.length);
-    const object = await env.DISTRIBUTOR_IMAGES.get(key);
+    const rangeHeader = request.headers.get('Range');
+    const object = await env.DISTRIBUTOR_IMAGES.get(key, rangeHeader ? { range: request.headers } : undefined);
     if (!object) return new Response('Not found', { status: 404 });
-    return new Response(object.body, {
-      headers: {
-        'Content-Type': object.httpMetadata?.contentType || 'application/octet-stream',
-        'Cache-Control': 'public, max-age=31536000, immutable'
-      }
-    });
+    const headers = {
+      'Content-Type': object.httpMetadata?.contentType || 'application/octet-stream',
+      'Cache-Control': 'public, max-age=31536000, immutable',
+      'Accept-Ranges': 'bytes'
+    };
+    if (object.range && 'offset' in object.range) {
+      const { offset, length } = object.range;
+      headers['Content-Range'] = `bytes ${offset}-${offset + length - 1}/${object.size}`;
+      headers['Content-Length'] = String(length);
+      return new Response(object.body, { status: 206, headers });
+    }
+    headers['Content-Length'] = String(object.size);
+    return new Response(object.body, { headers });
   }
 
   if (url.pathname.startsWith('/bulletin-images/')) {
