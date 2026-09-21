@@ -146,30 +146,8 @@
       align-items: center;
       gap: 5px;
     }
-    .lightbox-nav {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      background: none;
-      border: none;
-      color: var(--muted);
-      font-size: 40px;
-      cursor: pointer;
-      padding: 12px 18px;
-      line-height: 1;
-      transition: color 0.2s;
-    }
-    .lightbox-nav:hover { color: var(--gold-light); }
-    .lightbox-nav.prev { left: 4px; }
-    .lightbox-nav.next { right: 4px; }
-    .lb-photo-label {
-      display: block;
-      font-size: 11px;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      color: var(--gold-light);
-      margin-bottom: 6px;
-    }
+    /* .lightbox-nav / .lb-photo-label moved to css/style.css - now shared
+       with inshop.html's per-build photo lightbox too. */
     /* Cover video mirrors .gallery-item img's sizing exactly - same
        contain/letterbox treatment so a video cover doesn't visually stand
        out from photo covers in the grid. */
@@ -190,7 +168,6 @@
     }
     .lightbox video { max-width: 90vw; max-height: 85vh; object-fit: contain; border: 1px solid var(--border); }
     @media (max-width: 580px) {
-      .lightbox-nav { font-size: 28px; padding: 8px 10px; }
       .lightbox video { max-width: 95vw; max-height: 75vh; }
     }
   </style>
@@ -529,15 +506,32 @@
       // work. Keeps the build's own title, and completed_at drives both
       // the sort order and the "Completed <date>" caption below.
       const [buildsRes, projectsRes] = await Promise.all([
-        supabase.from('builds_public').select('*').not('completed_at', 'is', null).not('photo_url', 'is', null).order('completed_at', { ascending: false }),
+        supabase.from('builds_public').select('*').not('completed_at', 'is', null).order('completed_at', { ascending: false }),
         supabase.from('gallery_projects').select('*, gallery_project_photos(*)').order('created_at', { ascending: false })
       ]);
 
-      const builds = (buildsRes.error ? [] : (buildsRes.data || [])).map(b => ({
-        title: b.title, type: b.type, caliber: b.caliber, is_showcase: b.is_showcase,
-        updated_at: b.completed_at, completed_at: b.completed_at,
-        photos: [{ photo_url: b.photo_url, label: null, media_type: 'image' }]
-      }));
+      // Completed builds can now carry several progress photos (Before/
+      // Mid-Refinish/Done, via build_photos - admin-dashboard.html's build
+      // form), not just the one legacy builds.photo_url. build_photos
+      // queried separately since builds_public is a view, not a real
+      // table - PostgREST's relationship embedding needs a real foreign
+      // key on the queried relation itself, which a view doesn't carry.
+      const buildsBase = buildsRes.error ? [] : (buildsRes.data || []);
+      const buildIds = buildsBase.map(b => b.id);
+      const { data: buildPhotoRows } = buildIds.length
+        ? await supabase.from('build_photos').select('*').in('build_id', buildIds).order('position', { ascending: true })
+        : { data: [] };
+      const buildPhotosById = {};
+      (buildPhotoRows || []).forEach(p => (buildPhotosById[p.build_id] ||= []).push(p));
+
+      const builds = buildsBase.map(b => {
+        const photos = (buildPhotosById[b.id] || []).map(p => ({ photo_url: p.photo_url, label: p.label, media_type: 'image' }));
+        return {
+          title: b.title, type: b.type, caliber: b.caliber, is_showcase: b.is_showcase,
+          updated_at: b.completed_at, completed_at: b.completed_at,
+          photos: photos.length ? photos : (b.photo_url ? [{ photo_url: b.photo_url, label: null, media_type: 'image' }] : [])
+        };
+      }).filter(b => b.photos.length > 0);
       const projects = (projectsRes.error ? [] : (projectsRes.data || [])).map(p => ({
         title: p.title, type: p.type, caliber: p.caliber, is_showcase: p.is_showcase,
         updated_at: p.created_at,

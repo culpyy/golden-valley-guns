@@ -776,6 +776,35 @@ h2.section-title {
   text-transform: uppercase;
 }
 
+/* Shared by any page with a multi-photo lightbox (gallery.html,
+   inshop.html's per-build photos) - moved here rather than duplicated per
+   page once inshop.html needed the same prev/next nav gallery.html
+   already had. */
+.lightbox-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 40px;
+  cursor: pointer;
+  padding: 12px 18px;
+  line-height: 1;
+  transition: color 0.2s;
+}
+.lightbox-nav:hover { color: var(--gold-light); }
+.lightbox-nav.prev { left: 4px; }
+.lightbox-nav.next { right: 4px; }
+.lb-photo-label {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--gold-light);
+  margin-bottom: 6px;
+}
+
 /* ── INLINE PHONE LINKS ── */
 /* One consistent look for the phone number wherever it's mentioned mid-copy, instead of a one-off inline style at each spot. */
 .tel-link {
@@ -1601,4 +1630,5 @@ footer {
   .lightbox img { max-width: 95vw; max-height: 75vh; }
   .lightbox-caption h4 { font-size: 18px; }
   .lightbox-caption span { font-size: 10px; }
+  .lightbox-nav { font-size: 28px; padding: 8px 10px; }
 }

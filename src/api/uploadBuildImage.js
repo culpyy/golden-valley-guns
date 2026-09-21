@@ -35,7 +35,11 @@ export async function handleUploadBuildImage(request, env) {
   if (body.byteLength === 0) return jsonResponse({ error: 'Empty upload.' }, 400);
   if (body.byteLength > MAX_BYTES) return jsonResponse({ error: 'Image too large - 10MB max.' }, 400);
 
-  const filename = `${buildId}-${Date.now()}.${ext}`;
+  // Random suffix in addition to the timestamp - admin can now attach
+  // several photos to one build in a tight loop (see admin-dashboard.html's
+  // bPhotos), so two uploads landing in the same millisecond is a real
+  // possibility, not just theoretical.
+  const filename = `${buildId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
   await env.DISTRIBUTOR_IMAGES.put(`builds/${filename}`, body, {
     httpMetadata: { contentType }
   });

@@ -629,15 +629,20 @@
   </section>
 
   <!-- BUILD PHOTO LIGHTBOX -->
-  <!-- Reuses the shared .lightbox/.lb-img/.lightbox-caption CSS from
-       css/style.css (same classes gallery.html's lightbox uses) - js/main.js
-       already wires the close button/backdrop-click/Escape handling for any
-       #lightbox element on the page, so only the open side (openBuildPhoto
-       below) needs its own code. -->
+  <!-- Reuses the shared .lightbox/.lb-img/.lightbox-caption/.lightbox-nav
+       CSS from css/style.css (same classes gallery.html's lightbox uses) -
+       js/main.js already wires the close button/backdrop-click/Escape
+       handling for any #lightbox element on the page, so only the open
+       side (openBuildPhoto below) needs its own code. Prev/next lets a
+       build with several progress photos (Before/Mid-Refinish/Done) be
+       stepped through, not just show one. -->
   <div class="lightbox" id="lightbox">
     <button class="lightbox-close" aria-label="Close">&times;</button>
+    <button class="lightbox-nav prev" id="buildLightboxPrev" aria-label="Previous photo">&#8249;</button>
     <img class="lb-img" src="" alt="" />
+    <button class="lightbox-nav next" id="buildLightboxNext" aria-label="Next photo">&#8250;</button>
     <div class="lightbox-caption">
+      <span class="lb-photo-label"></span>
       <h4 class="lb-title"></h4>
       <span class="lb-sub"></span>
     </div>
@@ -854,12 +859,14 @@
           ? `<a href="track.html?code=${encodeURIComponent(b.tracking_code)}" class="track-link">Track this build</a>`
           : '';
 
-        // Admin uploads a photo per-build (admin-dashboard.html's build
-        // form) but nothing on the public board ever showed it - only
-        // shown once the build is Ready on gallery.html. This surfaces it
-        // for any in-progress build too, via the shared lightbox below.
-        const photoLink = b.photo_url
-          ? `<button type="button" class="track-link" style="background:none;border:none;padding:0;font:inherit;cursor:pointer;" onclick="openBuildPhoto('${b.id}')">View Photo</button>`
+        // Admin can attach one or more progress photos per-build
+        // (admin-dashboard.html's build form, build_photos table) but
+        // nothing on the public board ever showed them - only shown once
+        // the build is completed on gallery.html. This surfaces them for
+        // any in-progress build too, via the shared lightbox below.
+        const photoCount = (b.photos || []).length;
+        const photoLink = photoCount
+          ? `<button type="button" class="track-link" style="background:none;border:none;padding:0;font:inherit;cursor:pointer;" onclick="openBuildPhoto('${b.id}')">View Photo${photoCount > 1 ? 's (' + photoCount + ')' : ''}</button>`
           : '';
 
         // Only rendered when isAdmin (client-side check in init(), based on
@@ -910,22 +917,61 @@
     }
 
     // Opens the shared #lightbox (markup above, CSS from css/style.css) for
-    // a single build's photo - same low-level open steps main.js's generic
+    // a build's photo set - same low-level open steps main.js's generic
     // lightbox uses, just triggered from a card button instead of a
     // data-title element, since build cards carry a lot more of their own
     // markup/styling than a plain gallery tile. main.js still handles
-    // closing it (close button, backdrop click, Escape) for free.
+    // closing it (close button, backdrop click, Escape) for free. Prev/next
+    // steps through multiple progress photos, same pattern as gallery.html.
+    let lbBuildPhotos = [];
+    let lbBuildIndex = 0;
+    let lbBuildTitle = '';
+    let lbBuildSub = '';
+
+    function renderBuildLightboxPhoto() {
+      const lightbox = document.getElementById('lightbox');
+      const photo = lbBuildPhotos[lbBuildIndex];
+      lightbox.querySelector('.lb-img').src = photo.photo_url;
+      lightbox.querySelector('.lb-img').alt = lbBuildTitle;
+      lightbox.querySelector('.lb-title').textContent = lbBuildTitle;
+      lightbox.querySelector('.lb-sub').textContent = lbBuildSub;
+      const labelEl = lightbox.querySelector('.lb-photo-label');
+      const countSuffix = lbBuildPhotos.length > 1 ? ` (${lbBuildIndex + 1}/${lbBuildPhotos.length})` : '';
+      labelEl.textContent = (photo.label || '') + countSuffix;
+      labelEl.style.display = labelEl.textContent ? '' : 'none';
+      const multi = lbBuildPhotos.length > 1;
+      document.getElementById('buildLightboxPrev').style.display = multi ? '' : 'none';
+      document.getElementById('buildLightboxNext').style.display = multi ? '' : 'none';
+    }
+
     function openBuildPhoto(id) {
       const b = builds.find(x => x.id === id);
-      if (!b || !b.photo_url) return;
+      if (!b || !b.photos || !b.photos.length) return;
+      lbBuildPhotos = b.photos;
+      lbBuildIndex = 0;
+      lbBuildTitle = b.title || '';
+      lbBuildSub = [b.type, b.caliber].filter(Boolean).join(' · ');
+      renderBuildLightboxPhoto();
       const lightbox = document.getElementById('lightbox');
-      lightbox.querySelector('.lb-img').src = b.photo_url;
-      lightbox.querySelector('.lb-img').alt = b.title || '';
-      lightbox.querySelector('.lb-title').textContent = b.title || '';
-      lightbox.querySelector('.lb-sub').textContent = [b.type, b.caliber].filter(Boolean).join(' · ');
       lightbox.classList.add('open');
       document.body.style.overflow = 'hidden';
     }
+
+    document.getElementById('buildLightboxPrev').addEventListener('click', (e) => {
+      e.stopPropagation();
+      lbBuildIndex = (lbBuildIndex - 1 + lbBuildPhotos.length) % lbBuildPhotos.length;
+      renderBuildLightboxPhoto();
+    });
+    document.getElementById('buildLightboxNext').addEventListener('click', (e) => {
+      e.stopPropagation();
+      lbBuildIndex = (lbBuildIndex + 1) % lbBuildPhotos.length;
+      renderBuildLightboxPhoto();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (!document.getElementById('lightbox').classList.contains('open') || lbBuildPhotos.length < 2) return;
+      if (e.key === 'ArrowLeft') document.getElementById('buildLightboxPrev').click();
+      if (e.key === 'ArrowRight') document.getElementById('buildLightboxNext').click();
+    });
 
     // board search - matches name, type, caliber, and tracking code
     const boardSearchInput = document.getElementById('boardSearch');
@@ -972,7 +1018,20 @@
           </div>`;
         return;
       }
-      builds = data || [];
+      const buildsBase = data || [];
+
+      // build_photos queried separately and merged in - builds_public is a
+      // view (not a real table), so PostgREST's automatic
+      // .select('*, build_photos(*)') relationship embedding doesn't see
+      // the build_photos -> builds foreign key through it.
+      const buildIds = buildsBase.map(b => b.id);
+      const { data: photoRows } = buildIds.length
+        ? await supabase.from('build_photos').select('*').in('build_id', buildIds).order('position', { ascending: true })
+        : { data: [] };
+      const photosByBuild = {};
+      (photoRows || []).forEach(p => (photosByBuild[p.build_id] ||= []).push(p));
+
+      builds = buildsBase.map(b => ({ ...b, photos: photosByBuild[b.id] || [] }));
       renderBoardUpdated();
       renderSummary();
       renderBuilds();
