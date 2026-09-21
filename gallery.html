@@ -448,10 +448,16 @@
       if (e.key === 'ArrowRight') document.getElementById('lightboxNext').click();
     });
 
+    function formatCompletionDate(iso) {
+      return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
     // Unified item shape from either source: { title, type, caliber,
-    // is_showcase, updated_at, photos: [{ photo_url, label }] }.
+    // is_showcase, updated_at, completed_at (builds only), photos: [{ photo_url, label }] }.
     function buildGalleryItem(entry) {
-      const sub = [entry.type, entry.caliber].filter(Boolean).join(' · ');
+      const subParts = [entry.type, entry.caliber].filter(Boolean);
+      if (entry.completed_at) subParts.push('Completed ' + formatCompletionDate(entry.completed_at));
+      const sub = subParts.join(' · ');
       const cover = entry.photos[0];
 
       const item = document.createElement('div');
@@ -515,14 +521,22 @@
       // e.g. a Before/After set - see sql/gallery_projects.sql). Both get
       // normalized into the same { photos: [...] } shape so the rest of
       // this page doesn't care which source a project came from.
+      //
+      // Builds only show once actually completed (completed_at set via
+      // admin's Mark Complete), not just status='ready' - a build can sit
+      // Ready-awaiting-pickup for a while, and showing it in the public
+      // gallery before it's really done misrepresented it as finished
+      // work. Keeps the build's own title, and completed_at drives both
+      // the sort order and the "Completed <date>" caption below.
       const [buildsRes, projectsRes] = await Promise.all([
-        supabase.from('builds_public').select('*').eq('status', 'ready').not('photo_url', 'is', null).order('updated_at', { ascending: false }),
+        supabase.from('builds_public').select('*').not('completed_at', 'is', null).not('photo_url', 'is', null).order('completed_at', { ascending: false }),
         supabase.from('gallery_projects').select('*, gallery_project_photos(*)').order('created_at', { ascending: false })
       ]);
 
       const builds = (buildsRes.error ? [] : (buildsRes.data || [])).map(b => ({
         title: b.title, type: b.type, caliber: b.caliber, is_showcase: b.is_showcase,
-        updated_at: b.updated_at, photos: [{ photo_url: b.photo_url, label: null, media_type: 'image' }]
+        updated_at: b.completed_at, completed_at: b.completed_at,
+        photos: [{ photo_url: b.photo_url, label: null, media_type: 'image' }]
       }));
       const projects = (projectsRes.error ? [] : (projectsRes.data || [])).map(p => ({
         title: p.title, type: p.type, caliber: p.caliber, is_showcase: p.is_showcase,

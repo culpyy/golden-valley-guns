@@ -628,6 +628,21 @@
     </div>
   </section>
 
+  <!-- BUILD PHOTO LIGHTBOX -->
+  <!-- Reuses the shared .lightbox/.lb-img/.lightbox-caption CSS from
+       css/style.css (same classes gallery.html's lightbox uses) - js/main.js
+       already wires the close button/backdrop-click/Escape handling for any
+       #lightbox element on the page, so only the open side (openBuildPhoto
+       below) needs its own code. -->
+  <div class="lightbox" id="lightbox">
+    <button class="lightbox-close" aria-label="Close">&times;</button>
+    <img class="lb-img" src="" alt="" />
+    <div class="lightbox-caption">
+      <h4 class="lb-title"></h4>
+      <span class="lb-sub"></span>
+    </div>
+  </div>
+
   <!-- FOOTER -->
   <footer>
     <div class="footer-inner">
@@ -839,6 +854,14 @@
           ? `<a href="track.html?code=${encodeURIComponent(b.tracking_code)}" class="track-link">Track this build</a>`
           : '';
 
+        // Admin uploads a photo per-build (admin-dashboard.html's build
+        // form) but nothing on the public board ever showed it - only
+        // shown once the build is Ready on gallery.html. This surfaces it
+        // for any in-progress build too, via the shared lightbox below.
+        const photoLink = b.photo_url
+          ? `<button type="button" class="track-link" style="background:none;border:none;padding:0;font:inherit;cursor:pointer;" onclick="openBuildPhoto('${b.id}')">View Photo</button>`
+          : '';
+
         // Only rendered when isAdmin (client-side check in init(), based on
         // a real Supabase session) - the real security boundary is server
         // side: admin-dashboard.html's own auth guard redirects to
@@ -849,8 +872,8 @@
           ? `<div class="card-admin-actions"><a href="admin-dashboard.html?edit=${encodeURIComponent(b.id)}" class="btn-card-edit">Edit Build</a></div>`
           : '';
 
-        const cardFooter = (trackLink || adminActions)
-          ? `<div class="card-footer-row"><div>${trackLink}</div>${adminActions}</div>`
+        const cardFooter = (trackLink || photoLink || adminActions)
+          ? `<div class="card-footer-row"><div style="display:flex;flex-direction:column;gap:6px;">${trackLink}${photoLink}</div>${adminActions}</div>`
           : '';
 
         return `
@@ -884,6 +907,24 @@
             ${cardFooter}
           </div>`;
       }).join('');
+    }
+
+    // Opens the shared #lightbox (markup above, CSS from css/style.css) for
+    // a single build's photo - same low-level open steps main.js's generic
+    // lightbox uses, just triggered from a card button instead of a
+    // data-title element, since build cards carry a lot more of their own
+    // markup/styling than a plain gallery tile. main.js still handles
+    // closing it (close button, backdrop click, Escape) for free.
+    function openBuildPhoto(id) {
+      const b = builds.find(x => x.id === id);
+      if (!b || !b.photo_url) return;
+      const lightbox = document.getElementById('lightbox');
+      lightbox.querySelector('.lb-img').src = b.photo_url;
+      lightbox.querySelector('.lb-img').alt = b.title || '';
+      lightbox.querySelector('.lb-title').textContent = b.title || '';
+      lightbox.querySelector('.lb-sub').textContent = [b.type, b.caliber].filter(Boolean).join(' · ');
+      lightbox.classList.add('open');
+      document.body.style.overflow = 'hidden';
     }
 
     // board search - matches name, type, caliber, and tracking code
