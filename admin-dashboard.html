@@ -2546,6 +2546,9 @@
     // for the next cron tick).
     function settlementCell(o) {
       if (o.status !== 'paid') return '<span style="color:var(--muted);font-size:12px;">&mdash;</span>';
+      // Money order / check / cash never went through Authorize.net, so
+      // there's no batch to settle and nothing for Check Now to look up.
+      if (!o.authorize_net_transaction_id) return '<span style="color:var(--muted);font-size:12px;">Paid offline</span>';
       const colors = { settled: '#4caf50', pending: '#d4af37', failed: '#e08080', unknown: 'var(--muted)' };
       const labels = { settled: 'Settled', pending: 'Settling...', failed: 'DID NOT SETTLE', unknown: 'Unknown' };
       if (!o.settlement_status) {
@@ -2880,7 +2883,7 @@
           ? 'Order marked paid. Emailed the customer a link to choose pickup or their FFL.'
           : 'Emailed the customer again.');
       } catch (err) {
-        showToast((automatic ? 'Order marked paid, but ' : '') + 'the delivery-info email failed: ' + err.message + ' Use Email Customer Again or Enter Manually.');
+        showToast((automatic ? 'Order marked paid. ' : '') + err.message);
       }
     }
 

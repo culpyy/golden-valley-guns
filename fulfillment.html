@@ -201,7 +201,6 @@
   <script src="js/main.js"></script>
   <script src="js/ffl-lookup.js" defer></script>
   <script>
-    const escapeHtml = (v) => String(v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const fflFieldIds = ['fflBusinessName', 'fflPhone', 'fflAddress'];
     document.querySelectorAll('input[name="fulfillmentMethod"]').forEach(radio => {
       radio.addEventListener('change', () => {
