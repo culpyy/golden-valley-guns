@@ -35,6 +35,7 @@
 // even if non-firearm items are riding along in the same cart.
 
 import { getSupabaseAdmin } from '../lib/supabaseAdmin.js';
+import { matchFfl } from './fflSearch.js';
 import { chargeCreditCard } from '../lib/authorizeNet.js';
 import { logPaymentAttempt } from '../lib/paymentAttempts.js';
 import { sendEmail } from '../lib/email.js';
@@ -183,7 +184,8 @@ export async function handleCheckout(request, env) {
     if (!businessName || !phone || !address) {
       return jsonResponse({ error: 'Receiving FFL business name, phone, and address are required for a dealer transfer.' }, 400);
     }
-    transferFfl = { businessName, licenseNumber, phone, address };
+    const atf = await matchFfl(env, { licenseNumber, phone });
+    transferFfl = { businessName, licenseNumber: licenseNumber || atf.license || '', phone, address, atfMatch: atf.match, atfNote: atf.note };
   }
 
   // Shipping choice only applies to a firearm-free order - a cart with any
@@ -261,6 +263,8 @@ export async function handleCheckout(request, env) {
     transfer_ffl_license_number: transferFfl?.licenseNumber || null,
     transfer_ffl_phone: transferFfl?.phone || null,
     transfer_ffl_address: transferFfl?.address || null,
+    transfer_ffl_atf_match: transferFfl?.atfMatch ?? null,
+    transfer_ffl_atf_note: transferFfl?.atfNote || null,
     ship_to_customer: shippingMethod === 'ship',
     shipping_line1: shippingAddress?.line1 || null,
     shipping_line2: shippingAddress?.line2 || null,
@@ -406,7 +410,8 @@ async function sendOrderEmails(env, { orderId, orderNumber, customer, items, sub
       ``,
       `FFL TRANSFER REQUESTED - DO NOT SHIP UNTIL VERIFIED.`,
       `Receiving dealer: ${transferFfl.businessName}`,
-      `License #: ${transferFfl.licenseNumber}`,
+      `License #: ${transferFfl.licenseNumber || '(not provided)'}`,
+      transferFfl.atfNote ? `ATF list check: ${transferFfl.atfNote}` : `ATF list check: no match found, verify manually.`,
       `Phone: ${transferFfl.phone}`,
       `Address: ${transferFfl.address}`,
       `Verify this FFL is current (phone/fax/email copy of license) before shipping, then mark it verified in the Orders tab.`

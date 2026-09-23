@@ -20,6 +20,7 @@ import { handleSendReviewInvite } from './api/sendReviewInvite.js';
 import { handleAddTracking } from './api/addTracking.js';
 import { handleYoutubeFeed } from './api/youtubeFeed.js';
 import { handleFacebookFeed } from './api/facebookFeed.js';
+import { handleFflSearch } from './api/fflSearch.js';
 import { handleResendWebhook } from './api/resendWebhook.js';
 import { handleCheckSettlement } from './api/checkSettlement.js';
 import { handleResendOrderEmail } from './api/resendOrderEmail.js';
@@ -610,6 +611,25 @@ async function route(request, env) {
         status: 500,
         headers: { 'Content-Type': 'application/json' }
       });
+    }
+  }
+
+  if (url.pathname === '/api/ffl-search' && request.method === 'GET') {
+    // Typeahead fires per keystroke (debounced client-side), so the limit is
+    // higher than the other public lookups.
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    const { allowed, retryAfterSeconds } = await checkRateLimit(env, `ffl-search:${ip}`, { limit: 120, windowSeconds: 600 });
+    if (!allowed) {
+      return new Response(JSON.stringify({ error: 'Too many requests.' }), {
+        status: 429,
+        headers: { 'Content-Type': 'application/json', 'Retry-After': String(retryAfterSeconds) }
+      });
+    }
+    try {
+      return await handleFflSearch(request, env);
+    } catch (err) {
+      console.error('FFL search failed:', err);
+      return new Response(JSON.stringify({ error: 'Search failed.' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
     }
   }
 

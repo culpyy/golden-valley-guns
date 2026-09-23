@@ -2378,6 +2378,16 @@
       renderOrdersTable();
     }
 
+    // FFL gate colors: green = an active license number was verified against
+    // the ATF list; yellow = dealer is on the ATF list but no verified license
+    // number yet; red = not on the ATF list, needs full manual confirmation.
+    function fflState(o) {
+      if (o.ffl_verified) return 'green';
+      return o.transfer_ffl_atf_match === true ? 'yellow' : 'red';
+    }
+    const FFL_COLORS = { green: '#2d7a3a', yellow: '#8a6d10', red: '#8B1414' };
+    const FFL_TEXT = { green: '#4caf50', yellow: '#f0d060', red: '#e05a5a' };
+
     function renderOrdersTable() {
       const container = document.getElementById('ordersTable');
       if (ordersAllRows.length === 0) {
@@ -2409,7 +2419,7 @@
                 </td>
               </tr>` : ''}
               <tr${o.status === 'paid' ? ' style="box-shadow:inset 4px 0 0 #2d9a45;"' : ''}>
-                <td class="title">${escapeHtml(o.order_number)}${o.source === 'special_order' ? ' <span class="part-badge-pill" style="position:static;display:inline-block;">Special Order</span>' : ''}${o.is_firearm ? ' <span class="part-badge-pill" style="position:static;display:inline-block;background:var(--surface2);">Firearm</span>' : ''}${isFflTransfer ? ` <span class="part-badge-pill" style="position:static;display:inline-block;background:${o.ffl_verified ? '#2d7a3a' : '#8a6d10'};">FFL Transfer${o.ffl_verified ? ' - Verified' : ' - NOT VERIFIED'}</span>` : ''}${isShipToCustomer ? ` <span class="part-badge-pill" style="position:static;display:inline-block;background:var(--surface2);">Ships to Customer</span>` : ''}${declinedAttemptCount(o) > 0 ? ` <span class="part-badge-pill" style="position:static;display:inline-block;background:${o.status === 'paid' ? 'var(--surface2)' : '#8B1414'};" title="Click Items to see why">${declinedAttemptCount(o)} ${o.status === 'paid' ? 'Earlier ' : ''}Declined Attempt${declinedAttemptCount(o) > 1 ? 's' : ''}</span>` : ''}</td>
+                <td class="title">${escapeHtml(o.order_number)}${o.source === 'special_order' ? ' <span class="part-badge-pill" style="position:static;display:inline-block;">Special Order</span>' : ''}${o.is_firearm ? ' <span class="part-badge-pill" style="position:static;display:inline-block;background:var(--surface2);">Firearm</span>' : ''}${isFflTransfer ? ` <span class="part-badge-pill" style="position:static;display:inline-block;background:${FFL_COLORS[fflState(o)]};">FFL Transfer${o.ffl_verified ? ' - Verified' : (fflState(o) === 'yellow' ? ' - NEEDS LICENSE #' : ' - NOT ON ATF LIST')}</span>` : ''}${isShipToCustomer ? ` <span class="part-badge-pill" style="position:static;display:inline-block;background:var(--surface2);">Ships to Customer</span>` : ''}${declinedAttemptCount(o) > 0 ? ` <span class="part-badge-pill" style="position:static;display:inline-block;background:${o.status === 'paid' ? '#000;color:#777' : '#8B1414'};" title="Click Items to see why">${declinedAttemptCount(o)} ${o.status === 'paid' ? 'Earlier ' : ''}Declined Attempt${declinedAttemptCount(o) > 1 ? 's' : ''}</span>` : ''}</td>
                 <td style="font-size:12px;">${escapeHtml(o.customer_name)}<br><span style="color:var(--muted);">${escapeHtml(o.customer_email)}</span></td>
                 <td>$${parseFloat(o.total).toFixed(2)}</td>
                 <td>
@@ -2430,16 +2440,17 @@
               </tr>
               ${isFflTransfer ? `
               <tr class="ffl-transfer-row">
-                <td colspan="7" style="background:${o.ffl_verified ? 'rgba(45,122,58,0.08)' : 'rgba(212,175,55,0.10)'};border-left:3px solid ${o.ffl_verified ? '#2d7a3a' : '#d4af37'};">
+                <td colspan="7" style="background:${{ green: 'rgba(45,122,58,0.08)', yellow: 'rgba(212,175,55,0.10)', red: 'rgba(139,20,20,0.12)' }[fflState(o)]};border-left:3px solid ${FFL_COLORS[fflState(o)]};">
                   <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
                     <div style="font-size:12px;line-height:1.7;">
-                      <strong style="color:${o.ffl_verified ? '#4caf50' : '#f0d060'};">${o.ffl_verified ? 'FFL VERIFIED' : 'DO NOT SHIP - FFL NOT YET VERIFIED'}</strong><br>
+                      <strong style="color:${FFL_TEXT[fflState(o)]};">${o.ffl_verified ? 'FFL VERIFIED' : (fflState(o) === 'yellow' ? 'DO NOT SHIP - ON ATF LIST, ENTER ACTIVE LICENSE # TO VERIFY' : 'DO NOT SHIP - NOT ON ATF LIST, CONFIRM MANUALLY')}</strong><br>
                       Receiving dealer: ${escapeHtml(o.transfer_ffl_business_name || '—')}<br>
                       License #: ${escapeHtml(o.transfer_ffl_license_number || '—')} &middot; Phone: ${escapeHtml(o.transfer_ffl_phone || '—')}<br>
                       ${escapeHtml(o.transfer_ffl_address || '—')}
+                      ${o.transfer_ffl_atf_note ? `<br><span style="color:${o.transfer_ffl_atf_match ? '#f0d060' : '#e05a5a'};">${o.transfer_ffl_atf_match ? '&#10003; ' : '&#9888; '}${escapeHtml(o.transfer_ffl_atf_note)}</span>` : '<br><span style="color:var(--muted);">No ATF list match found - verify manually.</span>'}
                       ${o.ffl_verified && o.ffl_verified_at ? `<br><span style="color:var(--muted);">Verified ${new Date(o.ffl_verified_at).toLocaleString()}</span>` : ''}
                     </div>
-                    ${!o.ffl_verified ? `<button class="btn-edit" onclick="markFflVerified('${o.id}')">Mark FFL Verified</button>` : ''}
+                    ${fflState(o) === 'yellow' ? `<div style="display:flex;gap:8px;align-items:center;"><input type="text" id="fflLic-${o.id}" value="${escapeHtml(o.transfer_ffl_license_number || '')}" placeholder="1-23-456-78-9A-01234" style="width:190px;" /><button class="btn-edit" onclick="verifyFflLicense('${o.id}')">Verify License</button></div>` : ''}${fflState(o) === 'red' ? `<button class="btn-edit" onclick="markFflVerified('${o.id}')">Manually Confirmed</button>` : ''}
                   </div>
                   ${o.status === 'paid' ? trackingBlock(o) : ''}
                 </td>
@@ -2552,7 +2563,7 @@
         if (a.approved) {
           return `<div style="color:#4caf50;">Attempt ${i + 1} (${when}): Approved &middot; txn ${escapeHtml(a.transaction_id || '—')}</div>`;
         }
-        return `<div style="color:#e08080;">Attempt ${i + 1} (${when}): Declined &middot; ${escapeHtml(a.plain_reason || 'No further detail available.')}</div>`;
+        return `<div style="color:${o.status === 'paid' ? '#888' : '#e08080'};">Attempt ${i + 1} (${when}): Declined &middot; ${escapeHtml(a.plain_reason || 'No further detail available.')}</div>`;
       }).join('');
       return `<div style="margin-top:8px;font-size:11px;line-height:1.6;">${rows}</div>`;
     }
@@ -2794,9 +2805,27 @@
     // real-time FFL verification. This just records that Shawn actually did
     // his own check (phone/fax/email copy of the license) before shipping,
     // same as he already does it outside the site.
+    // Yellow -> green: the license number must exist on the ATF list
+    // (which only lists active licensees) before the order can be verified.
+    async function verifyFflLicense(id) {
+      const raw = document.getElementById('fflLic-' + id)?.value || '';
+      const key = raw.replace(/[^0-9A-Za-z]/g, '').toUpperCase();
+      if (key.length < 12) { showToast('Enter the full license number (e.g. 1-23-456-78-9A-01234).'); return; }
+      const { data: hit, error: lookupError } = await supabase.from('ffl_directory').select('license, business_name, name').eq('license_key', key).maybeSingle();
+      if (lookupError) { showToast('Lookup error: ' + lookupError.message); return; }
+      if (!hit) { showToast('That license number is not on the ATF list. Not verified.'); return; }
+      const now = new Date().toISOString();
+      const { error } = await supabase.from('orders').update({ transfer_ffl_license_number: hit.license, ffl_verified: true, ffl_verified_at: now }).eq('id', id);
+      if (error) { showToast('Error: ' + error.message); return; }
+      const row = ordersAllRows.find(o => o.id === id);
+      if (row) { row.transfer_ffl_license_number = hit.license; row.ffl_verified = true; row.ffl_verified_at = now; }
+      renderOrdersTable();
+      showToast(`Verified: ${hit.business_name || hit.name} has an active license on the ATF list.`);
+    }
+
     async function markFflVerified(id) {
       const row = ordersAllRows.find(o => o.id === id);
-      if (!confirm(`Confirm you've verified ${row?.transfer_ffl_business_name || 'this dealer'}'s FFL is current (license copy, phone, or fax) before marking this ready to ship?`)) return;
+      if (!confirm(`${row?.transfer_ffl_business_name || 'This dealer'} is NOT on the ATF list. Only continue if you've fully confirmed their FFL is current yourself (license copy, phone, or fax). Mark verified?`)) return;
 
       const { error } = await supabase.from('orders').update({
         ffl_verified: true,
