@@ -2402,8 +2402,14 @@
               const isFflTransfer = o.fulfillment_method === 'ffl_transfer';
               const isShipToCustomer = !!o.ship_to_customer;
               return `
-              <tr>
-                <td class="title">${escapeHtml(o.order_number)}${o.source === 'special_order' ? ' <span class="part-badge-pill" style="position:static;display:inline-block;">Special Order</span>' : ''}${o.is_firearm ? ' <span class="part-badge-pill" style="position:static;display:inline-block;background:var(--surface2);">Firearm</span>' : ''}${isFflTransfer ? ` <span class="part-badge-pill" style="position:static;display:inline-block;background:${o.ffl_verified ? '#2d7a3a' : '#8B1414'};">FFL Transfer${o.ffl_verified ? ' - Verified' : ' - NOT VERIFIED'}</span>` : ''}${isShipToCustomer ? ` <span class="part-badge-pill" style="position:static;display:inline-block;background:var(--surface2);">Ships to Customer</span>` : ''}${declinedAttemptCount(o) > 0 ? ` <span class="part-badge-pill" style="position:static;display:inline-block;background:#8B1414;" title="Click Items to see why">${declinedAttemptCount(o)} Declined Attempt${declinedAttemptCount(o) > 1 ? 's' : ''}</span>` : ''}</td>
+              ${o.status === 'paid' ? `
+              <tr class="paid-banner-row">
+                <td colspan="7" style="background:#1f6b30;color:#fff;padding:12px 16px;font-size:15px;font-weight:700;letter-spacing:1px;">
+                  &#10004; PAID &mdash; Order #${escapeHtml(o.order_number)} &middot; $${parseFloat(o.total).toFixed(2)}${o.settlement_status === 'settled' ? ' &middot; Settled' : ''}
+                </td>
+              </tr>` : ''}
+              <tr${o.status === 'paid' ? ' style="box-shadow:inset 4px 0 0 #2d9a45;"' : ''}>
+                <td class="title">${escapeHtml(o.order_number)}${o.source === 'special_order' ? ' <span class="part-badge-pill" style="position:static;display:inline-block;">Special Order</span>' : ''}${o.is_firearm ? ' <span class="part-badge-pill" style="position:static;display:inline-block;background:var(--surface2);">Firearm</span>' : ''}${isFflTransfer ? ` <span class="part-badge-pill" style="position:static;display:inline-block;background:${o.ffl_verified ? '#2d7a3a' : '#8a6d10'};">FFL Transfer${o.ffl_verified ? ' - Verified' : ' - NOT VERIFIED'}</span>` : ''}${isShipToCustomer ? ` <span class="part-badge-pill" style="position:static;display:inline-block;background:var(--surface2);">Ships to Customer</span>` : ''}${declinedAttemptCount(o) > 0 ? ` <span class="part-badge-pill" style="position:static;display:inline-block;background:${o.status === 'paid' ? 'var(--surface2)' : '#8B1414'};" title="Click Items to see why">${declinedAttemptCount(o)} ${o.status === 'paid' ? 'Earlier ' : ''}Declined Attempt${declinedAttemptCount(o) > 1 ? 's' : ''}</span>` : ''}</td>
                 <td style="font-size:12px;">${escapeHtml(o.customer_name)}<br><span style="color:var(--muted);">${escapeHtml(o.customer_email)}</span></td>
                 <td>$${parseFloat(o.total).toFixed(2)}</td>
                 <td>
@@ -2424,10 +2430,10 @@
               </tr>
               ${isFflTransfer ? `
               <tr class="ffl-transfer-row">
-                <td colspan="7" style="background:${o.ffl_verified ? 'rgba(45,122,58,0.08)' : 'rgba(139,20,20,0.1)'};border-left:3px solid ${o.ffl_verified ? '#2d7a3a' : '#8B1414'};">
+                <td colspan="7" style="background:${o.ffl_verified ? 'rgba(45,122,58,0.08)' : 'rgba(212,175,55,0.10)'};border-left:3px solid ${o.ffl_verified ? '#2d7a3a' : '#d4af37'};">
                   <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
                     <div style="font-size:12px;line-height:1.7;">
-                      <strong style="color:${o.ffl_verified ? '#4caf50' : '#e08080'};">${o.ffl_verified ? 'FFL VERIFIED' : 'DO NOT SHIP - FFL NOT YET VERIFIED'}</strong><br>
+                      <strong style="color:${o.ffl_verified ? '#4caf50' : '#f0d060'};">${o.ffl_verified ? 'FFL VERIFIED' : 'DO NOT SHIP - FFL NOT YET VERIFIED'}</strong><br>
                       Receiving dealer: ${escapeHtml(o.transfer_ffl_business_name || '—')}<br>
                       License #: ${escapeHtml(o.transfer_ffl_license_number || '—')} &middot; Phone: ${escapeHtml(o.transfer_ffl_phone || '—')}<br>
                       ${escapeHtml(o.transfer_ffl_address || '—')}

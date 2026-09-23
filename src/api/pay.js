@@ -112,12 +112,12 @@ export async function handlePayOrder(request, env) {
     const licenseNumber = (ffl.licenseNumber || '').trim();
     const phone = (ffl.phone || '').trim();
     const address = (ffl.address || '').trim();
-    if (!businessName || !licenseNumber || !phone || !address) {
+    if (!businessName || !phone || !address) {
       // Claim already flipped this to 'processing' above - must revert
       // before bailing, same reasoning as the charge-throws catch below:
       // an error return here must never leave the order stuck.
       await supabase.from('orders').update({ status: 'pending' }).eq('id', claimed.id);
-      return jsonResponse({ error: 'Receiving FFL business name, license number, phone, and address are all required for a dealer transfer.' }, 400);
+      return jsonResponse({ error: 'Receiving FFL business name, phone, and address are required for a dealer transfer.' }, 400);
     }
     transferFfl = { businessName, licenseNumber, phone, address };
   }

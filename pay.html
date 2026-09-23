@@ -130,7 +130,7 @@
             <input type="text" id="fflBusinessName" />
           </div>
           <div class="form-group">
-            <label for="fflLicenseNumber">FFL License Number</label>
+            <label for="fflLicenseNumber">FFL License Number (optional - we'll verify it for you)</label>
             <input type="text" id="fflLicenseNumber" placeholder="e.g. 1-23-456-78-9A-01234" />
           </div>
           <div class="form-group">
@@ -324,7 +324,7 @@
     // FFL fields only need to be filled in (and only get submitted) when the
     // customer actually picks the transfer option - same pattern as
     // checkout.html.
-    const fflFieldIds = ['fflBusinessName', 'fflLicenseNumber', 'fflPhone', 'fflAddress'];
+    const fflFieldIds = ['fflBusinessName', 'fflPhone', 'fflAddress'];
     document.querySelectorAll('input[name="fulfillmentMethod"]').forEach(radio => {
       radio.addEventListener('change', () => {
         const isTransfer = radio.value === 'ffl_transfer' && radio.checked;
@@ -586,9 +586,9 @@
           },
           cardData: {
             cardNumber: document.getElementById('cardNumber').value.replace(/\s+/g, ''),
-            month: document.getElementById('expMonth').value.trim(),
-            year: document.getElementById('expYear').value.trim(),
-            cardCode: document.getElementById('cardCode').value.trim()
+            month: document.getElementById('expMonth').value.replace(/D/g, '').padStart(2, '0'),
+            year: (y => y.length === 2 ? '20' + y : y)(document.getElementById('expYear').value.replace(/D/g, '')),
+            cardCode: document.getElementById('cardCode').value.replace(/D/g, '')
           }
         };
         Accept.dispatchData(secureData, responseHandler);
