@@ -1681,29 +1681,40 @@
       showToast(editingGalleryProjectId ? 'Project updated.' : 'Added to gallery.');
     });
 
+    // Completed builds show in the public gallery straight from their own
+    // build_photos (gallery.html), so they're listed here too, read-only -
+    // Edit jumps to the Builds tab's form instead of duplicating the photos
+    // into gallery_projects (which would show each build twice publicly).
     async function loadGalleryPhotos() {
-      const { data, error } = await supabase
-        .from('gallery_projects')
-        .select('*, gallery_project_photos(*)')
-        .order('created_at', { ascending: false });
+      const [projRes, buildRes] = await Promise.all([
+        supabase.from('gallery_projects').select('*, gallery_project_photos(*)').order('created_at', { ascending: false }),
+        supabase.from('builds').select('id, title, type, caliber, is_showcase, completed_at, photo_url, build_photos(*)').not('completed_at', 'is', null).order('completed_at', { ascending: false })
+      ]);
       const container = document.getElementById('galleryPhotosTable');
-      if (error || !data || data.length === 0) {
+      const projects = projRes.error ? [] : (projRes.data || []);
+      const builds = (buildRes.error ? [] : (buildRes.data || [])).map(b => {
+        const photos = (b.build_photos || []).slice().sort((x, y) => x.position - y.position).map(p => p.photo_url);
+        return { ...b, photoUrls: photos.length ? photos : (b.photo_url ? [b.photo_url] : []) };
+      }).filter(b => b.photoUrls.length > 0);
+      if (projects.length === 0 && builds.length === 0) {
         container.innerHTML = '<div class="empty-state">No gallery projects yet. Click "+ Add Project" to get started.</div>';
         return;
       }
-      container.innerHTML = `
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Photos</th>
-              <th>Title</th>
-              <th>Type / Caliber</th>
-              <th>Showcase</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            ${data.map(proj => {
+      const thumbsFor = urls => urls.slice(0, 4).map(u => `<img src="${escapeHtml(u)}" alt="" style="width:36px;height:36px;object-fit:cover;border:1px solid var(--border);margin-right:4px;" />`).join('')
+        + (urls.length > 4 ? `<span style="font-size:11px;color:var(--muted);">+${urls.length - 4}</span>` : '');
+      const buildRows = builds.map(b => `
+              <tr>
+                <td style="white-space:nowrap;">${thumbsFor(b.photoUrls)}</td>
+                <td class="title">${escapeHtml(b.title)} <span style="font-size:11px;color:var(--muted);">Completed build, ${new Date(b.completed_at).toLocaleDateString()}</span></td>
+                <td style="font-size:12px;">${[b.type, b.caliber].filter(Boolean).map(escapeHtml).join(' · ') || '—'}</td>
+                <td>${b.is_showcase ? '<span title="Showcase" style="color:var(--gold-light);">&#9733;</span>' : ''}</td>
+                <td>
+                  <div class="row-actions">
+                    <button class="btn-edit" onclick="activateTab('builds'); editBuild('${b.id}')">Edit Build</button>
+                  </div>
+                </td>
+              </tr>`).join('');
+      const projectRows = projects.map(proj => {
               const photos = (proj.gallery_project_photos || []).slice().sort((a, b) => a.position - b.position);
               const thumbs = photos.slice(0, 4).map(p => p.media_type === 'video'
                 ? `<video src="${escapeHtml(p.photo_url)}" muted style="width:36px;height:36px;object-fit:cover;border:1px solid var(--border);margin-right:4px;background:#000;"></video>`
@@ -1722,7 +1733,20 @@
                   </div>
                 </td>
               </tr>
-            `; }).join('')}
+            `; }).join('');
+      container.innerHTML = `
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Photos</th>
+              <th>Title</th>
+              <th>Type / Caliber</th>
+              <th>Showcase</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${buildRows}${projectRows}
           </tbody>
         </table>`;
     }
@@ -2155,6 +2179,7 @@
       const { error } = await supabase.from('builds').update({ completed_at: new Date().toISOString() }).eq('id', id);
       if (error) { showToast('Error: ' + error.message); return; }
       showToast('Marked complete.');
+      loadGalleryPhotos();
       loadBuilds();
     }
 
@@ -2162,6 +2187,7 @@
       const { error } = await supabase.from('builds').update({ completed_at: null }).eq('id', id);
       if (error) { showToast('Error: ' + error.message); return; }
       showToast('Moved back to active builds.');
+      loadGalleryPhotos();
       loadBuilds();
     }
 
