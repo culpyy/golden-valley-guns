@@ -180,12 +180,13 @@ export async function handleCheckout(request, env) {
     const businessName = (ffl.businessName || '').trim();
     const licenseNumber = (ffl.licenseNumber || '').trim();
     const phone = (ffl.phone || '').trim();
+    const dealerEmail = (ffl.email || '').trim().slice(0, 200);
     const address = (ffl.address || '').trim();
     if (!businessName || !phone || !address) {
       return jsonResponse({ error: 'Receiving FFL business name, phone, and address are required for a dealer transfer.' }, 400);
     }
     const atf = await matchFfl(env, { licenseNumber, phone });
-    transferFfl = { businessName, licenseNumber: licenseNumber || atf.license || '', phone, address, atfMatch: atf.match, atfNote: atf.note };
+    transferFfl = { businessName, licenseNumber: licenseNumber || atf.license || '', phone, address, email: dealerEmail, atfMatch: atf.match, atfNote: atf.note };
   }
 
   // Shipping choice only applies to a firearm-free order - a cart with any
@@ -263,6 +264,7 @@ export async function handleCheckout(request, env) {
     transfer_ffl_license_number: transferFfl?.licenseNumber || null,
     transfer_ffl_phone: transferFfl?.phone || null,
     transfer_ffl_address: transferFfl?.address || null,
+    transfer_ffl_email: transferFfl?.email || null,
     transfer_ffl_atf_match: transferFfl?.atfMatch ?? null,
     transfer_ffl_atf_note: transferFfl?.atfNote || null,
     ship_to_customer: shippingMethod === 'ship',

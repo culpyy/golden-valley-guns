@@ -2445,7 +2445,7 @@
                     <div style="font-size:12px;line-height:1.7;">
                       <strong style="color:${FFL_TEXT[fflState(o)]};">${o.ffl_verified ? 'FFL VERIFIED' : (fflState(o) === 'yellow' ? 'DO NOT SHIP - ON ATF LIST, ENTER ACTIVE LICENSE # TO VERIFY' : 'DO NOT SHIP - NOT ON ATF LIST, CONFIRM MANUALLY')}</strong><br>
                       Receiving dealer: ${escapeHtml(o.transfer_ffl_business_name || '—')}<br>
-                      License #: ${escapeHtml(o.transfer_ffl_license_number || '—')} &middot; Phone: ${escapeHtml(o.transfer_ffl_phone || '—')}<br>
+                      License #: ${escapeHtml(o.transfer_ffl_license_number || '—')} &middot; Phone: ${escapeHtml(o.transfer_ffl_phone || '—')}${o.transfer_ffl_email ? ` &middot; Email: <a href="mailto:${escapeHtml(o.transfer_ffl_email)}">${escapeHtml(o.transfer_ffl_email)}</a>` : ''}<br>
                       ${escapeHtml(o.transfer_ffl_address || '—')}
                       ${o.transfer_ffl_atf_note ? `<br><span style="color:${o.transfer_ffl_atf_match ? '#f0d060' : '#e05a5a'};">${o.transfer_ffl_atf_match ? '&#10003; ' : '&#9888; '}${escapeHtml(o.transfer_ffl_atf_note)}</span>` : '<br><span style="color:var(--muted);">No ATF list match found - verify manually.</span>'}
                       ${o.ffl_verified && o.ffl_verified_at ? `<br><span style="color:var(--muted);">Verified ${new Date(o.ffl_verified_at).toLocaleString()}</span>` : ''}
