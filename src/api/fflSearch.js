@@ -15,19 +15,31 @@ export async function handleFflSearch(request, env) {
   if (q.length < 3) return jsonResponse({ results: [] });
 
   const supabase = getSupabaseAdmin(env);
-  let query = supabase.from('ffl_directory')
-    .select('license, business_name, name, street, city, state, zip, phone')
-    .limit(8);
-  for (const word of q.split(' ').slice(0, 6)) query = query.ilike('search', `%${word}%`);
-  if (/^[A-Z]{2}$/.test(state)) query = query.eq('state', state);
+  const cols = 'license, business_name, name, street, city, state, zip, phone';
+  const stateOk = /^[A-Z]{2}$/.test(state);
 
-  const { data, error } = await query;
+  // Best matches first: the whole typed phrase appearing contiguously in the
+  // business name / owner name (so "88 tactical" finds 88 TACTICAL, not every
+  // "tactical" whose ZIP happens to contain "88"). Then a looser every-word
+  // match to fill any remaining slots.
+  let exact = supabase.from('ffl_directory').select(cols).or(`business_name.ilike.%${q}%,name.ilike.%${q}%`).limit(8);
+  if (stateOk) exact = exact.eq('state', state);
+  const { data: exactRows, error: exactError } = await exact;
+
+  let loose = supabase.from('ffl_directory').select(cols).limit(20);
+  for (const word of q.split(' ').slice(0, 6)) loose = loose.ilike('search', `%${word}%`);
+  if (stateOk) loose = loose.eq('state', state);
+  const { data: looseRows, error: looseError } = await loose;
+
+  const error = exactError || looseError;
   if (error) {
     console.error('ffl-search failed:', error);
     return jsonResponse({ error: 'Search failed.' }, 500);
   }
+  const seen = new Set();
+  const data = [...(exactRows || []), ...(looseRows || [])].filter(r => !seen.has(r.license) && seen.add(r.license)).slice(0, 8);
   return jsonResponse({
-    results: (data || []).map(r => ({
+    results: data.map(r => ({
       license: r.license,
       businessName: r.business_name || r.name,
       address: `${r.street}, ${r.city}, ${r.state} ${r.zip}`,
