@@ -2388,6 +2388,19 @@
     const FFL_COLORS = { green: '#2d7a3a', yellow: '#8a6d10', red: '#8B1414' };
     const FFL_TEXT = { green: '#4caf50', yellow: '#f0d060', red: '#e05a5a' };
 
+    // One color per order state so the state reads at a glance: green paid,
+    // amber awaiting payment, red payment failed, blue refunded, gray
+    // cancelled. Deliberately separate from the FFL red/yellow/green gate,
+    // which lives in its own row under each order.
+    const ORDER_STATE = {
+      paid:       { bg: '#1f6b30', stripe: '#2d9a45', icon: '&#10004;', label: 'PAID' },
+      pending:    { bg: '#8a6d10', stripe: '#d4af37', icon: '&#9203;',  label: 'AWAITING PAYMENT' },
+      processing: { bg: '#8a6d10', stripe: '#d4af37', icon: '&#9203;',  label: 'PAYMENT PROCESSING' },
+      failed:     { bg: '#8B1414', stripe: '#c33',    icon: '&#10008;', label: 'PAYMENT FAILED' },
+      refunded:   { bg: '#1f4f8f', stripe: '#3d7fd6', icon: '&#8617;',  label: 'REFUNDED' },
+      cancelled:  { bg: '#3a3a3a', stripe: '#777',    icon: '&#8856;',  label: 'CANCELLED' }
+    };
+
     function renderOrdersTable() {
       const container = document.getElementById('ordersTable');
       if (ordersAllRows.length === 0) {
@@ -2412,13 +2425,13 @@
               const isFflTransfer = o.fulfillment_method === 'ffl_transfer';
               const isShipToCustomer = !!o.ship_to_customer;
               return `
-              ${o.status === 'paid' ? `
-              <tr class="paid-banner-row">
-                <td colspan="7" style="background:#1f6b30;color:#fff;padding:12px 16px;font-size:15px;font-weight:700;letter-spacing:1px;">
-                  &#10004; PAID &mdash; Order #${escapeHtml(o.order_number)} &middot; $${parseFloat(o.total).toFixed(2)}${o.settlement_status === 'settled' ? ' &middot; Settled' : ''}
+              ${ORDER_STATE[o.status] ? `
+              <tr class="order-banner-row">
+                <td colspan="7" style="background:${ORDER_STATE[o.status].bg};color:#fff;padding:${o.status === 'paid' ? '12px' : '8px'} 16px;font-size:${o.status === 'paid' ? '15px' : '13px'};font-weight:700;letter-spacing:1px;">
+                  ${ORDER_STATE[o.status].icon} ${ORDER_STATE[o.status].label} &mdash; Order #${escapeHtml(o.order_number)} &middot; $${parseFloat(o.total).toFixed(2)}${o.status === 'paid' && o.settlement_status === 'settled' ? ' &middot; Settled' : ''}
                 </td>
               </tr>` : ''}
-              <tr${o.status === 'paid' ? ' style="box-shadow:inset 4px 0 0 #2d9a45;"' : ''}>
+              <tr${ORDER_STATE[o.status] ? ` style="box-shadow:inset 4px 0 0 ${ORDER_STATE[o.status].stripe};"` : ''}>
                 <td class="title">${escapeHtml(o.order_number)}${o.source === 'special_order' ? ' <span class="part-badge-pill" style="position:static;display:inline-block;">Special Order</span>' : ''}${o.is_firearm ? ' <span class="part-badge-pill" style="position:static;display:inline-block;background:var(--surface2);">Firearm</span>' : ''}${isFflTransfer ? ` <span class="part-badge-pill" style="position:static;display:inline-block;background:${FFL_COLORS[fflState(o)]};">FFL Transfer${o.ffl_verified ? ' - Verified' : (fflState(o) === 'yellow' ? ' - NEEDS LICENSE #' : ' - NOT ON ATF LIST')}</span>` : ''}${isShipToCustomer ? ` <span class="part-badge-pill" style="position:static;display:inline-block;background:var(--surface2);">Ships to Customer</span>` : ''}${declinedAttemptCount(o) > 0 ? ` <span class="part-badge-pill" style="position:static;display:inline-block;background:${o.status === 'paid' ? '#000;color:#777' : '#8B1414'};" title="Click Items to see why">${declinedAttemptCount(o)} ${o.status === 'paid' ? 'Earlier ' : ''}Declined Attempt${declinedAttemptCount(o) > 1 ? 's' : ''}</span>` : ''}</td>
                 <td style="font-size:12px;">${escapeHtml(o.customer_name)}<br><span style="color:var(--muted);">${escapeHtml(o.customer_email)}</span></td>
                 <td>$${parseFloat(o.total).toFixed(2)}</td>
