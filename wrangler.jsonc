@@ -3,6 +3,7 @@
   "compatibility_date": "2026-07-15",
   "compatibility_flags": ["nodejs_compat"],
   "main": "src/worker.js",
+  "observability": { "enabled": true },
   "assets": {
     "directory": "./",
     "binding": "ASSETS",
