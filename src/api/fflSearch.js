@@ -10,7 +10,7 @@ function jsonResponse(body, status = 200) {
 
 export async function handleFflSearch(request, env) {
   const url = new URL(request.url);
-  const q = (url.searchParams.get('q') || '').toLowerCase().replace(/[%_,()*\]/g, ' ').replace(/\s+/g, ' ').trim();
+  const q = (url.searchParams.get('q') || '').toLowerCase().replace(/[%_,()*\\]/g, ' ').replace(/\s+/g, ' ').trim();
   const state = (url.searchParams.get('state') || '').toUpperCase().trim();
   if (q.length < 3) return jsonResponse({ results: [] });
 
