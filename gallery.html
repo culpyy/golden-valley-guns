@@ -116,6 +116,13 @@
       max-width: 400px;
       line-height: 1.7;
     }
+    .gallery-date {
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--gold-light);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
     .showcase-badge {
       position: absolute;
       top: 12px;
@@ -489,7 +496,18 @@
       item.appendChild(overlay);
 
       item.addEventListener('click', () => openGalleryLightbox(entry.photos, entry.title || '', sub));
-      return item;
+
+      // Completion date sits visibly under the card (not just in the hover
+      // overlay, which touch screens never see). Standalone gallery projects
+      // have no completion date, so they get no caption.
+      if (!entry.completed_at) return item;
+      const cell = document.createElement('div');
+      cell.className = 'gallery-cell';
+      const date = document.createElement('div');
+      date.className = 'gallery-date';
+      date.textContent = 'Completed ' + formatCompletionDate(entry.completed_at);
+      cell.append(item, date);
+      return cell;
     }
 
     async function loadGallery() {
