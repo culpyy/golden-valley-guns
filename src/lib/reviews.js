@@ -17,7 +17,17 @@ function randomToken() {
   return crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '').slice(0, 8);
 }
 
+// Master switch, turned OFF 2026-09-23: invites were going out the moment a
+// build was marked paid, well before the customer had their firearm in hand
+// (a build can be paid, then still be waiting on FFL transfer/pickup). Both
+// trigger paths (pay.js and the admin Mark Paid button) go through this one
+// function, so this stops all of them. Flip to true once invites are tied to
+// actual delivery instead of payment. Existing reviews and the admin Reviews
+// tab are untouched.
+const REVIEW_INVITES_ENABLED = false;
+
 export async function sendReviewInvite(env, buildId) {
+  if (!REVIEW_INVITES_ENABLED) return { sent: false, reason: 'Review invites are turned off.' };
   const supabase = getSupabaseAdmin(env);
   const { data: build } = await supabase.from('builds').select('*').eq('id', buildId).single();
   if (!build) return { sent: false, reason: 'Build not found.' };
