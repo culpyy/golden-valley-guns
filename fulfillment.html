@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="48x48" href="favicon-48.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="favicon-192.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="favicon-180.png" />
+  <title>How You Receive Your Order | Golden Valley Guns LLC | Golden Valley, AZ</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    /* Shared checkout-form layout/component rules live in css/style.css
+       (used identically by checkout.html) - only this page's own color
+       choice for the firearm notice stays here. */
+    .firearm-notice {
+      background: rgba(224, 176, 30, 0.1);
+      border: 1px solid var(--gold);
+      color: var(--silver);
+      padding: 14px 16px;
+      font-size: 13px;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+    .firearm-notice strong { color: var(--gold-light); }
+  </style>
+</head>
+<body>
+
+  <!-- AGE GATE -->
+  <div id="ageGate" class="age-gate">
+    <div class="age-gate-card">
+      <img src="images/logo.png" class="age-gate-logo" alt="Golden Valley Guns LLC" />
+      <h2>Age Verification Required</h2>
+      <p>You must be <strong>18 years of age or older</strong> to enter this site. Golden Valley Guns LLC is an FFL 07 licensed firearms manufacturer and dealer. By continuing, you confirm you meet the minimum age requirement under federal and Arizona law.</p>
+      <div class="age-gate-actions">
+        <button id="ageGateEnter" class="btn-primary">I'm 18 or Older</button>
+        <a href="https://www.google.com" class="btn-secondary">Exit</a>
+      </div>
+    </div>
+  </div>
+  <script>
+    if (localStorage.getItem('gvg_age_verified') === 'true') {
+      document.getElementById('ageGate').style.display = 'none';
+    } else {
+      document.body.style.overflow = 'hidden';
+    }
+  </script>
+
+  <!-- NAV -->
+  <nav class="nav">
+    <a href="index.html" class="nav-logo">
+      <img src="images/logo.png" class="nav-logo-img" alt="" />
+      <div class="nav-logo-text">
+        <span class="wordmark">Golden Valley Guns LLC</span>
+        <span class="sub">Golden Valley, Arizona<span class="sub-ffl"> · FFL 07 Manufacturer</span></span>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="services.html">Services</a></li>
+      <li><a href="intake.html">Ship to Us</a></li>
+      <li><a href="inshop.html">In Shop</a></li>
+      <li><a href="gallery.html">Gallery</a></li>
+      <li><a href="shop.html">Shop</a></li>
+      <li><a href="bulletin.html">What's Next</a></li>
+      <li><a href="contact.html">Contact</a></li>
+    </ul>
+    <a href="contact.html" class="nav-cta">Get In Touch</a>
+    <div class="hamburger" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </div>
+  </nav>
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div class="section-label">Golden Valley Guns</div>
+    <h1>How Do You Want to Receive It?</h1>
+    <p>We received your payment. Firearms cannot ship directly to you, so tell us how you want to receive yours.</p>
+  </div>
+
+    <!-- LOADING -->
+  <div class="checkout-state" id="loadingState" style="display:block;"><p>Loading your order&hellip;</p></div>
+
+  <div class="checkout-state" id="unavailableState">
+    <h2 id="unavailableTitle">Link Not Available</h2>
+    <p id="unavailableMessage">This link isn't valid. Double check it, or contact us and we'll help sort it out.</p>
+    <a href="contact.html" class="btn-secondary">Contact Us</a>
+  </div>
+
+  <div class="checkout-wrap" id="checkoutWrap" style="display:none;">
+    <div class="checkout-summary">
+      <div class="checkout-section-title">Your Order</div>
+      <div id="summaryLines"></div>
+      <div id="orderNumberLine" style="margin-top:16px;font-size:12px;color:var(--muted);"></div>
+    </div>
+    <div class="checkout-form-panel">
+      <form id="fulfillForm" novalidate>
+        <div class="firearm-notice">
+          <strong>This order includes a firearm.</strong> By federal law it can't ship directly to you. Either way, a NICS background check and ATF Form 4473 are completed in person before it's yours. If your NICS check is denied, this order is refunded in full.
+        </div>
+        <div class="form-group" id="fulfillmentGroup">
+          <label style="margin-bottom:8px;display:block;">How do you want to receive it?</label>
+          <label class="fulfillment-option">
+            <input type="radio" name="fulfillmentMethod" value="pickup" checked />
+            <span><strong>Pick up at Golden Valley Guns</strong> - complete your NICS check and ATF Form 4473 here in person. Nothing ships.</span>
+          </label>
+          <label class="fulfillment-option">
+            <input type="radio" name="fulfillmentMethod" value="ffl_transfer" />
+            <span><strong>Transfer to my local FFL dealer</strong> - we ship it to your dealer, who handles your NICS check and Form 4473 there. We verify your dealer's license before shipping, which can add a few days. Your dealer may charge their own transfer fee.</span>
+          </label>
+        </div>
+
+        <div id="fflTransferFields" style="display:none;">
+          <div class="form-group" style="position:relative;">
+            <label for="fflSearch">Find your dealer (name, city, or ZIP)</label>
+            <input type="text" id="fflSearch" autocomplete="off" placeholder="e.g. Smith Guns Phoenix" />
+            <div id="fflSearchResults" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:20;max-height:280px;overflow:auto;background:var(--surface,#1a1a1a);border:1px solid var(--border);"></div>
+          </div>
+          <div class="form-group">
+            <label for="fflBusinessName">Receiving FFL Business Name</label>
+            <input type="text" id="fflBusinessName" />
+          </div>
+          <div class="form-group">
+            <label for="fflLicenseNumber">FFL License Number (optional - we'll verify it for you)</label>
+            <input type="text" id="fflLicenseNumber" placeholder="e.g. 1-23-456-78-9A-01234" />
+          </div>
+          <div class="form-group">
+            <label for="fflPhone">Dealer Phone</label>
+            <input type="tel" id="fflPhone" />
+          </div>
+          <div class="form-group">
+            <label for="fflEmail">Dealer Email (optional)</label>
+            <input type="email" id="fflEmail" autocomplete="off" />
+          </div>
+          <div class="form-group">
+            <label for="fflAddress">Dealer Address</label>
+            <input type="text" id="fflAddress" />
+          </div>
+        </div>
+
+        
+        <div class="checkout-error" id="checkoutError"></div>
+        <button type="submit" class="btn-primary" style="margin-top: 20px; width: 100%; justify-content: center;" id="submitBtn">Submit &#8594;</button>
+      </form>
+      <div class="checkout-success" id="checkoutSuccess">
+        <h2>Thank You</h2>
+        <p id="successMessage"></p>
+        <a href="index.html" class="btn-secondary">Back to Home</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <img src="images/logo.png" class="footer-logo-img" alt="Golden Valley Guns LLC" />
+        <div class="wordmark">Golden Valley Guns LLC</div>
+        <div class="sub">Golden Valley, Arizona</div>
+        <p>FFL 07 Manufacturer. Custom builds, gunsmithing, parts work, and transfers out of Golden Valley, AZ.</p>
+      </div>
+      <div class="footer-col">
+        <h5>Pages</h5>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="services.html">Services</a></li>
+          <li><a href="intake.html">Ship to Us</a></li>
+          <li><a href="inshop.html">In Shop</a></li>
+          <li><a href="gallery.html">Gallery</a></li>
+          <li><a href="shop.html">Shop</a></li>
+      <li><a href="bulletin.html">What's Next</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>Contact</h5>
+        <ul>
+          <li><a href="tel:9287270893">(928) 727-0893</a></li>
+          <li><a href="sms:9287270893">Text: (928) 727-0893</a></li>
+          <li><a href="mailto:goldenvalleyguns@gmail.com">goldenvalleyguns@gmail.com</a></li>
+          <li><a href="https://maps.google.com/?q=7088+W+Jupiter+Dr+Golden+Valley+AZ+86413" target="_blank">7088 W Jupiter Dr<br>Golden Valley, AZ 86413</a></li>
+          <li><a href="https://www.facebook.com/p/Golden-Valley-Guns-LLC-61565769817507/" target="_blank">Facebook</a></li>
+          <li><a href="https://www.youtube.com/channel/UCRIezIM_qIvuAnVeTpnjD0w" target="_blank">YouTube</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; <span id="copyYear">2025</span> Golden Valley Guns LLC. All rights reserved. &middot; <a href="privacy.html">Privacy Policy</a> &middot; <a href="terms.html">Terms of Service</a> &middot; <a href="shipping-returns.html">Shipping &amp; Returns</a></p>
+      <div class="payment-badges" aria-label="Accepted payment methods">
+        <span class="payment-badge">VISA</span>
+        <span class="payment-badge">MASTERCARD</span>
+        <span class="payment-badge">DISCOVER</span>
+        <span class="payment-badge">AMEX</span>
+      </div>
+      <span class="ffl-badge">FFL 07 · Golden Valley, AZ</span>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script src="js/ffl-lookup.js" defer></script>
+  <script>
+    const escapeHtml = (v) => String(v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const fflFieldIds = ['fflBusinessName', 'fflPhone', 'fflAddress'];
+    document.querySelectorAll('input[name="fulfillmentMethod"]').forEach(radio => {
+      radio.addEventListener('change', () => {
+        if (!radio.checked) return;
+        const isTransfer = radio.value === 'ffl_transfer';
+        document.getElementById('fflTransferFields').style.display = isTransfer ? 'block' : 'none';
+        fflFieldIds.forEach(id => {
+          const el = document.getElementById(id);
+          if (isTransfer) el.setAttribute('required', ''); else el.removeAttribute('required');
+        });
+      });
+    });
+
+    function show(id) {
+      ['loadingState', 'unavailableState', 'checkoutWrap'].forEach(x => {
+        document.getElementById(x).style.display = x === id ? (id === 'checkoutWrap' ? 'grid' : 'block') : 'none';
+      });
+    }
+    function unavailable(title, message) {
+      document.getElementById('unavailableTitle').textContent = title;
+      document.getElementById('unavailableMessage').textContent = message;
+      show('unavailableState');
+    }
+    function showError(message) {
+      const el = document.getElementById('checkoutError');
+      el.textContent = message;
+      el.style.display = 'block';
+    }
+
+    const token = new URLSearchParams(location.search).get('token');
+    if (!token) {
+      unavailable('Link Not Available', "This link is missing some information. Double check the link, or contact us and we'll help sort it out.");
+    } else {
+      fetch('/api/fulfillment?token=' + encodeURIComponent(token))
+        .then(res => res.json().then(data => ({ ok: res.ok, data })))
+        .then(({ ok, data }) => {
+          if (!ok) { unavailable('Link Not Available', data.error || "This link isn't valid."); return; }
+          if (data.alreadySubmitted) { unavailable('Already Received', 'We already have your choice for order #' + data.orderNumber + '. Thank you! Contact us if you need to change it.'); return; }
+          document.getElementById('summaryLines').innerHTML = '<div class="summary-line"><span class="name">' + escapeHtml(data.itemName) + '</span><span>$' + data.total.toFixed(2) + '</span></div>';
+          document.getElementById('orderNumberLine').textContent = 'Order #' + data.orderNumber + ' (paid)';
+          show('checkoutWrap');
+        })
+        .catch(() => unavailable('Something Went Wrong', 'Could not load your order. Please refresh, or contact us.'));
+    }
+
+    document.getElementById('fulfillForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (e.target.hasAttribute('data-submitting')) return;
+      document.getElementById('checkoutError').style.display = 'none';
+      if (!e.target.reportValidity()) return;
+      const method = document.querySelector('input[name="fulfillmentMethod"]:checked')?.value || 'pickup';
+      const fulfillment = { method };
+      if (method === 'ffl_transfer') {
+        fulfillment.ffl = {
+          businessName: document.getElementById('fflBusinessName').value.trim(),
+          licenseNumber: document.getElementById('fflLicenseNumber').value.trim(),
+          phone: document.getElementById('fflPhone').value.trim(),
+          email: document.getElementById('fflEmail').value.trim(),
+          address: document.getElementById('fflAddress').value.trim()
+        };
+      }
+      e.target.setAttribute('data-submitting', '');
+      const btn = document.getElementById('submitBtn');
+      btn.textContent = 'Submitting…';
+      try {
+        const res = await fetch('/api/fulfillment', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, fulfillment }) });
+        const data = await res.json();
+        if (!res.ok) { showError(data.error || 'Something went wrong. Please try again.'); return; }
+        document.getElementById('fulfillForm').style.display = 'none';
+        document.getElementById('successMessage').textContent = method === 'ffl_transfer'
+          ? "Got it. We'll verify your dealer's license and be in touch once it's on its way. Nothing ships until that's done."
+          : 'Got it. Stop by the shop to complete your NICS check and Form 4473. Nothing ships.';
+        document.getElementById('checkoutSuccess').style.display = 'block';
+      } catch (err) {
+        showError('Could not reach the server. Please try again.');
+      } finally {
+        e.target.removeAttribute('data-submitting');
+        btn.textContent = 'Submit →';
+      }
+    });
+  </script>
+</body>
+</html>

@@ -21,6 +21,7 @@ import { handleAddTracking } from './api/addTracking.js';
 import { handleYoutubeFeed } from './api/youtubeFeed.js';
 import { handleFacebookFeed } from './api/facebookFeed.js';
 import { handleFflSearch } from './api/fflSearch.js';
+import { handleGetFulfillment, handlePostFulfillment, handleRequestFulfillment, handleSetFulfillment } from './api/fulfillment.js';
 import { handleResendWebhook } from './api/resendWebhook.js';
 import { handleCheckSettlement } from './api/checkSettlement.js';
 import { handleResendOrderEmail } from './api/resendOrderEmail.js';
@@ -608,6 +609,38 @@ async function route(request, env) {
     } catch (err) {
       console.error('Add tracking failed:', err);
       return new Response(JSON.stringify({ error: 'Failed to save tracking info.' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+  }
+
+  // Delivery-info collection for firearm orders paid offline (money order,
+  // check) - see src/api/fulfillment.js. Public GET/POST are keyed by an
+  // unguessable per-order token; the two /api/admin/ routes check the admin
+  // session inside their handlers.
+  const fulfillmentRoutes = {
+    'GET /api/fulfillment': [handleGetFulfillment, 30],
+    'POST /api/fulfillment': [handlePostFulfillment, 10],
+    'POST /api/admin/request-fulfillment': [handleRequestFulfillment, 30],
+    'POST /api/admin/set-fulfillment': [handleSetFulfillment, 30]
+  };
+  const fulfillmentRoute = fulfillmentRoutes[`${request.method} ${url.pathname}`];
+  if (fulfillmentRoute) {
+    const [handler, limit] = fulfillmentRoute;
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    const { allowed, retryAfterSeconds } = await checkRateLimit(env, `fulfillment:${request.method}:${url.pathname}:${ip}`, { limit, windowSeconds: 600 });
+    if (!allowed) {
+      return new Response(JSON.stringify({ error: 'Too many requests.' }), {
+        status: 429,
+        headers: { 'Content-Type': 'application/json', 'Retry-After': String(retryAfterSeconds) }
+      });
+    }
+    try {
+      return await handler(request, env);
+    } catch (err) {
+      console.error('Fulfillment request failed:', err);
+      return new Response(JSON.stringify({ error: 'Something went wrong. Please try again.' }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' }
       });

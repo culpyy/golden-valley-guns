@@ -1184,9 +1184,36 @@
     </div>
   </div>
 
+      <div class="form-modal-overlay" id="fulfillModal">
+        <div class="form-card" style="max-width:560px;">
+          <h3 id="fulfillModalTitle">Delivery Info</h3>
+          <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Firearm paid offline. Record how the customer will receive it. A receiving dealer still has to be verified before anything ships.</p>
+          <div class="form-field">
+            <label style="display:flex;gap:8px;align-items:center;"><input type="radio" name="fulfillMethod" value="pickup" checked /> Pickup in person (NICS / 4473 here)</label>
+            <label style="display:flex;gap:8px;align-items:center;margin-top:6px;"><input type="radio" name="fulfillMethod" value="ffl_transfer" /> Transfer to the customer's FFL dealer</label>
+          </div>
+          <div id="fulfillFflFields" style="display:none;margin-top:10px;">
+            <div class="form-field" style="position:relative;">
+              <label>Find dealer (name, city, or ZIP)</label>
+              <input type="text" id="fflSearch" autocomplete="off" placeholder="e.g. 88 tactical omaha" />
+              <div id="fflSearchResults" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:20;max-height:240px;overflow:auto;background:var(--surface,#1a1a1a);border:1px solid var(--border);"></div>
+            </div>
+            <div class="form-field"><label>Business Name</label><input type="text" id="fflBusinessName" /></div>
+            <div class="form-field"><label>License # (optional, verified on the order afterward)</label><input type="text" id="fflLicenseNumber" /></div>
+            <div class="form-field"><label>Phone</label><input type="tel" id="fflPhone" /></div>
+            <div class="form-field"><label>Email (optional)</label><input type="email" id="fflEmail" /></div>
+            <div class="form-field"><label>Address</label><input type="text" id="fflAddress" /></div>
+          </div>
+          <div class="form-actions">
+            <button class="btn-primary" type="button" onclick="saveFulfillmentModal()">Save</button>
+            <button class="btn-secondary" type="button" onclick="closeFulfillmentModal()">Cancel</button>
+          </div>
+        </div>
+      </div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase.js"></script>
   <script src="js/main.js"></script>
+  <script src="js/ffl-lookup.js" defer></script>
   <script>
     // ── EMAIL NOTIFICATIONS ──
     // Replaced the old EmailJS integration 2026-07-20 - it pointed at
@@ -2428,7 +2455,7 @@
               ${ORDER_STATE[o.status] ? `
               <tr class="order-banner-row">
                 <td colspan="7" style="background:${ORDER_STATE[o.status].bg};color:#fff;padding:${o.status === 'paid' ? '12px' : '8px'} 16px;font-size:${o.status === 'paid' ? '15px' : '13px'};font-weight:700;letter-spacing:1px;">
-                  ${ORDER_STATE[o.status].icon} ${ORDER_STATE[o.status].label} &mdash; Order #${escapeHtml(o.order_number)} &middot; $${parseFloat(o.total).toFixed(2)}${o.status === 'paid' && o.settlement_status === 'settled' ? ' &middot; Settled' : ''}
+                  ${ORDER_STATE[o.status].icon} ${ORDER_STATE[o.status].label} &mdash; Order #${escapeHtml(o.order_number)} &middot; $${parseFloat(o.total).toFixed(2)}${o.status === 'paid' && !o.authorize_net_transaction_id ? ' &middot; Paid offline (money order / check / cash)' : ''}${o.status === 'paid' && o.settlement_status === 'settled' ? ' &middot; Settled' : ''}
                 </td>
               </tr>` : ''}
               <tr${ORDER_STATE[o.status] ? ` style="box-shadow:inset 4px 0 0 ${ORDER_STATE[o.status].stripe};"` : ''}>
@@ -2451,6 +2478,21 @@
                   </div>
                 </td>
               </tr>
+              ${needsFulfillmentInfo(o) ? `
+              <tr class="ffl-transfer-row">
+                <td colspan="7" style="background:rgba(196,98,16,0.16);border-left:3px solid #c46210;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+                    <div style="font-size:12px;line-height:1.7;">
+                      <strong style="color:#f0a04b;">NEEDS DELIVERY INFO - FIREARM PAID OFFLINE</strong><br>
+                      No pickup / receiving FFL on file yet. ${o.fulfillment_requested_at ? `Customer emailed ${new Date(o.fulfillment_requested_at).toLocaleString()}, no answer yet.` : (o.customer_email ? 'Customer has not been emailed yet.' : 'No customer email on file.')}
+                    </div>
+                    <div class="row-actions">
+                      ${o.customer_email ? `<button class="btn-edit" onclick="requestFulfillment('${o.id}')">${o.fulfillment_requested_at ? 'Email Customer Again' : 'Email Customer'}</button>` : ''}
+                      <button class="btn-edit" onclick="openFulfillmentModal('${o.id}')">Enter Manually</button>
+                    </div>
+                  </div>
+                </td>
+              </tr>` : ''}
               ${isFflTransfer ? `
               <tr class="ffl-transfer-row">
                 <td colspan="7" style="background:${{ green: 'rgba(45,122,58,0.08)', yellow: 'rgba(212,175,55,0.10)', red: 'rgba(139,20,20,0.12)' }[fflState(o)]};border-left:3px solid ${FFL_COLORS[fflState(o)]};">
@@ -2801,12 +2843,98 @@
       unlockBodyScroll();
     });
 
+    // A firearm order marked Paid by hand (money order, check, cash) never
+    // went through the secure pay link, so nothing captured pickup-vs-FFL
+    // delivery info. See src/api/fulfillment.js.
+    function needsFulfillmentInfo(o) {
+      return !!o.is_firearm && o.status === 'paid' && !o.authorize_net_transaction_id && !o.fulfillment_submitted_at;
+    }
+
     async function updateOrderStatus(id, status) {
       const { error } = await supabase.from('orders').update({ status }).eq('id', id);
       if (error) { showToast('Error: ' + error.message); return; }
       const row = ordersAllRows.find(o => o.id === id);
       if (row) row.status = status;
-      showToast('Order updated.');
+      renderOrdersTable();
+      if (row && needsFulfillmentInfo(row) && !row.fulfillment_requested_at) {
+        await requestFulfillment(id, { automatic: true });
+      } else {
+        showToast('Order updated.');
+      }
+    }
+
+    async function requestFulfillment(id, { automatic = false } = {}) {
+      const row = ordersAllRows.find(o => o.id === id);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const res = await fetch('/api/admin/request-fulfillment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token || ''}` },
+          body: JSON.stringify({ orderId: id })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Could not send the email.');
+        if (row) row.fulfillment_requested_at = new Date().toISOString();
+        renderOrdersTable();
+        showToast(automatic
+          ? 'Order marked paid. Emailed the customer a link to choose pickup or their FFL.'
+          : 'Emailed the customer again.');
+      } catch (err) {
+        showToast((automatic ? 'Order marked paid, but ' : '') + 'the delivery-info email failed: ' + err.message + ' Use Email Customer Again or Enter Manually.');
+      }
+    }
+
+    // ── Manual delivery-info entry (customer never answered) ──
+    let fulfillmentModalOrderId = null;
+    function openFulfillmentModal(id) {
+      const o = ordersAllRows.find(r => r.id === id);
+      if (!o) return;
+      fulfillmentModalOrderId = id;
+      document.getElementById('fulfillModalTitle').textContent = `Delivery Info: Order ${o.order_number} (${o.customer_name})`;
+      ['fflSearch', 'fflBusinessName', 'fflLicenseNumber', 'fflPhone', 'fflEmail', 'fflAddress'].forEach(x => { document.getElementById(x).value = ''; });
+      document.querySelector('input[name="fulfillMethod"][value="pickup"]').checked = true;
+      document.getElementById('fulfillFflFields').style.display = 'none';
+      document.getElementById('fulfillModal').classList.add('open');
+    }
+    function closeFulfillmentModal() {
+      document.getElementById('fulfillModal').classList.remove('open');
+      fulfillmentModalOrderId = null;
+    }
+    document.querySelectorAll('input[name="fulfillMethod"]').forEach(r => r.addEventListener('change', () => {
+      document.getElementById('fulfillFflFields').style.display = document.querySelector('input[name="fulfillMethod"]:checked').value === 'ffl_transfer' ? 'block' : 'none';
+    }));
+    async function saveFulfillmentModal() {
+      const id = fulfillmentModalOrderId;
+      const method = document.querySelector('input[name="fulfillMethod"]:checked').value;
+      const fulfillment = { method };
+      if (method === 'ffl_transfer') {
+        fulfillment.ffl = {
+          businessName: document.getElementById('fflBusinessName').value.trim(),
+          licenseNumber: document.getElementById('fflLicenseNumber').value.trim(),
+          phone: document.getElementById('fflPhone').value.trim(),
+          email: document.getElementById('fflEmail').value.trim(),
+          address: document.getElementById('fflAddress').value.trim()
+        };
+        if (!fulfillment.ffl.businessName || !fulfillment.ffl.phone || !fulfillment.ffl.address) {
+          showToast('Dealer name, phone, and address are required.');
+          return;
+        }
+      }
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const res = await fetch('/api/admin/set-fulfillment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token || ''}` },
+          body: JSON.stringify({ orderId: id, fulfillment })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Save failed.');
+        closeFulfillmentModal();
+        await loadOrders();
+        showToast(method === 'ffl_transfer' ? 'Dealer saved. Verify the license to turn it green.' : 'Saved: customer will pick up in person.');
+      } catch (err) {
+        showToast('Error: ' + err.message);
+      }
     }
 
     function toggleOrderItems(id) {
