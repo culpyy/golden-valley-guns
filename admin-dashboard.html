@@ -1711,6 +1711,7 @@
                 <td>
                   <div class="row-actions">
                     <button class="btn-edit" onclick="activateTab('builds'); editBuild('${b.id}')">Edit Build</button>
+                    <button class="btn-delete" onclick="removeBuildFromGallery('${b.id}')">Delete</button>
                   </div>
                 </td>
               </tr>`).join('');
@@ -1749,6 +1750,19 @@
             ${buildRows}${projectRows}
           </tbody>
         </table>`;
+    }
+
+    // Deleting a completed build's gallery post removes its photos (the
+    // gallery only lists builds that have photos), never the build record
+    // itself - it stays in Completed Builds and the completed count.
+    async function removeBuildFromGallery(id) {
+      if (!confirm('Remove this build from the gallery? Its photos are deleted. The build itself stays in Completed Builds. This cannot be undone.')) return;
+      const { error: photosErr } = await supabase.from('build_photos').delete().eq('build_id', id);
+      if (photosErr) { showToast('Error: ' + photosErr.message); return; }
+      const { error } = await supabase.from('builds').update({ photo_url: null }).eq('id', id);
+      if (error) { showToast('Error: ' + error.message); return; }
+      showToast('Removed from gallery.');
+      loadGalleryPhotos();
     }
 
     async function editGalleryPhoto(id) {
