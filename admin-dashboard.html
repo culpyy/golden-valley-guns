@@ -1681,60 +1681,16 @@
       showToast(editingGalleryProjectId ? 'Project updated.' : 'Added to gallery.');
     });
 
-    // Completed builds show in the public gallery straight from their own
-    // build_photos (gallery.html), so they're listed here too, read-only -
-    // Edit jumps to the Builds tab's form instead of duplicating the photos
-    // into gallery_projects (which would show each build twice publicly).
     async function loadGalleryPhotos() {
-      const [projRes, buildRes] = await Promise.all([
-        supabase.from('gallery_projects').select('*, gallery_project_photos(*)').order('created_at', { ascending: false }),
-        supabase.from('builds').select('id, title, type, caliber, is_showcase, completed_at, photo_url, build_photos(*)').not('completed_at', 'is', null).order('completed_at', { ascending: false })
-      ]);
+      const { data, error } = await supabase
+        .from('gallery_projects')
+        .select('*, gallery_project_photos(*)')
+        .order('created_at', { ascending: false });
       const container = document.getElementById('galleryPhotosTable');
-      const projects = projRes.error ? [] : (projRes.data || []);
-      const builds = (buildRes.error ? [] : (buildRes.data || [])).map(b => {
-        const photos = (b.build_photos || []).slice().sort((x, y) => x.position - y.position).map(p => p.photo_url);
-        return { ...b, photoUrls: photos.length ? photos : (b.photo_url ? [b.photo_url] : []) };
-      }).filter(b => b.photoUrls.length > 0);
-      if (projects.length === 0 && builds.length === 0) {
-        container.innerHTML = '<div class="empty-state">No gallery projects yet. Click "+ Add Project" to get started.</div>';
+      if (error || !data || data.length === 0) {
+        container.innerHTML = '<div class="empty-state">No gallery posts yet. Completed builds land here automatically, or click "+ Add Project".</div>';
         return;
       }
-      const thumbsFor = urls => urls.slice(0, 4).map(u => `<img src="${escapeHtml(u)}" alt="" style="width:36px;height:36px;object-fit:cover;border:1px solid var(--border);margin-right:4px;" />`).join('')
-        + (urls.length > 4 ? `<span style="font-size:11px;color:var(--muted);">+${urls.length - 4}</span>` : '');
-      const buildRows = builds.map(b => `
-              <tr>
-                <td style="white-space:nowrap;">${thumbsFor(b.photoUrls)}</td>
-                <td class="title">${escapeHtml(b.title)} <span style="font-size:11px;color:var(--muted);">Completed build, ${new Date(b.completed_at).toLocaleDateString()}</span></td>
-                <td style="font-size:12px;">${[b.type, b.caliber].filter(Boolean).map(escapeHtml).join(' · ') || '—'}</td>
-                <td>${b.is_showcase ? '<span title="Showcase" style="color:var(--gold-light);">&#9733;</span>' : ''}</td>
-                <td>
-                  <div class="row-actions">
-                    <button class="btn-edit" onclick="activateTab('builds'); editBuild('${b.id}')">Edit Build</button>
-                    <button class="btn-delete" onclick="removeBuildFromGallery('${b.id}')">Delete</button>
-                  </div>
-                </td>
-              </tr>`).join('');
-      const projectRows = projects.map(proj => {
-              const photos = (proj.gallery_project_photos || []).slice().sort((a, b) => a.position - b.position);
-              const thumbs = photos.slice(0, 4).map(p => p.media_type === 'video'
-                ? `<video src="${escapeHtml(p.photo_url)}" muted style="width:36px;height:36px;object-fit:cover;border:1px solid var(--border);margin-right:4px;background:#000;"></video>`
-                : `<img src="${escapeHtml(p.photo_url)}" alt="" style="width:36px;height:36px;object-fit:cover;border:1px solid var(--border);margin-right:4px;" />`).join('');
-              const extra = photos.length > 4 ? `<span style="font-size:11px;color:var(--muted);">+${photos.length - 4}</span>` : '';
-              return `
-              <tr>
-                <td style="white-space:nowrap;">${thumbs}${extra}</td>
-                <td class="title">${escapeHtml(proj.title)}</td>
-                <td style="font-size:12px;">${[proj.type, proj.caliber].filter(Boolean).map(escapeHtml).join(' · ') || '—'}</td>
-                <td>${proj.is_showcase ? '<span title="Showcase" style="color:var(--gold-light);">&#9733;</span>' : ''}</td>
-                <td>
-                  <div class="row-actions">
-                    <button class="btn-edit" onclick="editGalleryPhoto('${proj.id}')">Edit</button>
-                    <button class="btn-delete" onclick="deleteGalleryPhoto('${proj.id}')">Delete</button>
-                  </div>
-                </td>
-              </tr>
-            `; }).join('');
       container.innerHTML = `
         <table class="data-table">
           <thead>
@@ -1747,22 +1703,29 @@
             </tr>
           </thead>
           <tbody>
-            ${buildRows}${projectRows}
+            ${data.map(proj => {
+              const photos = (proj.gallery_project_photos || []).slice().sort((a, b) => a.position - b.position);
+              const thumbs = photos.slice(0, 4).map(p => p.media_type === 'video'
+                ? `<video src="${escapeHtml(p.photo_url)}" muted style="width:36px;height:36px;object-fit:cover;border:1px solid var(--border);margin-right:4px;background:#000;"></video>`
+                : `<img src="${escapeHtml(p.photo_url)}" alt="" style="width:36px;height:36px;object-fit:cover;border:1px solid var(--border);margin-right:4px;" />`).join('');
+              const extra = photos.length > 4 ? `<span style="font-size:11px;color:var(--muted);">+${photos.length - 4}</span>` : '';
+              const done = proj.completed_at ? `<div style="font-size:11px;color:var(--muted);font-weight:400;">Completed ${new Date(proj.completed_at).toLocaleDateString()}</div>` : '';
+              return `
+              <tr>
+                <td style="white-space:nowrap;">${thumbs}${extra}</td>
+                <td class="title">${escapeHtml(proj.title)}${done}</td>
+                <td style="font-size:12px;">${[proj.type, proj.caliber].filter(Boolean).map(escapeHtml).join(' · ') || '—'}</td>
+                <td>${proj.is_showcase ? '<span title="Showcase" style="color:var(--gold-light);">&#9733;</span>' : ''}</td>
+                <td>
+                  <div class="row-actions">
+                    <button class="btn-edit" onclick="editGalleryPhoto('${proj.id}')">Edit</button>
+                    <button class="btn-delete" onclick="deleteGalleryPhoto('${proj.id}')">Delete</button>
+                  </div>
+                </td>
+              </tr>
+            `; }).join('')}
           </tbody>
         </table>`;
-    }
-
-    // Deleting a completed build's gallery post removes its photos (the
-    // gallery only lists builds that have photos), never the build record
-    // itself - it stays in Completed Builds and the completed count.
-    async function removeBuildFromGallery(id) {
-      if (!confirm('Remove this build from the gallery? Its photos are deleted. The build itself stays in Completed Builds. This cannot be undone.')) return;
-      const { error: photosErr } = await supabase.from('build_photos').delete().eq('build_id', id);
-      if (photosErr) { showToast('Error: ' + photosErr.message); return; }
-      const { error } = await supabase.from('builds').update({ photo_url: null }).eq('id', id);
-      if (error) { showToast('Error: ' + error.message); return; }
-      showToast('Removed from gallery.');
-      loadGalleryPhotos();
     }
 
     async function editGalleryPhoto(id) {
@@ -2015,7 +1978,7 @@
           // created_at is set once, automatically, and never edited.
           return diff !== 0 ? diff : new Date(a.created_at) - new Date(b.created_at);
         });
-      const completed = buildsAllRows.filter(b => b.completed_at)
+      const completed = buildsAllRows.filter(b => b.completed_at && !b.archived_at)
         .sort((a, b) => new Date(b.completed_at) - new Date(a.completed_at));
 
       renderActiveBuildsTable(active);
@@ -2187,14 +2150,49 @@
       document.getElementById('toggleCompletedBtn').textContent = completedExpanded ? 'Hide' : 'Show';
     });
 
+    // Completing a build converts it into a plain gallery post (title, type,
+    // caliber, date, photos) and archives the build: the full record
+    // (customer, ATF, price, notes) stays in the DB but leaves the Builds
+    // tab. Idempotent - a retry after a partial failure reuses the post.
+    async function convertBuildToGallery(build, completedAt) {
+      const { data: existing } = await supabase.from('gallery_projects').select('id').eq('build_id', build.id).maybeSingle();
+      if (!existing) {
+        const { data: proj, error } = await supabase.from('gallery_projects').insert({
+          title: build.title, type: build.type || '', caliber: build.caliber || '',
+          is_showcase: !!build.is_showcase, completed_at: completedAt, created_at: completedAt, build_id: build.id
+        }).select('id').single();
+        if (error) throw error;
+        let photos = (build.build_photos || []).slice().sort((a, b) => a.position - b.position)
+          .map(p => ({ photo_url: p.photo_url, label: p.label }));
+        if (!photos.length && build.photo_url) photos = [{ photo_url: build.photo_url, label: null }];
+        if (photos.length) {
+          const rows = photos.map((p, i) => ({ project_id: proj.id, photo_url: p.photo_url, label: p.label || null, position: i, media_type: 'image' }));
+          const { error: photosErr } = await supabase.from('gallery_project_photos').insert(rows);
+          if (photosErr) {
+            await supabase.from('gallery_projects').delete().eq('id', proj.id);
+            throw photosErr;
+          }
+        }
+      }
+      const { error: archiveErr } = await supabase.from('builds').update({ completed_at: completedAt, archived_at: completedAt }).eq('id', build.id);
+      if (archiveErr) throw archiveErr;
+    }
+
     async function markBuildComplete(id) {
       const build = buildsAllRows.find(b => b.id === id);
-      if (build && build.payment_status !== 'paid' && !confirm(`"${build.title}" isn't marked Paid yet. Mark it complete anyway?`)) return;
-      const { error } = await supabase.from('builds').update({ completed_at: new Date().toISOString() }).eq('id', id);
-      if (error) { showToast('Error: ' + error.message); return; }
-      showToast('Marked complete.');
-      loadGalleryPhotos();
+      if (!build) return;
+      let msg = `Mark "${build.title}" complete? It moves to the Gallery as a simple post (photos and video only) and leaves the Builds tab. The customer and ATF details stay saved.`;
+      if (build.payment_status !== 'paid') msg += ' Heads up: it is not marked Paid yet. Payment can still be taken from the Orders tab.';
+      if (!confirm(msg)) return;
+      try {
+        await convertBuildToGallery(build, new Date().toISOString());
+      } catch (err) {
+        showToast('Error: ' + (err.message || err));
+        return;
+      }
+      showToast('Moved to Gallery.');
       loadBuilds();
+      loadGalleryPhotos();
     }
 
     async function reopenBuild(id) {

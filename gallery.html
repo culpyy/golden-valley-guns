@@ -177,6 +177,82 @@
     @media (max-width: 580px) {
       .lightbox video { max-width: 95vw; max-height: 75vh; }
     }
+    /* ── GALLERY REDESIGN: dated archive, not a cropped grid ── */
+    .g-wrap { padding: 0 48px 96px; }
+    .g-filters { display: flex; flex-wrap: wrap; gap: 8px; padding: 32px 0 8px; }
+    .g-chip {
+      font: inherit; font-size: 13px; color: var(--silver); background: transparent;
+      border: 1px solid var(--border); padding: 8px 16px; cursor: pointer;
+      transition: color .2s, border-color .2s, background .2s;
+    }
+    .g-chip:hover { color: var(--text); border-color: var(--gold); }
+    .g-chip[aria-pressed="true"] { color: #fff; background: var(--gold); border-color: var(--gold); }
+    .g-chip:focus-visible, .g-tile:focus-visible, .g-thumb:focus-visible, .g-more-btn:focus-visible, .g-open:focus-visible, .g-frame:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 3px; }
+
+    /* Lead: newest post, shown large. The blurred copy of the photo fills the
+       frame behind it so a tall or wide shot never sits in a grey letterbox. */
+    .g-lead { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(280px, 1fr); gap: 40px; padding: 32px 0 56px; align-items: center; border-bottom: 1px solid var(--border); }
+    .g-frame { position: relative; overflow: hidden; aspect-ratio: 16 / 11; background: #000; border: 1px solid var(--border); cursor: pointer; width: 100%; padding: 0; display: block; }
+    .g-frame::before { content: ''; position: absolute; inset: -30px; background: var(--bg-img) center / cover; filter: blur(26px) brightness(.4); }
+    .g-frame img, .g-frame video { position: relative; width: 100%; height: 100%; object-fit: contain; display: block; }
+    .g-lead-title { font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: clamp(34px, 4.4vw, 56px); line-height: 1.02; letter-spacing: 1px; color: var(--text); margin: 0 0 14px; }
+    .g-lead-meta { font-size: 16px; color: var(--silver); margin: 0 0 4px; }
+    .g-date { font-size: 14px; color: var(--gold-light); margin: 0; }
+    .g-strip { display: flex; flex-wrap: wrap; gap: 8px; margin: 28px 0 24px; }
+    .g-thumb { position: relative; width: 68px; height: 68px; padding: 0; border: 1px solid var(--border); background: #000; cursor: pointer; overflow: hidden; }
+    .g-thumb img, .g-thumb video { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .g-thumb:hover { border-color: var(--gold-light); }
+    .g-thumb-more { display: flex; align-items: center; justify-content: center; font-size: 14px; color: var(--silver); background: var(--surface2); }
+    .g-thumb-play { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.35); }
+    .g-open { font: inherit; font-size: 14px; font-weight: 600; color: var(--gold-light); background: none; border: 0; border-bottom: 1px solid var(--gold); padding: 0 0 3px; cursor: pointer; }
+    .g-open:hover { color: var(--gold-glow); }
+
+    /* Archive: grouped by month. Columns keep every photo at its own
+       proportions (no cropping, no mats). */
+    .g-month { display: flex; align-items: baseline; gap: 16px; margin: 56px 0 24px; }
+    .g-month h3 { font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 30px; letter-spacing: 1.5px; color: var(--text); margin: 0; }
+    .g-month::after { content: ''; order: 1; flex: 1; height: 1px; background: var(--border); }
+    .g-month span { order: 2; font-size: 13px; color: var(--muted); }
+    .g-cols { columns: 3; column-gap: 20px; }
+    .g-tile { break-inside: avoid; margin: 0 0 28px; cursor: pointer; display: block; }
+    .g-media { position: relative; overflow: hidden; background: var(--surface2); border: 1px solid var(--border); min-height: 120px; }
+    .g-media img, .g-media video { display: block; width: 100%; height: auto; transition: filter .25s; }
+    .g-tile:hover .g-media img, .g-tile:hover .g-media video { filter: brightness(1.12); }
+    .g-tile:hover .g-media { border-color: var(--gold); }
+    .g-pill { position: absolute; left: 10px; bottom: 10px; display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,.72); color: #fff; font-size: 12px; font-weight: 600; padding: 4px 9px; }
+    .g-pill svg { flex: none; }
+    .g-tag { position: absolute; top: 10px; left: 10px; background: var(--gold); color: #fff; font-size: 12px; font-weight: 700; padding: 3px 9px; z-index: 1; }
+    .g-play { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 52px; height: 52px; border-radius: 50%; background: rgba(0,0,0,.62); border: 1px solid rgba(255,255,255,.5); display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: 1; }
+    .g-cap { padding: 12px 2px 0; }
+    .g-cap h4 { font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 21px; letter-spacing: 1px; color: var(--text); margin: 0 0 3px; line-height: 1.15; }
+    .g-cap p { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.5; }
+    .g-cap .g-date { font-size: 13px; }
+    .g-more { text-align: center; margin-top: 32px; }
+    .g-more-btn { font: inherit; font-size: 14px; font-weight: 600; color: var(--text); background: transparent; border: 1px solid var(--gold); padding: 14px 32px; cursor: pointer; transition: background .2s; }
+    .g-more-btn:hover { background: var(--gold); }
+    .g-none { padding: 64px 0; text-align: center; color: var(--muted); font-size: 15px; }
+
+    /* Lightbox: stage + caption + filmstrip. Media is capped so the caption
+       and strip never sit on top of it. */
+    #lightbox .lb-img, #lightbox .lb-video { max-width: 92vw; max-height: 64vh; }
+    #lightbox .lightbox-caption { bottom: 108px; width: 90%; }
+    .lb-strip { position: absolute; left: 0; right: 0; bottom: 16px; display: flex; justify-content: center; gap: 8px; padding: 0 16px; overflow-x: auto; }
+    .lb-strip .g-thumb { width: 60px; height: 60px; flex: none; opacity: .55; }
+    .lb-strip .g-thumb[aria-current="true"] { opacity: 1; border-color: var(--gold-light); }
+
+    @media (max-width: 900px) {
+      .g-wrap { padding: 0 20px 72px; }
+      .g-lead { grid-template-columns: 1fr; gap: 22px; padding-bottom: 40px; }
+      .g-cols { columns: 2; column-gap: 12px; }
+      .g-tile { margin-bottom: 20px; }
+    }
+    @media (max-width: 480px) {
+      .g-cap h4 { font-size: 18px; }
+      .g-thumb { width: 56px; height: 56px; }
+      #lightbox .lb-img, #lightbox .lb-video { max-height: 56vh; }
+      #lightbox .lightbox-nav { display: none !important; }
+    }
+    @media (prefers-reduced-motion: reduce) { .g-media img, .g-media video { transition: none; } }
   </style>
 </head>
 <body>
@@ -245,46 +321,41 @@
   </div>
 
   <!-- GALLERY -->
-  <section>
+  <section class="g-wrap">
+    <div id="gFilters" class="g-filters" role="group" aria-label="Filter the gallery" hidden></div>
+    <div id="gLead"></div>
+    <div id="gArchive"></div>
+    <div class="g-more"><button type="button" id="gMore" class="g-more-btn" hidden></button></div>
 
-    <div class="build-section">
-      <div class="build-header">
-        <h3>Completed Builds</h3>
-        <span>Straight From The Shop</span>
-      </div>
-
-      <div id="galleryGrid" class="gallery-grid" style="display:none;"></div>
-
-      <div id="galleryEmpty" class="gallery-coming-soon fade-in">
-        <svg width="64" height="64" fill="none" stroke="var(--gold-light)" stroke-width="1.2" viewBox="0 0 24 24">
-          <rect x="3" y="3" width="18" height="18" rx="2"/>
-          <circle cx="8.5" cy="8.5" r="1.5"/>
-          <path d="M21 15l-5-5L5 21"/>
-        </svg>
-        <h3>Photos Coming Soon</h3>
-        <p>We're still building out this gallery. In the meantime, see what's actively on the bench right now, or follow us on Facebook and YouTube for finished builds as they go out the door.</p>
-        <div style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 8px;">
-          <a href="inshop.html" class="btn-primary">See What's In Shop &#8594;</a>
-          <a href="https://www.facebook.com/p/Golden-Valley-Guns-LLC-61565769817507/" target="_blank" class="btn-secondary">Facebook &#8594;</a>
-          <a href="https://www.youtube.com/channel/UCRIezIM_qIvuAnVeTpnjD0w" target="_blank" class="btn-secondary">YouTube &#8594;</a>
-        </div>
+    <div id="galleryEmpty" class="gallery-coming-soon fade-in">
+      <svg width="64" height="64" fill="none" stroke="var(--gold-light)" stroke-width="1.2" viewBox="0 0 24 24">
+        <rect x="3" y="3" width="18" height="18" rx="2"/>
+        <circle cx="8.5" cy="8.5" r="1.5"/>
+        <path d="M21 15l-5-5L5 21"/>
+      </svg>
+      <h3>Photos Coming Soon</h3>
+      <p>We're still building out this gallery. In the meantime, see what's actively on the bench right now, or follow us on Facebook and YouTube for finished builds as they go out the door.</p>
+      <div style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 8px;">
+        <a href="inshop.html" class="btn-primary">See What's In Shop &#8594;</a>
+        <a href="https://www.facebook.com/p/Golden-Valley-Guns-LLC-61565769817507/" target="_blank" class="btn-secondary">Facebook &#8594;</a>
+        <a href="https://www.youtube.com/channel/UCRIezIM_qIvuAnVeTpnjD0w" target="_blank" class="btn-secondary">YouTube &#8594;</a>
       </div>
     </div>
-
   </section>
 
   <!-- LIGHTBOX -->
   <div class="lightbox" id="lightbox">
     <button class="lightbox-close" aria-label="Close">&times;</button>
-    <button class="lightbox-nav prev" id="lightboxPrev" aria-label="Previous photo">&#8249;</button>
+    <button class="lightbox-nav prev" id="lightboxPrev" aria-label="Previous">&#8249;</button>
     <img class="lb-img" src="" alt="" />
     <video class="lb-video" controls playsinline style="display:none;"></video>
-    <button class="lightbox-nav next" id="lightboxNext" aria-label="Next photo">&#8250;</button>
+    <button class="lightbox-nav next" id="lightboxNext" aria-label="Next">&#8250;</button>
     <div class="lightbox-caption">
       <span class="lb-photo-label"></span>
       <h4 class="lb-title"></h4>
       <span class="lb-sub"></span>
     </div>
+    <div class="lb-strip" id="lbStrip"></div>
   </div>
 
   <!-- FOOTER -->
@@ -363,232 +434,437 @@
       }
     })();
 
-    // Always-shown builds (is_showcase) plus this many of the most recently
-    // completed ones - rotation is just "top N by date," so an older build
-    // naturally drops off the moment a newer one pushes past this limit.
-    // Nothing to manage by hand as new builds finish.
-    const RECENT_LIMIT = 12;
+    // ── GALLERY ──
+    // Every entry: { title, type, caliber, is_showcase, date,
+    // completed_at, items: [{ photo_url, label, media_type }] }.
+    //
+    // Nothing is dropped as the archive grows: the newest entry leads, the rest
+    // are grouped by month and revealed PAGE_SIZE at a time.
+    const PAGE_SIZE = 12;
+    let ALL = [];
+    let activeFilter = 'all';
+    let shownCount = PAGE_SIZE;
 
-    // Active lightbox state - which project's photos are showing and which
-    // index, so prev/next can step through without re-querying anything.
-    let lbPhotos = [];
+    // ── lightbox ──
+    let lbItems = [];
     let lbIndex = 0;
     let lbTitle = '';
     let lbSub = '';
 
-    function renderLightboxPhoto() {
+    const PLAY_SVG = (s) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>`;
+
+    function renderLightbox() {
       const lb = document.getElementById('lightbox');
-      const photo = lbPhotos[lbIndex];
+      const item = lbItems[lbIndex];
       const img = lb.querySelector('.lb-img');
       const video = lb.querySelector('.lb-video');
       video.pause();
-      if (photo.media_type === 'video') {
-        video.src = photo.photo_url;
-        video.style.display = '';
+      if (item.media_type === 'video') {
         img.style.display = 'none';
         img.src = '';
+        video.style.display = '';
+        video.src = item.photo_url;
+        const p = video.play();
+        if (p && p.catch) p.catch(() => {});
       } else {
-        img.src = photo.photo_url;
+        video.style.display = 'none';
+        video.removeAttribute('src');
+        video.load();
+        img.src = item.photo_url;
         img.alt = lbTitle;
         img.style.display = '';
-        video.style.display = 'none';
-        video.src = '';
+        const next = lbItems[(lbIndex + 1) % lbItems.length];
+        if (next && next.media_type !== 'video') new Image().src = next.photo_url;
       }
       lb.querySelector('.lb-title').textContent = lbTitle;
       lb.querySelector('.lb-sub').textContent = lbSub;
       const labelEl = lb.querySelector('.lb-photo-label');
-      const countSuffix = lbPhotos.length > 1 ? ` (${lbIndex + 1}/${lbPhotos.length})` : '';
-      labelEl.textContent = (photo.label || '') + countSuffix;
+      const count = lbItems.length > 1 ? `${lbIndex + 1} of ${lbItems.length}` : '';
+      labelEl.textContent = [item.label, count].filter(Boolean).join(', ');
       labelEl.style.display = labelEl.textContent ? '' : 'none';
-      const multi = lbPhotos.length > 1;
+      const multi = lbItems.length > 1;
       document.getElementById('lightboxPrev').style.display = multi ? '' : 'none';
       document.getElementById('lightboxNext').style.display = multi ? '' : 'none';
+
+      const strip = document.getElementById('lbStrip');
+      strip.style.display = multi ? '' : 'none';
+      strip.querySelectorAll('.g-thumb').forEach((t, i) => {
+        if (i === lbIndex) { t.setAttribute('aria-current', 'true'); t.scrollIntoView({ block: 'nearest', inline: 'center' }); }
+        else t.removeAttribute('aria-current');
+      });
     }
 
-    function openGalleryLightbox(photos, title, sub) {
-      lbPhotos = photos;
-      lbIndex = 0;
-      lbTitle = title;
-      lbSub = sub;
-      renderLightboxPhoto();
-      const lb = document.getElementById('lightbox');
-      lb.classList.add('open');
+    function openLightbox(entry, index) {
+      lbItems = entry.items;
+      lbIndex = index || 0;
+      lbTitle = entry.title || '';
+      lbSub = entrySub(entry);
+      const strip = document.getElementById('lbStrip');
+      strip.innerHTML = '';
+      entry.items.forEach((it, i) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'g-thumb';
+        b.setAttribute('aria-label', (it.label || (it.media_type === 'video' ? 'Video' : 'Photo')) + ' ' + (i + 1));
+        b.appendChild(thumbMedia(it));
+        b.addEventListener('click', (e) => { e.stopPropagation(); lbIndex = i; renderLightbox(); });
+        strip.appendChild(b);
+      });
+      renderLightbox();
+      document.getElementById('lightbox').classList.add('open');
       document.body.style.overflow = 'hidden';
     }
 
-    document.getElementById('lightboxPrev').addEventListener('click', (e) => {
-      e.stopPropagation();
-      lbIndex = (lbIndex - 1 + lbPhotos.length) % lbPhotos.length;
-      renderLightboxPhoto();
-    });
-    document.getElementById('lightboxNext').addEventListener('click', (e) => {
-      e.stopPropagation();
-      lbIndex = (lbIndex + 1) % lbPhotos.length;
-      renderLightboxPhoto();
-    });
+    function stepLightbox(dir) {
+      if (lbItems.length < 2) return;
+      lbIndex = (lbIndex + dir + lbItems.length) % lbItems.length;
+      renderLightbox();
+    }
+    document.getElementById('lightboxPrev').addEventListener('click', (e) => { e.stopPropagation(); stepLightbox(-1); });
+    document.getElementById('lightboxNext').addEventListener('click', (e) => { e.stopPropagation(); stepLightbox(1); });
     document.addEventListener('keydown', (e) => {
-      if (!document.getElementById('lightbox').classList.contains('open') || lbPhotos.length < 2) return;
-      if (e.key === 'ArrowLeft') document.getElementById('lightboxPrev').click();
-      if (e.key === 'ArrowRight') document.getElementById('lightboxNext').click();
+      if (!document.getElementById('lightbox').classList.contains('open')) return;
+      if (e.key === 'ArrowLeft') stepLightbox(-1);
+      if (e.key === 'ArrowRight') stepLightbox(1);
     });
+    let touchX = null;
+    document.getElementById('lightbox').addEventListener('touchstart', (e) => { touchX = e.touches[0].clientX; }, { passive: true });
+    document.getElementById('lightbox').addEventListener('touchend', (e) => {
+      if (touchX === null) return;
+      const dx = e.changedTouches[0].clientX - touchX;
+      touchX = null;
+      if (Math.abs(dx) > 50) stepLightbox(dx < 0 ? 1 : -1);
+    }, { passive: true });
 
-    function formatCompletionDate(iso) {
+    // ── helpers ──
+    function formatDate(iso) {
       return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     }
-
-    // Unified item shape from either source: { title, type, caliber,
-    // is_showcase, updated_at, completed_at (builds only), photos: [{ photo_url, label }] }.
-    function buildGalleryItem(entry) {
-      const subParts = [entry.type, entry.caliber].filter(Boolean);
-      if (entry.completed_at) subParts.push('Completed ' + formatCompletionDate(entry.completed_at));
-      const sub = subParts.join(' · ');
-      const cover = entry.photos[0];
-
-      const item = document.createElement('div');
-      item.className = 'gallery-item fade-in';
-
-      if (entry.is_showcase) {
-        const badge = document.createElement('span');
-        badge.className = 'showcase-badge';
-        badge.textContent = 'Showcase';
-        item.appendChild(badge);
-      }
-
-      if (entry.photos.length > 1) {
-        const countBadge = document.createElement('span');
-        countBadge.className = 'photo-count-badge';
-        countBadge.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="14" height="14" rx="1"/><path d="M7 21h11a2 2 0 0 0 2-2V7"/></svg>${entry.photos.length}`;
-        item.appendChild(countBadge);
-      }
-
-      const inner = document.createElement('div');
-      inner.className = 'gallery-item-inner';
-      if (cover.media_type === 'video') {
-        const video = document.createElement('video');
-        video.src = cover.photo_url;
-        video.muted = true;
-        video.playsInline = true;
-        video.preload = 'metadata';
-        inner.appendChild(video);
-        const playBadge = document.createElement('div');
-        playBadge.className = 'video-play-badge';
-        playBadge.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg>';
-        item.appendChild(playBadge);
-      } else {
-        const img = document.createElement('img');
-        img.src = cover.photo_url;
-        img.alt = entry.title || '';
-        img.loading = 'lazy';
-        inner.appendChild(img);
-      }
-      item.appendChild(inner);
-
-      const overlay = document.createElement('div');
-      overlay.className = 'gallery-overlay';
-      const overlayText = document.createElement('div');
-      overlayText.className = 'gallery-overlay-text';
-      const h4 = document.createElement('h4');
-      h4.textContent = entry.title || '';
-      const span = document.createElement('span');
-      span.textContent = sub;
-      overlayText.append(h4, span);
-      overlay.appendChild(overlayText);
-      item.appendChild(overlay);
-
-      item.addEventListener('click', () => openGalleryLightbox(entry.photos, entry.title || '', sub));
-
-      // Completion date sits visibly under the card (not just in the hover
-      // overlay, which touch screens never see). Standalone gallery projects
-      // have no completion date, so they get no caption.
-      if (!entry.completed_at) return item;
-      const cell = document.createElement('div');
-      cell.className = 'gallery-cell';
-      const date = document.createElement('div');
-      date.className = 'gallery-date';
-      date.textContent = 'Completed ' + formatCompletionDate(entry.completed_at);
-      cell.append(item, date);
-      return cell;
+    function monthKey(iso) {
+      const d = new Date(iso);
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    }
+    function monthLabel(iso) {
+      return new Date(iso).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    }
+    function metaLine(entry) {
+      return [entry.type, entry.caliber].filter(Boolean).join(', ');
+    }
+    function entrySub(entry) {
+      return [metaLine(entry), entry.completed_at ? 'Completed ' + formatDate(entry.completed_at) : ''].filter(Boolean).join(', ');
+    }
+    function contentsLabel(entry) {
+      const videos = entry.items.filter(i => i.media_type === 'video').length;
+      const photos = entry.items.length - videos;
+      const parts = [];
+      if (photos) parts.push(photos + (photos === 1 ? ' photo' : ' photos'));
+      if (videos) parts.push(videos + (videos === 1 ? ' video' : ' videos'));
+      return parts.join(', ');
+    }
+    function fmtDuration(sec) {
+      if (!isFinite(sec) || sec <= 0) return '';
+      const m = Math.floor(sec / 60);
+      const s = Math.round(sec % 60);
+      return m + ':' + String(s).padStart(2, '0');
     }
 
-    async function loadGallery() {
-      // Two sources: real finished builds (builds_public, still one photo
-      // each) and standalone gallery_projects (any number of photos each,
-      // e.g. a Before/After set - see sql/gallery_projects.sql). Both get
-      // normalized into the same { photos: [...] } shape so the rest of
-      // this page doesn't care which source a project came from.
-      //
-      // Builds only show once actually completed (completed_at set via
-      // admin's Mark Complete), not just status='ready' - a build can sit
-      // Ready-awaiting-pickup for a while, and showing it in the public
-      // gallery before it's really done misrepresented it as finished
-      // work. Keeps the build's own title, and completed_at drives both
-      // the sort order and the "Completed <date>" caption below.
-      const [buildsRes, projectsRes] = await Promise.all([
-        supabase.from('builds_public').select('*').not('completed_at', 'is', null).order('completed_at', { ascending: false }),
-        supabase.from('gallery_projects').select('*, gallery_project_photos(*)').order('created_at', { ascending: false })
-      ]);
+    // Video files are only touched when they scroll near the viewport, so a
+    // long archive doesn't request every clip's header up front.
+    const videoObserver = 'IntersectionObserver' in window
+      ? new IntersectionObserver((records) => {
+          records.forEach(r => {
+            if (!r.isIntersecting) return;
+            const v = r.target;
+            videoObserver.unobserve(v);
+            v.addEventListener('loadedmetadata', () => {
+              const pill = v.closest('.g-tile, .g-lead')?.querySelector('[data-duration]');
+              if (pill) pill.textContent = fmtDuration(v.duration);
+            }, { once: true });
+            v.preload = 'metadata';
+            v.src = v.dataset.src + '#t=0.1';
+          });
+        }, { rootMargin: '300px' })
+      : null;
 
-      // Completed builds can now carry several progress photos (Before/
-      // Mid-Refinish/Done, via build_photos - admin-dashboard.html's build
-      // form), not just the one legacy builds.photo_url. build_photos
-      // queried separately since builds_public is a view, not a real
-      // table - PostgREST's relationship embedding needs a real foreign
-      // key on the queried relation itself, which a view doesn't carry.
-      const buildsBase = buildsRes.error ? [] : (buildsRes.data || []);
-      const buildIds = buildsBase.map(b => b.id);
-      const { data: buildPhotoRows } = buildIds.length
-        ? await supabase.from('build_photos').select('*').in('build_id', buildIds).order('position', { ascending: true })
-        : { data: [] };
-      const buildPhotosById = {};
-      (buildPhotoRows || []).forEach(p => (buildPhotosById[p.build_id] ||= []).push(p));
+    function makeVideo(url) {
+      const v = document.createElement('video');
+      v.muted = true;
+      v.playsInline = true;
+      v.preload = 'none';
+      v.dataset.src = url;
+      v.setAttribute('aria-hidden', 'true');
+      if (videoObserver) videoObserver.observe(v); else v.src = url + '#t=0.1';
+      return v;
+    }
+    function makeImg(url, alt, eager) {
+      const img = document.createElement('img');
+      img.src = url;
+      img.alt = alt || '';
+      img.decoding = 'async';
+      if (!eager) img.loading = 'lazy';
+      return img;
+    }
+    function thumbMedia(it) {
+      if (it.media_type === 'video') {
+        const wrap = document.createElement('span');
+        wrap.style.cssText = 'display:block;width:100%;height:100%;position:relative;';
+        wrap.appendChild(makeVideo(it.photo_url));
+        const p = document.createElement('span');
+        p.className = 'g-thumb-play';
+        p.innerHTML = PLAY_SVG(18);
+        wrap.appendChild(p);
+        return wrap;
+      }
+      return makeImg(it.photo_url, '');
+    }
 
-      const builds = buildsBase.map(b => {
-        const photos = (buildPhotosById[b.id] || []).map(p => ({ photo_url: p.photo_url, label: p.label, media_type: 'image' }));
-        return {
-          title: b.title, type: b.type, caliber: b.caliber, is_showcase: b.is_showcase,
-          updated_at: b.completed_at, completed_at: b.completed_at,
-          photos: photos.length ? photos : (b.photo_url ? [{ photo_url: b.photo_url, label: null, media_type: 'image' }] : [])
-        };
-      }).filter(b => b.photos.length > 0);
-      const projects = (projectsRes.error ? [] : (projectsRes.data || [])).map(p => ({
-        title: p.title, type: p.type, caliber: p.caliber, is_showcase: p.is_showcase,
-        updated_at: p.created_at,
-        photos: (p.gallery_project_photos || []).slice().sort((a, b) => a.position - b.position).map(ph => ({ photo_url: ph.photo_url, label: ph.label, media_type: ph.media_type || 'image' }))
-      })).filter(p => p.photos.length > 0);
-      const data = [...builds, ...projects].sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+    // ── rendering ──
+    function buildLead(entry) {
+      const cover = entry.items[0];
+      const lead = document.createElement('article');
+      lead.className = 'g-lead';
 
-      const grid = document.getElementById('galleryGrid');
-      const empty = document.getElementById('galleryEmpty');
-      if (data.length === 0) {
-        grid.style.display = 'none';
-        empty.style.display = '';
-        return;
+      const frame = document.createElement('button');
+      frame.type = 'button';
+      frame.className = 'g-frame';
+      frame.setAttribute('aria-label', 'Open ' + (entry.title || 'post'));
+      if (cover.media_type === 'video') {
+        frame.appendChild(makeVideo(cover.photo_url));
+        const play = document.createElement('span');
+        play.className = 'g-play';
+        play.innerHTML = PLAY_SVG(22);
+        frame.appendChild(play);
+      } else {
+        frame.style.setProperty('--bg-img', `url("${cover.photo_url}")`);
+        frame.appendChild(makeImg(cover.photo_url, entry.title, true));
+      }
+      frame.addEventListener('click', () => openLightbox(entry, 0));
+
+      const info = document.createElement('div');
+      const h2 = document.createElement('h2');
+      h2.className = 'g-lead-title';
+      h2.textContent = entry.title || '';
+      info.appendChild(h2);
+      if (metaLine(entry)) {
+        const m = document.createElement('p');
+        m.className = 'g-lead-meta';
+        m.textContent = metaLine(entry);
+        info.appendChild(m);
+      }
+      if (entry.completed_at) {
+        const d = document.createElement('p');
+        d.className = 'g-date';
+        d.textContent = 'Completed ' + formatDate(entry.completed_at);
+        info.appendChild(d);
+      }
+      if (entry.items.length > 1) {
+        const strip = document.createElement('div');
+        strip.className = 'g-strip';
+        const MAX_THUMBS = 5;
+        entry.items.slice(0, MAX_THUMBS).forEach((it, i) => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'g-thumb';
+          b.setAttribute('aria-label', (it.label || (it.media_type === 'video' ? 'Video' : 'Photo')) + ' ' + (i + 1));
+          b.appendChild(thumbMedia(it));
+          b.addEventListener('click', () => openLightbox(entry, i));
+          strip.appendChild(b);
+        });
+        if (entry.items.length > MAX_THUMBS) {
+          const more = document.createElement('button');
+          more.type = 'button';
+          more.className = 'g-thumb g-thumb-more';
+          more.textContent = '+' + (entry.items.length - MAX_THUMBS);
+          more.setAttribute('aria-label', 'See all ' + entry.items.length);
+          more.addEventListener('click', () => openLightbox(entry, MAX_THUMBS));
+          strip.appendChild(more);
+        }
+        info.appendChild(strip);
+      }
+      const open = document.createElement('button');
+      open.type = 'button';
+      open.className = 'g-open';
+      open.textContent = entry.items.length > 1 ? 'View all ' + contentsLabel(entry) : 'View full size';
+      open.addEventListener('click', () => openLightbox(entry, 0));
+      info.appendChild(open);
+
+      lead.append(frame, info);
+      return lead;
+    }
+
+    function buildTile(entry) {
+      const cover = entry.items[0];
+      const tile = document.createElement('article');
+      tile.className = 'g-tile';
+      tile.tabIndex = 0;
+      tile.setAttribute('role', 'button');
+      tile.setAttribute('aria-label', 'Open ' + (entry.title || 'post') + ', ' + contentsLabel(entry));
+
+      const media = document.createElement('div');
+      media.className = 'g-media';
+      if (cover.media_type === 'video') {
+        media.appendChild(makeVideo(cover.photo_url));
+        const play = document.createElement('span');
+        play.className = 'g-play';
+        play.innerHTML = PLAY_SVG(22);
+        media.appendChild(play);
+        // A video-only post gets its runtime; mixed posts say what's inside.
+        const pill = document.createElement('div');
+        pill.className = 'g-pill';
+        const dur = document.createElement('span');
+        dur.setAttribute('data-duration', '');
+        pill.append(dur);
+        if (entry.items.length > 1) pill.append(document.createTextNode(contentsLabel(entry)));
+        media.appendChild(pill);
+      } else {
+        media.appendChild(makeImg(cover.photo_url, entry.title));
+        if (entry.items.length > 1) {
+          const pill = document.createElement('div');
+          pill.className = 'g-pill';
+          const hasVideo = entry.items.some(i => i.media_type === 'video');
+          if (hasVideo) { const s = document.createElement('span'); s.innerHTML = PLAY_SVG(11); pill.appendChild(s); }
+          pill.appendChild(document.createTextNode(contentsLabel(entry)));
+          media.appendChild(pill);
+        }
+      }
+      if (entry.is_showcase) {
+        const tag = document.createElement('span');
+        tag.className = 'g-tag';
+        tag.textContent = 'Showcase';
+        media.appendChild(tag);
       }
 
-      const showcase = data.filter(b => b.is_showcase);
-      const recent = data.filter(b => !b.is_showcase).slice(0, RECENT_LIMIT);
-      const combined = [...showcase, ...recent];
-
-      if (combined.length === 0) {
-        grid.style.display = 'none';
-        empty.style.display = '';
-        return;
+      const cap = document.createElement('div');
+      cap.className = 'g-cap';
+      const h4 = document.createElement('h4');
+      h4.textContent = entry.title || '';
+      cap.appendChild(h4);
+      if (metaLine(entry)) {
+        const p = document.createElement('p');
+        p.textContent = metaLine(entry);
+        cap.appendChild(p);
+      }
+      if (entry.completed_at) {
+        const d = document.createElement('p');
+        d.className = 'g-date';
+        d.textContent = 'Completed ' + formatDate(entry.completed_at);
+        cap.appendChild(d);
       }
 
-      empty.style.display = 'none';
-      grid.style.display = '';
-      combined.forEach(entry => grid.appendChild(buildGalleryItem(entry)));
-
-      // Fade-in observer in main.js only picks up elements present at page
-      // load - these were added after, so trigger the same effect directly.
-      grid.querySelectorAll('.fade-in').forEach(el => {
-        el.style.opacity = '1';
-        el.style.transform = 'translateY(0)';
+      tile.append(media, cap);
+      tile.addEventListener('click', () => openLightbox(entry, 0));
+      tile.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openLightbox(entry, 0); }
       });
+      return tile;
+    }
+
+    function matchesFilter(entry) {
+      if (activeFilter === 'all') return true;
+      if (activeFilter === 'videos') return entry.items.some(i => i.media_type === 'video');
+      if (activeFilter === 'showcase') return !!entry.is_showcase;
+      return entry.type === activeFilter.slice(5);
+    }
+
+    function renderFilters() {
+      const box = document.getElementById('gFilters');
+      const chips = [['all', 'All work']];
+      if (ALL.some(e => e.items.some(i => i.media_type === 'video'))) chips.push(['videos', 'Videos']);
+      if (ALL.some(e => e.is_showcase)) chips.push(['showcase', 'Showcase']);
+      [...new Set(ALL.map(e => e.type).filter(Boolean))].sort().forEach(t => chips.push(['type:' + t, t]));
+      if (chips.length < 3) { box.hidden = true; return; }
+      box.hidden = false;
+      box.innerHTML = '';
+      chips.forEach(([key, label]) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'g-chip';
+        b.textContent = label;
+        b.setAttribute('aria-pressed', String(key === activeFilter));
+        b.addEventListener('click', () => {
+          activeFilter = key;
+          shownCount = PAGE_SIZE;
+          renderFilters();
+          renderGallery();
+        });
+        box.appendChild(b);
+      });
+    }
+
+    function renderGallery() {
+      const leadBox = document.getElementById('gLead');
+      const archive = document.getElementById('gArchive');
+      const moreBtn = document.getElementById('gMore');
+      leadBox.innerHTML = '';
+      archive.innerHTML = '';
+
+      const view = ALL.filter(matchesFilter);
+      if (view.length === 0) {
+        archive.innerHTML = '<div class="g-none">Nothing here yet.</div>';
+        moreBtn.hidden = true;
+        return;
+      }
+      leadBox.appendChild(buildLead(view[0]));
+
+      const rest = view.slice(1);
+      const visible = rest.slice(0, shownCount);
+      let currentKey = null;
+      let cols = null;
+      let monthCount = null;
+      const groups = [];
+      visible.forEach(entry => {
+        const k = monthKey(entry.date);
+        if (k !== currentKey) {
+          currentKey = k;
+          const head = document.createElement('div');
+          head.className = 'g-month';
+          const h3 = document.createElement('h3');
+          h3.textContent = monthLabel(entry.date);
+          monthCount = document.createElement('span');
+          head.append(h3, monthCount);
+          cols = document.createElement('div');
+          cols.className = 'g-cols';
+          archive.append(head, cols);
+          groups.push({ el: monthCount, n: 0 });
+        }
+        cols.appendChild(buildTile(entry));
+        groups[groups.length - 1].n++;
+      });
+      groups.forEach(g => { g.el.textContent = g.n + (g.n === 1 ? ' post' : ' posts'); });
+
+      const remaining = rest.length - visible.length;
+      moreBtn.hidden = remaining <= 0;
+      if (remaining > 0) moreBtn.textContent = 'Show more work (' + remaining + ' more)';
+    }
+
+    document.getElementById('gMore').addEventListener('click', () => {
+      shownCount += PAGE_SIZE;
+      renderGallery();
+    });
+
+    async function loadGallery() {
+      // Everything on this page is a gallery post. A completed build becomes
+      // one automatically (admin's Mark Complete copies its photos into
+      // gallery_projects and carries the completion date), so the public
+      // page never reads the builds table for photos.
+      const { data, error } = await supabase.from('gallery_projects').select('*, gallery_project_photos(*)').order('created_at', { ascending: false });
+      const projects = (error ? [] : (data || [])).map(p => ({
+        title: p.title, type: p.type, caliber: p.caliber, is_showcase: p.is_showcase,
+        date: p.completed_at || p.created_at, completed_at: p.completed_at || null,
+        items: (p.gallery_project_photos || []).slice().sort((a, b) => a.position - b.position)
+          .map(ph => ({ photo_url: ph.photo_url, label: ph.label, media_type: ph.media_type || 'image' }))
+      }));
+
+      ALL = projects.filter(e => e.items.length > 0).sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      const empty = document.getElementById('galleryEmpty');
+      if (ALL.length === 0) { empty.style.display = ''; return; }
+      empty.style.display = 'none';
+      renderFilters();
+      renderGallery();
     }
 
     loadGallery();
   </script>
 </body>
 </html>
-
