@@ -8,6 +8,7 @@
 import { getSupabaseAdmin } from '../lib/supabaseAdmin.js';
 import { sendEmail } from '../lib/email.js';
 import { checkRateLimit } from '../lib/rateLimit.js';
+import { emailShell, emailParagraph, emailInfoBox, emailButton, emailFooterNote, escapeHtml } from '../lib/emailTemplate.js';
 
 const SUBJECT_LABELS = {
   build: 'Custom Build Inquiry',
@@ -64,10 +65,16 @@ export async function handleContact(request, env) {
 
   const subjectLabel = SUBJECT_LABELS[subject] || subject;
   try {
+    const replySubject = encodeURIComponent(`Re: Website inquiry: ${subjectLabel}`);
+    const mailtoUrl = `mailto:${email}?subject=${replySubject}`;
     await sendEmail(env, {
-      // Reply-To set to the customer's own address (not the noreply@ sender)
-      // so Shawn can just hit Reply in Gmail and land in the customer's
-      // inbox, instead of having to copy their email out of the message body.
+      // Reply-To set to the customer's own address so most mail clients'
+      // Reply button lands in the customer's inbox directly. Some clients
+      // (confirmed: iOS Mail, 2026-09-28 - Shawn's reply bounced back to
+      // noreply@ instead) don't reliably honor Reply-To, so the HTML body
+      // below also has a mailto: button as a client-independent fallback -
+      // that one always addresses correctly since it doesn't depend on the
+      // receiving client parsing Reply-To at all.
       replyTo: email,
       subject: `Website inquiry: ${subjectLabel} - ${fname} ${lname}`,
       source: 'contact_form',
@@ -80,8 +87,22 @@ export async function handleContact(request, env) {
         `Subject: ${subjectLabel}`,
         ``,
         `Message:`,
-        message
-      ].join('\n')
+        message,
+        ``,
+        `Reply directly: ${mailtoUrl}`
+      ].join('\n'),
+      html: emailShell([
+        emailParagraph(`New contact form submission from goldenvalleygunsllc.com`),
+        emailInfoBox([
+          ['Name', `${fname} ${lname}`],
+          ['Email', email],
+          ['Phone', phone || '(not provided)'],
+          ['Subject', subjectLabel]
+        ]),
+        emailParagraph(`<strong>Message:</strong><br>${escapeHtml(message).replace(/\n/g, '<br>')}`),
+        emailButton(mailtoUrl, `Reply to ${escapeHtml(fname)}`),
+        emailFooterNote(`If "Reply" in your mail app doesn't go to ${escapeHtml(email)}, use the button above instead. `)
+      ].join(''))
     });
   } catch (err) {
     // The submission is already saved above - don't fail the whole request
