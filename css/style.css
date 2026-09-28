@@ -1182,8 +1182,10 @@ footer {
   border-top: 1px solid var(--border);
   padding-top: 20px;
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
+  row-gap: 12px;
 }
 
 .footer-bottom p {
@@ -1193,6 +1195,21 @@ footer {
 
 .footer-bottom p a { color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
 .footer-bottom p a:hover { color: var(--gold-light); }
+
+/* The Elkhorn Digital credit reads as a footnote, not a fourth thing
+   competing with the legal links and badges for the same line - its own
+   quiet row underneath, not squeezed into the copyright line (that's what
+   made the row feel crowded once it was added there). */
+.footer-credit {
+  flex-basis: 100%;
+  text-align: center;
+  font-size: 11px;
+  color: var(--muted);
+  opacity: 0.7;
+  order: 3;
+}
+.footer-credit a { color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
+.footer-credit a:hover { color: var(--gold-light); opacity: 1; }
 
 .footer-bottom .ffl-badge {
   font-size: 11px;
