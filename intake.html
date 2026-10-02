@@ -243,6 +243,19 @@
     }
   </script>
 
+  <!-- DISCLAIMERS CONFIRM (shown on submit, must be acknowledged) -->
+  <div id="intakeConfirm" class="age-gate" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="intakeConfirmTitle">
+    <div class="age-gate-card" style="text-align:left;">
+      <h2 id="intakeConfirmTitle" style="text-align:center;">Before You Send</h2>
+      <p style="margin-bottom:16px;"><strong>Test-firing:</strong> If test-firing is required, it is performed with factory ammunition only. We do not test fire with hand-loaded, steel-core, or military surplus ammunition.</p>
+      <p><strong>NFA / Class III:</strong> All Class III/NFA firearms must be accompanied by a copy of the appropriate paperwork when dropped off.</p>
+      <div class="age-gate-actions">
+        <button type="button" id="intakeConfirmSend" class="btn-primary">I Understand, Continue</button>
+        <button type="button" id="intakeConfirmBack" class="btn-secondary">Go Back</button>
+      </div>
+    </div>
+  </div>
+
   <!-- NAV -->
   <nav class="nav">
     <a href="index.html" class="nav-logo">
@@ -592,6 +605,17 @@
     // connection from blocking the customer entirely: they still get a
     // printable result and instructions either way, just with a prompt to
     // also call/text if the online save didn't go through.
+    const intakeConfirm = document.getElementById('intakeConfirm');
+    let disclaimersAcked = false;
+    const closeConfirm = () => { intakeConfirm.style.display = 'none'; };
+    document.getElementById('intakeConfirmSend').addEventListener('click', () => {
+      disclaimersAcked = true;
+      closeConfirm();
+      intakeForm.requestSubmit();
+    });
+    document.getElementById('intakeConfirmBack').addEventListener('click', closeConfirm);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeConfirm(); });
+
     intakeForm.addEventListener('submit', async e => {
       e.preventDefault();
       errorEl.style.display = 'none';
@@ -612,6 +636,13 @@
         errorEl.style.display = 'block';
         return;
       }
+
+      if (!disclaimersAcked) {
+        intakeConfirm.style.display = 'flex';
+        document.getElementById('intakeConfirmSend').focus();
+        return;
+      }
+      disclaimersAcked = false;
 
       const submitBtn = document.getElementById('intakeSubmitBtn');
       submitBtn.disabled = true;
