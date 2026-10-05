@@ -219,6 +219,22 @@
       .ref-code-value { color: #000 !important; }
       .result-step-num { background: #000 !important; color: #fff !important; }
     }
+
+    /* ── KIT / PLATFORM TYPE-AHEAD ── */
+    .kit-suggest {
+      position: absolute; left: 0; right: 0; z-index: 30;
+      max-height: 260px; overflow-y: auto;
+      background: var(--surface); border: 1px solid var(--gold);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    }
+    .kit-suggest button {
+      display: block; width: 100%; text-align: left; cursor: pointer;
+      background: none; border: none; border-bottom: 1px solid var(--border);
+      color: var(--text); font: inherit; font-size: 14px; padding: 12px 14px;
+    }
+    .kit-suggest button:last-child { border-bottom: none; }
+    .kit-suggest button:hover, .kit-suggest button.hl { background: var(--surface2, #1c1c1c); color: var(--gold-light); }
+    .kit-suggest .kit-also { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
   </style>
 </head>
 <body>
@@ -368,10 +384,11 @@
                   <input type="text" id="i-caliber" placeholder="7.62x39mm" />
                 </div>
               </div>
-              <div class="form-group">
+              <div class="form-group" style="position:relative;">
                 <label for="i-kit-type">Kit / Platform (optional)</label>
-                <input type="text" id="i-kit-type" placeholder="PM12, HK33, AK-47, Suomi, etc." />
-                <p class="form-note" style="margin-top:4px;">If this is a specific parts kit or platform, telling us here helps us track it accurately - especially if you're sending more than one thing.</p>
+                <input type="text" id="i-kit-type" autocomplete="off" placeholder="Start typing: PM-12, HK33, AK-47, Suomi..." />
+                <div class="kit-suggest" id="kitSuggest" style="display:none;" role="listbox"></div>
+                <p class="form-note" id="kitMatchNote" style="margin-top:4px;">If this is a specific parts kit or platform, pick it from the list as you type. It helps us track it accurately, especially if you're sending more than one thing. Not listed? Type it in anyway.</p>
               </div>
               <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
                 <input type="checkbox" id="i-nfa" style="width:16px;height:16px;accent-color:var(--gold-light);cursor:pointer;" />
@@ -507,6 +524,9 @@
     </div>
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/kit-catalog.js"></script>
   <script src="js/main.js"></script>
   <script src="js/cart.js"></script>
   <script>
@@ -517,6 +537,86 @@
       transfer:     'FFL Transfer',
       other:        'Other'
     };
+
+    // ── Kit / Platform type-ahead (catalog: js/kit-catalog.js) ──
+    // Suggests names from the catalog as the customer types, matching alternate
+    // spellings too, and fills Caliber from the platform's default when it is
+    // still empty. If the catalog can't load, or nothing matches, this is just
+    // the plain text box it used to be.
+    (function initKitTypeahead() {
+      const input   = document.getElementById('i-kit-type');
+      const box     = document.getElementById('kitSuggest');
+      const note    = document.getElementById('kitMatchNote');
+      const caliber = document.getElementById('i-caliber');
+      const baseNote = note.textContent;
+      let items = [], hl = -1, autoCaliber = null;
+
+      const hide = () => { box.style.display = 'none'; hl = -1; };
+
+      function render() {
+        items = KitCatalog.search(input.value, 8);
+        if (!items.length) return hide();
+        box.innerHTML = items.map((r, i) => {
+          const q = KitCatalog.key(input.value);
+          const alias = q && KitCatalog.key(r.name).indexOf(q) === -1
+            ? (r.aliases || []).find(a => KitCatalog.key(a).indexOf(q) !== -1) : null;
+          return `<button type="button" role="option" data-i="${i}">${escapeHtmlLocal(r.name)}${alias ? `<span class="kit-also">also known as ${escapeHtmlLocal(alias)}</span>` : ''}</button>`;
+        }).join('');
+        box.style.display = 'block';
+        hl = -1;
+      }
+
+      function choose(r) {
+        input.value = r.name;
+        // Only fill caliber if the customer hasn't typed their own.
+        if (r.default_caliber && (!caliber.value.trim() || caliber.value === autoCaliber)) {
+          caliber.value = r.default_caliber;
+          autoCaliber = r.default_caliber;
+        }
+        note.textContent = 'Got it: ' + r.name + '.';
+        hide();
+      }
+
+      // Snap exact name/alias matches to the catalog spelling ("pm12" -> "Beretta PM-12").
+      function settle() {
+        const typed = input.value.trim();
+        const hit = KitCatalog.match(typed);
+        if (hit) { if (input.value !== hit.name) choose(hit); else { note.textContent = 'Got it: ' + hit.name + '.'; hide(); } }
+        else { note.textContent = typed ? "Not in our list yet, that's fine. We'll sort it out when it arrives." : baseNote; hide(); }
+      }
+
+      function escapeHtmlLocal(t) {
+        return String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      }
+
+      input.addEventListener('input', () => { if (KitCatalog.all().length) render(); });
+      input.addEventListener('focus', () => { if (KitCatalog.all().length && !input.value.trim()) render(); });
+      // mousedown, not click: the input's blur would hide the list before a click lands.
+      box.addEventListener('mousedown', e => {
+        const b = e.target.closest('button[data-i]');
+        if (!b) return;
+        e.preventDefault();
+        choose(items[+b.dataset.i]);
+      });
+      input.addEventListener('keydown', e => {
+        if (box.style.display === 'none') return;
+        const btns = box.querySelectorAll('button');
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+          e.preventDefault();
+          hl = (hl + (e.key === 'ArrowDown' ? 1 : -1) + btns.length) % btns.length;
+          btns.forEach((b, i) => b.classList.toggle('hl', i === hl));
+          btns[hl].scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'Enter' && hl >= 0) {
+          e.preventDefault();
+          choose(items[hl]);
+        } else if (e.key === 'Escape') {
+          hide();
+        }
+      });
+      input.addEventListener('blur', () => setTimeout(settle, 120));
+
+      KitCatalog.load(supabase);
+    })();
 
     const intakeForm = document.getElementById('intakeForm');
     const errorEl = document.getElementById('intakeError');
@@ -626,7 +726,9 @@
       const service = document.getElementById('i-service').value;
       const type    = document.getElementById('i-type').value;
       const caliber = document.getElementById('i-caliber').value.trim();
-      const kitType = document.getElementById('i-kit-type').value.trim();
+      const kitTypeTyped = document.getElementById('i-kit-type').value.trim();
+      const kitHit = KitCatalog.match(kitTypeTyped);
+      const kitType = kitHit ? kitHit.name : kitTypeTyped;
       const isNfa   = document.getElementById('i-nfa').checked;
       const notes   = document.getElementById('i-notes').value.trim();
       const gotcha  = document.getElementById('i-gotcha').value;

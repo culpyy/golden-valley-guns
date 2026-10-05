@@ -282,6 +282,22 @@
       vertical-align: middle;
     }
     .data-table tr:hover td { background: var(--surface2); }
+    .status-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    .status-chip {
+      background: var(--surface); border: 1px solid var(--border); color: var(--silver);
+      font: inherit; font-size: 12px; letter-spacing: 0.5px; padding: 6px 12px; cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .status-chip:hover { border-color: var(--gold); color: var(--gold-light); }
+    .status-chip.active { border-color: var(--gold); background: var(--gold); color: #111; }
+    .status-chip .n { opacity: 0.7; margin-left: 4px; }
+    /* Sortable column headers on Active Builds. The arrow is CSS-only so it
+       never ends up in the th text that labelDataTableCells() copies into
+       the mobile card labels. */
+    .data-table th.sortable { cursor: pointer; user-select: none; }
+    .data-table th.sortable:hover { color: var(--gold-light); }
+    .data-table th.sortable[data-dir="asc"]::after  { content: " \25B2"; color: var(--gold-light); }
+    .data-table th.sortable[data-dir="desc"]::after { content: " \25BC"; color: var(--gold-light); }
     .data-table td.title { color: var(--text); font-weight: 500; }
     .status-pill {
       display: inline-block;
@@ -659,6 +675,7 @@
     <button class="tab-btn" data-tab="orders">Orders</button>
     <button class="tab-btn" data-tab="messages" id="messagesTabBtn">Messages</button>
     <button class="tab-btn" data-tab="intake" id="intakeTabBtn">Intake</button>
+    <button class="tab-btn" data-tab="platforms">Kit Platforms</button>
     <button class="tab-btn" data-tab="reviews" id="reviewsTabBtn">Reviews</button>
     <button class="tab-btn" data-tab="bulletin">Bulletin Board</button>
     <button class="tab-btn" data-tab="products">Products</button>
@@ -688,8 +705,10 @@
         <input type="hidden" id="buildId" />
         <div class="form-grid">
           <div class="form-field">
-            <label>Title</label>
-            <input type="text" id="b-title" placeholder="AK-47 Parts Kit Build" required />
+            <label>Title (kit / model)</label>
+            <input type="text" id="b-title" list="buildTitleList" autocomplete="off" placeholder="Start typing, e.g. Beretta PM-12" required />
+            <datalist id="buildTitleList"></datalist>
+            <p class="form-note">Pick a name from the list so every kit of the same model is spelled the same. A new model? Just type it, and it'll show up in the list next time.</p>
           </div>
           <div class="form-field">
             <label>Type</label>
@@ -797,6 +816,29 @@
       </div>
       </div>
 
+      <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom: 16px;">
+        <div class="form-field" style="max-width: 320px; flex: 1; min-width: 200px;">
+          <input type="text" id="buildsSearch" placeholder="Search code, title, or customer..." />
+        </div>
+        <div class="form-field" style="max-width: 200px;">
+          <select id="buildsTypeFilter">
+            <option value="">All types</option>
+            <option>Rifle</option>
+            <option>Pistol</option>
+            <option>Shotgun</option>
+            <option>Short-Barreled Rifle</option>
+            <option>Short-Barreled Shotgun</option>
+            <option>Suppressor</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer;">
+          <input type="checkbox" id="buildsNfaFilter" style="width:auto;" /> NFA only
+        </label>
+        <span id="buildsCount" style="font-size:12px;color:var(--muted);letter-spacing:0.5px;"></span>
+        <button class="btn-edit" id="buildsResetView" style="display:none;">Reset</button>
+      </div>
+      <div class="status-chips" id="buildsStatusChips"></div>
       <div id="buildsTable"></div>
       <div style="margin-top:24px;padding:16px 20px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
         <div style="font-size:12px;color:var(--muted);letter-spacing:0.5px;">Builds missing a tracking code won't show up on customer lookups.</div>
@@ -944,6 +986,46 @@
         Submitted from the "Ship Something to Us" page before a customer mails in a kit or firearm. The printable slip they include in the box has the same info - this just lets you see it coming.
       </div>
       <div id="intakeTable"></div>
+    </div>
+
+    <!-- ── KIT PLATFORMS TAB ── -->
+    <div class="tab-panel" id="tab-platforms">
+      <div class="section-hd">
+        <h2>Kit Platforms</h2>
+        <button class="btn-add" id="addPlatformBtn">+ Add Platform</button>
+      </div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:20px;max-width:680px;">
+        The list of kit names customers pick from on the "Ship Something to Us" page, and that the build form suggests from. Add other spellings under "Also known as" (like "Model 12" for the PM-12) so a customer typing it still lands on the right name. Capitals, spaces and dashes are ignored, so you don't need "PM12" and "PM-12" both. The default caliber fills in for the customer when they pick that kit.
+      </div>
+
+      <div class="form-card" id="platformForm">
+        <h3 id="platformFormTitle">Add Platform</h3>
+        <input type="hidden" id="pf-id" />
+        <div class="form-grid">
+          <div class="form-field">
+            <label>Name</label>
+            <input type="text" id="pf-name" placeholder="Beretta PM-12" required />
+          </div>
+          <div class="form-field">
+            <label>Default caliber (optional)</label>
+            <input type="text" id="pf-caliber" placeholder="9mm" />
+          </div>
+          <div class="form-field full">
+            <label>Also known as (comma separated)</label>
+            <input type="text" id="pf-aliases" placeholder="Model 12, Beretta 12" />
+          </div>
+          <div class="form-field full" style="display:flex;align-items:center;gap:10px;">
+            <input type="checkbox" id="pf-active" style="width:16px;height:16px;accent-color:var(--gold-light);cursor:pointer;" checked />
+            <label for="pf-active" style="cursor:pointer;font-size:12px;">Show in the customer list</label>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn-save" id="savePlatformBtn">Add Platform</button>
+          <button class="btn-cancel" id="cancelPlatformBtn">Cancel</button>
+        </div>
+      </div>
+
+      <div id="platformsTable"></div>
     </div>
 
     <!-- ── REVIEWS TAB ── -->
@@ -1212,6 +1294,7 @@
       </div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase.js"></script>
+  <script src="js/kit-catalog.js"></script>
   <script src="js/main.js"></script>
   <script src="js/ffl-lookup.js" defer></script>
   <script>
@@ -1787,8 +1870,15 @@
     }
 
     document.getElementById('saveBuildBtn').addEventListener('click', async () => {
-      const title = document.getElementById('b-title').value.trim();
+      const title = canonicalBuildTitle(document.getElementById('b-title').value.trim());
+      document.getElementById('b-title').value = title;
       if (!title) { showToast('Title is required.'); return; }
+
+      const receivedInput = document.getElementById('b-received').value;
+      if (receivedInput && receivedInput > new Date().toLocaleDateString('en-CA')) {
+        showToast('Received date is in the future. Check the date.');
+        return;
+      }
 
       const id = document.getElementById('buildId').value;
       const isNew = !id;
@@ -1939,6 +2029,7 @@
     async function loadBuilds() {
       const { data, error } = await supabase.from('builds').select('*, build_photos(*)').order('received', { ascending: false });
       buildsAllRows = error ? [] : (data || []);
+      refreshBuildTitleList();
 
       // Newest first, kept as a full array per build (not just the latest)
       // so Shawn can confirm the customer was actually notified at EVERY
@@ -1968,22 +2059,170 @@
       // for NFA vs standard having different stage counts), so reusing it
       // here instead of a separate hardcoded stage list keeps this in sync
       // with the Progress column automatically.
-      const active = buildsAllRows.filter(b => !b.completed_at)
-        .sort((a, b) => {
-          const diff = calcProgress(b.status, b.is_nfa) - calcProgress(a.status, a.is_nfa);
-          // Within the same stage, oldest-added first (FIFO) - created_at
-          // instead of received, since received is a hand-typed date (a
-          // GVG-2026-049 data-entry typo put it 3 months in the past) and
-          // shouldn't be able to throw off ordering the way it just did.
-          // created_at is set once, automatically, and never edited.
-          return diff !== 0 ? diff : new Date(a.created_at) - new Date(b.created_at);
+      applyBuildsView();
+    }
+
+    // Filter + sort state for the Active Builds list. Remembered in this
+    // browser so Shawn's last view survives a refresh. sortKey null = the
+    // default order below (furthest-along stage first).
+    // Title type-ahead. The suggestions are the titles already on builds
+    // (most-used spelling first), so a name Shawn types once is offered
+    // from then on. Everything is compared with case, spaces and dashes
+    // ignored, so "pm-12", "PM12" and "Beretta PM-12" all land on the one
+    // spelling already in use instead of creating a new variant.
+    const titleKey = t => String(t || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    let buildTitleCounts = {};
+    function refreshBuildTitleList() {
+      buildTitleCounts = {};
+      buildsAllRows.forEach(b => { if (b.title) buildTitleCounts[b.title] = (buildTitleCounts[b.title] || 0) + 1; });
+      // Catalog names first-class (even with no builds yet), then any title
+      // already on a build that the catalog doesn't know.
+      KitCatalog.all().forEach(p => { if (!(p.name in buildTitleCounts)) buildTitleCounts[p.name] = 0; });
+      const names = Object.keys(buildTitleCounts).sort((a, b) => buildTitleCounts[b] - buildTitleCounts[a] || a.localeCompare(b));
+      document.getElementById('buildTitleList').innerHTML = names.map(n => `<option value="${escapeHtml(n)}"></option>`).join('');
+    }
+    function canonicalBuildTitle(typed) {
+      const k = titleKey(typed);
+      if (!k) return typed;
+      const cat = KitCatalog.match(typed);
+      if (cat) return cat.name;
+      const names = Object.keys(buildTitleCounts);
+      const best = list => list.sort((a, b) => buildTitleCounts[b] - buildTitleCounts[a])[0];
+      const exact = names.filter(n => titleKey(n) === k);
+      if (exact.length) return best(exact);
+      // "PM12" -> "Beretta PM-12": the typed text is the tail of exactly one
+      // existing name (so "pm12" never swallows "Beretta PM-12S").
+      if (k.length >= 3) {
+        const tail = names.filter(n => titleKey(n).endsWith(k));
+        if (tail.length === 1) return tail[0];
+      }
+      return typed;
+    }
+    document.getElementById('b-title').addEventListener('change', e => {
+      e.target.value = canonicalBuildTitle(e.target.value.trim());
+    });
+
+    const BUILDS_VIEW_KEY = 'gvg_builds_view';
+    const buildsView = (() => {
+      const base = { q: '', status: '', type: '', nfa: false, sortKey: null, sortDir: 'asc' };
+      try { return Object.assign(base, JSON.parse(localStorage.getItem(BUILDS_VIEW_KEY) || '{}')); }
+      catch (e) { return base; }
+    })();
+    function saveBuildsView() {
+      try { localStorage.setItem(BUILDS_VIEW_KEY, JSON.stringify(buildsView)); } catch (e) {}
+    }
+    // Arrival date as a sortable string. received is a hand-typed date (a
+    // GVG-2026-049 typo once put it 3 months in the past) so the Received
+    // column shows it openly; builds without one fall back to the day the
+    // row was entered (created_at), which is automatic and never edited.
+    function buildArrival(b) { return b.received || String(b.created_at || '').slice(0, 10); }
+    const BUILD_SORTERS = {
+      code:     b => (b.tracking_code || '').toLowerCase(),
+      title:    b => (b.title || '').toLowerCase(),
+      customer: b => (b.customer_name || '').toLowerCase(),
+      type:     b => (b.type || '').toLowerCase(),
+      received: b => buildArrival(b),
+      status:   b => calcProgress(b.status, b.is_nfa)
+    };
+    const BUILD_STATUS_LABELS = {
+      'intake': 'Intake', 'queued': 'In Queue', 'parts-ordered': 'Parts Ordered', 'weld': 'Weld',
+      'machining': 'Machining', 'blasting': 'Blasting', 'refinishing': 'Refinishing', 'testing': 'Testing',
+      'atf-filed': 'ATF Filed', 'atf-approved': 'ATF Approved', 'ready': 'Ready'
+    };
+    function renderBuildStatusChips(rows) {
+      const counts = {};
+      rows.forEach(b => { counts[b.status] = (counts[b.status] || 0) + 1; });
+      const chip = (value, label, n) =>
+        `<button type="button" class="status-chip${buildsView.status === value ? ' active' : ''}" data-status="${value}">${label}<span class="n">${n}</span></button>`;
+      // Pipeline order; a stage with nothing in it is hidden unless it's the
+      // one currently selected (so the active filter never disappears).
+      document.getElementById('buildsStatusChips').innerHTML =
+        chip('', 'All', rows.length) +
+        Object.keys(BUILD_STATUS_LABELS)
+          .filter(k => counts[k] || buildsView.status === k)
+          .map(k => chip(k, BUILD_STATUS_LABELS[k], counts[k] || 0)).join('');
+    }
+
+    function applyBuildsView() {
+      const q = buildsView.q.trim().toLowerCase();
+      const matchesQ = b => !q || `${b.tracking_code || ''} ${b.title || ''} ${b.customer_name || ''}`.toLowerCase().includes(q);
+
+      const allActive = buildsAllRows.filter(b => !b.completed_at);
+      // Everything except the status chip, so the chip counts answer "how
+      // many would I see if I clicked this one" under the other filters.
+      const beforeStatus = allActive.filter(b =>
+        matchesQ(b) &&
+        (!buildsView.type || b.type === buildsView.type) &&
+        (!buildsView.nfa || b.is_nfa));
+      const active = beforeStatus.filter(b => !buildsView.status || b.status === buildsView.status);
+      renderBuildStatusChips(beforeStatus);
+
+      const byKey = BUILD_SORTERS[buildsView.sortKey];
+      if (byKey) {
+        const dir = buildsView.sortDir === 'desc' ? -1 : 1;
+        active.sort((a, b) => {
+          const x = byKey(a), y = byKey(b);
+          return (x < y ? -1 : x > y ? 1 : 0) * dir || buildArrival(a).localeCompare(buildArrival(b));
         });
-      const completed = buildsAllRows.filter(b => b.completed_at && !b.archived_at)
+      } else {
+        // Furthest-along first (same idea as inshop.html's public board),
+        // oldest arrival first within a stage (FIFO).
+        active.sort((a, b) => {
+          const diff = calcProgress(b.status, b.is_nfa) - calcProgress(a.status, a.is_nfa);
+          return diff !== 0 ? diff : (buildArrival(a).localeCompare(buildArrival(b)) || new Date(a.created_at) - new Date(b.created_at));
+        });
+      }
+
+      const completed = buildsAllRows.filter(b => b.completed_at && !b.archived_at && matchesQ(b))
         .sort((a, b) => new Date(b.completed_at) - new Date(a.completed_at));
 
-      renderActiveBuildsTable(active);
+      const filtering = q || buildsView.status || buildsView.type || buildsView.nfa;
+      document.getElementById('buildsCount').textContent = filtering ? `Showing ${active.length} of ${allActive.length}` : `${allActive.length} active`;
+      document.getElementById('buildsResetView').style.display = (filtering || buildsView.sortKey) ? '' : 'none';
+
+      renderActiveBuildsTable(active, filtering);
       renderCompletedBuildsTable(completed);
     }
+
+    (function initBuildsView() {
+      const $ = id => document.getElementById(id);
+      $('buildsSearch').value = buildsView.q;
+      $('buildsTypeFilter').value = buildsView.type;
+      $('buildsNfaFilter').checked = buildsView.nfa;
+      const sync = () => {
+        buildsView.q = $('buildsSearch').value;
+        buildsView.type = $('buildsTypeFilter').value;
+        buildsView.nfa = $('buildsNfaFilter').checked;
+        saveBuildsView();
+        applyBuildsView();
+      };
+      $('buildsSearch').addEventListener('input', sync);
+      $('buildsStatusChips').addEventListener('click', e => {
+        const c = e.target.closest('.status-chip');
+        if (!c) return;
+        // Clicking the active chip again goes back to All.
+        buildsView.status = buildsView.status === c.dataset.status ? '' : c.dataset.status;
+        saveBuildsView();
+        applyBuildsView();
+      });
+      ['buildsTypeFilter', 'buildsNfaFilter'].forEach(id => $(id).addEventListener('change', sync));
+      $('buildsResetView').addEventListener('click', () => {
+        Object.assign(buildsView, { q: '', status: '', type: '', nfa: false, sortKey: null, sortDir: 'asc' });
+        $('buildsSearch').value = ''; $('buildsTypeFilter').value = ''; $('buildsNfaFilter').checked = false;
+        saveBuildsView();
+        applyBuildsView();
+      });
+      // Header clicks (the table is re-rendered each time, so delegate).
+      $('buildsTable').addEventListener('click', e => {
+        const th = e.target.closest('th.sortable');
+        if (!th) return;
+        const key = th.dataset.sort;
+        if (buildsView.sortKey === key) buildsView.sortDir = buildsView.sortDir === 'asc' ? 'desc' : 'asc';
+        else { buildsView.sortKey = key; buildsView.sortDir = 'asc'; }
+        saveBuildsView();
+        applyBuildsView();
+      });
+    })();
 
     function buildEmailCell(b) {
       const log = (buildEmailStatus[b.id] || [])[0];
@@ -2055,20 +2294,32 @@
       if (row) row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
     }
 
-    function renderActiveBuildsTable(rows) {
+    function buildReceivedCell(b) {
+      const fmt = d => new Date(d + 'T00:00:00').toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+      if (b.received) return fmt(b.received);
+      const entered = String(b.created_at || '').slice(0, 10);
+      return entered ? `<span style="color:var(--muted);" title="No received date set - showing the day this build was entered">${fmt(entered)}</span>` : '—';
+    }
+
+    function renderActiveBuildsTable(rows, filtering) {
       const container = document.getElementById('buildsTable');
       if (rows.length === 0) {
-        container.innerHTML = '<div class="empty-state">No active builds. Click "+ Add Build" to get started.</div>';
+        container.innerHTML = filtering
+          ? '<div class="empty-state">No builds match your filters.</div>'
+          : '<div class="empty-state">No active builds. Click "+ Add Build" to get started.</div>';
         return;
       }
+      const th = (key, label) => `<th class="sortable" data-sort="${key}"${buildsView.sortKey === key ? ` data-dir="${buildsView.sortDir}"` : ''}>${label}</th>`;
       container.innerHTML = `
         <table class="data-table">
           <thead>
             <tr>
-              <th>Tracking Code</th>
-              <th>Title</th>
-              <th>Customer</th>
-              <th>Status</th>
+              ${th('code', 'Tracking Code')}
+              ${th('title', 'Title')}
+              ${th('customer', 'Customer')}
+              ${th('type', 'Type')}
+              ${th('received', 'Received')}
+              ${th('status', 'Status')}
               <th>Progress</th>
               <th>Payment</th>
               <th>Email</th>
@@ -2081,6 +2332,8 @@
                 <td style="font-family:'Courier New',monospace;font-size:12px;color:var(--gold-light);letter-spacing:1.5px;">${escapeHtml(b.tracking_code) || '—'}</td>
                 <td class="title">${escapeHtml(b.title)}</td>
                 <td style="font-size:12px;">${escapeHtml(b.customer_name) || '—'}</td>
+                <td style="font-size:12px;">${escapeHtml(b.type) || '—'}</td>
+                <td style="font-size:12px;white-space:nowrap;">${buildReceivedCell(b)}</td>
                 <td><span class="status-pill ${b.status}">${escapeHtml(b.status)}</span></td>
                 <td>${calcProgress(b.status, b.is_nfa)}%</td>
                 <td>${buildPaymentCell(b)}</td>
@@ -2090,7 +2343,7 @@
                 </td>
               </tr>
               <tr class="items-detail-row" id="build-email-history-${b.id}" style="display:none;">
-                <td colspan="8">${buildEmailHistoryLines(b)}</td>
+                <td colspan="10">${buildEmailHistoryLines(b)}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -3189,12 +3442,13 @@
                 <td style="font-family:'Courier New',monospace;font-size:12px;color:var(--gold-light);letter-spacing:1px;">${escapeHtml(i.intake_code) || '—'}</td>
                 <td class="title">${i.is_read ? '' : '<span class="unread-dot"></span>'}${escapeHtml(i.name)}${i.is_nfa ? ' <span class="part-badge-pill" style="position:static;display:inline-block;">NFA</span>' : ''}</td>
                 <td>${escapeHtml(INTAKE_SERVICE_LABELS[i.service] || i.service)}</td>
-                <td style="font-size:12px;">${i.kit_type ? `<strong>${escapeHtml(i.kit_type)}</strong> — ` : ''}${escapeHtml(i.firearm_type || '—')}${i.caliber ? ' · ' + escapeHtml(i.caliber) : ''}</td>
+                <td style="font-size:12px;">${i.kit_type ? `<strong>${escapeHtml(i.kit_type)}</strong>${intakeKitUnlisted(i) ? ' <span class="part-badge-pill" style="position:static;display:inline-block;" title="Not in the Kit Platforms list yet">NEW</span>' : ''} — ` : ''}${escapeHtml(i.firearm_type || '—')}${i.caliber ? ' · ' + escapeHtml(i.caliber) : ''}</td>
                 <td style="font-size:12px;">${i.email ? escapeHtml(i.email) : ''}${i.phone ? (i.email ? '<br>' : '') + escapeHtml(i.phone) : ''}</td>
                 <td>
                   <div class="row-actions">
                     <button class="btn-edit" onclick="toggleIntakeBody('${i.id}')">View</button>
                     <button class="btn-edit" onclick="createBuildFromIntake('${i.id}')">Create Build</button>
+                    ${intakeKitUnlisted(i) ? `<button class="btn-edit" onclick="addPlatformFromIntake('${i.id}')">Add to Platforms</button>` : ''}
                     <button class="btn-edit" onclick="toggleIntakeRead('${i.id}', ${!i.is_read})">${i.is_read ? 'Mark Unread' : 'Mark Read'}</button>
                     <button class="btn-delete" onclick="deleteIntake('${i.id}')">Delete</button>
                   </div>
@@ -3246,6 +3500,12 @@
     // one (it's their own structured answer, not a guess) - still fully
     // editable, and left blank like before when kit_type is empty, since a
     // blank title still needs Shawn's own judgment call from the notes.
+    // A kit the customer typed that isn't in the catalog (or hasn't loaded
+    // yet - then no flag rather than a wrong one).
+    function intakeKitUnlisted(i) {
+      return !!i.kit_type && KitCatalog.all().length > 0 && !KitCatalog.match(i.kit_type);
+    }
+
     function createBuildFromIntake(id) {
       const intake = intakeAllRows.find(i => i.id === id);
       if (!intake) return;
@@ -3259,9 +3519,9 @@
 
       openBuildForm({
         id: '',
-        title: intake.kit_type || '',
+        title: (KitCatalog.match(intake.kit_type) || {}).name || intake.kit_type || '',
         type,
-        caliber: intake.caliber || '',
+        caliber: intake.caliber || (KitCatalog.match(intake.kit_type) || {}).default_caliber || '',
         status: 'intake',
         is_nfa: intake.is_nfa,
         customer_name: intake.name,
@@ -3501,6 +3761,152 @@
       if (error) { showToast('Error: ' + error.message); return; }
       loadBulletin();
       showToast('Idea deleted.');
+    }
+
+    // ── KIT PLATFORMS ──
+    // The catalog behind the intake wizard's Kit / Platform type-ahead (see
+    // js/kit-catalog.js, sql/kit_platforms.sql). Loaded here with the admin
+    // session so hidden platforms show too; KitCatalog only keeps the active ones.
+    let platformsAllRows = [];
+
+    async function loadPlatforms() {
+      const { data, error } = await supabase.from('kit_platforms').select('*').order('name');
+      platformsAllRows = error ? [] : (data || []);
+      KitCatalog.set(platformsAllRows);
+      refreshBuildTitleList();
+      renderPlatformsTable();
+      // Intake rows flag kits that aren't in the catalog, so they need a redraw now.
+      if (typeof renderIntakeTable === 'function' && intakeAllRows.length) renderIntakeTable();
+    }
+
+    function renderPlatformsTable() {
+      const container = document.getElementById('platformsTable');
+      if (platformsAllRows.length === 0) {
+        container.innerHTML = '<div class="empty-state">No platforms yet. Run sql/kit_platforms.sql in Supabase to add the starting list, or click "+ Add Platform".</div>';
+        return;
+      }
+      const used = {};
+      buildsAllRows.forEach(b => { if (b.title) used[b.title] = (used[b.title] || 0) + 1; });
+      container.innerHTML = `
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Also known as</th>
+              <th>Default caliber</th>
+              <th>Builds</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${platformsAllRows.map(p => `
+              <tr>
+                <td class="title">${escapeHtml(p.name)}</td>
+                <td style="font-size:12px;">${(p.aliases || []).map(escapeHtml).join(', ') || '—'}</td>
+                <td style="font-size:12px;">${escapeHtml(p.default_caliber) || '—'}</td>
+                <td style="font-size:12px;">${used[p.name] || 0}</td>
+                <td>${p.is_active ? '<span class="status-pill paid">Listed</span>' : '<span class="status-pill refunded">Hidden</span>'}</td>
+                <td>
+                  <div class="row-actions">
+                    <button class="btn-edit" onclick="editPlatform('${p.id}')">Edit</button>
+                    <button class="btn-edit" onclick="togglePlatform('${p.id}', ${!p.is_active})">${p.is_active ? 'Hide' : 'Show'}</button>
+                    <button class="btn-delete" onclick="deletePlatform('${p.id}')">Delete</button>
+                  </div>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>`;
+    }
+
+    function openPlatformForm(p) {
+      document.getElementById('platformFormTitle').textContent = p && p.id ? 'Edit Platform' : 'Add Platform';
+      document.getElementById('pf-id').value = p && p.id ? p.id : '';
+      document.getElementById('pf-name').value = p ? (p.name || '') : '';
+      document.getElementById('pf-caliber').value = p ? (p.default_caliber || '') : '';
+      document.getElementById('pf-aliases').value = p ? (p.aliases || []).join(', ') : '';
+      document.getElementById('pf-active').checked = p && p.id ? !!p.is_active : true;
+      document.getElementById('savePlatformBtn').textContent = p && p.id ? 'Save Platform' : 'Add Platform';
+      document.getElementById('platformForm').classList.add('open');
+      document.getElementById('platformForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    function editPlatform(id) {
+      const p = platformsAllRows.find(x => x.id === id);
+      if (p) openPlatformForm(p);
+    }
+    document.getElementById('addPlatformBtn').addEventListener('click', () => openPlatformForm(null));
+    document.getElementById('cancelPlatformBtn').addEventListener('click', () => {
+      document.getElementById('platformForm').classList.remove('open');
+    });
+
+    document.getElementById('savePlatformBtn').addEventListener('click', async () => {
+      const id = document.getElementById('pf-id').value;
+      const name = document.getElementById('pf-name').value.trim();
+      if (!name) { showToast('Name is required.'); return; }
+
+      // Aliases: split on commas/newlines, drop blanks, and drop any that are
+      // really the same as the name (matching already ignores case/spacing).
+      const seen = new Set([KitCatalog.key(name)]);
+      const aliases = document.getElementById('pf-aliases').value.split(/[,\n]/).map(a => a.trim()).filter(a => {
+        const k = KitCatalog.key(a);
+        if (!k || seen.has(k)) return false;
+        seen.add(k);
+        return true;
+      });
+
+      // An alias (or name) already used by a DIFFERENT platform would make
+      // matching ambiguous - refuse rather than silently pick one.
+      for (const other of platformsAllRows) {
+        if (other.id === id) continue;
+        const otherKeys = [other.name, ...(other.aliases || [])].map(KitCatalog.key);
+        const clash = [name, ...aliases].find(t => otherKeys.includes(KitCatalog.key(t)));
+        if (clash) { showToast('"' + clash + '" is already used by ' + other.name + '.'); return; }
+      }
+
+      const payload = {
+        name,
+        aliases,
+        default_caliber: document.getElementById('pf-caliber').value.trim() || null,
+        is_active: document.getElementById('pf-active').checked
+      };
+      const saveBtn = document.getElementById('savePlatformBtn');
+      saveBtn.disabled = true;
+      const { error } = id
+        ? await supabase.from('kit_platforms').update(payload).eq('id', id)
+        : await supabase.from('kit_platforms').insert(payload);
+      saveBtn.disabled = false;
+      if (error) {
+        showToast(error.code === '23505' ? 'A platform with that name already exists.' : 'Error: ' + error.message);
+        return;
+      }
+      document.getElementById('platformForm').classList.remove('open');
+      showToast(id ? 'Platform saved.' : 'Platform added.');
+      loadPlatforms();
+    });
+
+    async function togglePlatform(id, makeActive) {
+      const { error } = await supabase.from('kit_platforms').update({ is_active: makeActive }).eq('id', id);
+      if (error) { showToast('Error: ' + error.message); return; }
+      loadPlatforms();
+    }
+
+    async function deletePlatform(id) {
+      const p = platformsAllRows.find(x => x.id === id);
+      if (!p || !confirm('Delete "' + p.name + '" from the list? Builds and past submissions keep their names; this only removes it from the suggestions. (Hide it instead if you might want it back.)')) return;
+      const { error } = await supabase.from('kit_platforms').delete().eq('id', id);
+      if (error) { showToast('Error: ' + error.message); return; }
+      loadPlatforms();
+      showToast('Platform deleted.');
+    }
+
+    // From an intake row flagged "not in catalog": jump to the form with the
+    // customer's text filled in, so adding it is one click.
+    function addPlatformFromIntake(id) {
+      const intake = intakeAllRows.find(i => i.id === id);
+      if (!intake) return;
+      activateTab('platforms');
+      openPlatformForm({ name: intake.kit_type || '', default_caliber: intake.caliber || '', aliases: [] });
     }
 
     // ── PRODUCTS ──
@@ -4023,6 +4429,7 @@
     loadOrders();
     loadMessages();
     loadIntake();
+    loadPlatforms();
     loadReviews();
     loadBulletin();
     loadProducts();

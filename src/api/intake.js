@@ -8,6 +8,7 @@
 import { getSupabaseAdmin } from '../lib/supabaseAdmin.js';
 import { sendEmail } from '../lib/email.js';
 import { checkRateLimit } from '../lib/rateLimit.js';
+import { canonicalKitName } from '../lib/kitPlatforms.js';
 import { buildIntakeSlipPdf, bytesToBase64 } from '../lib/pdf.js';
 import { escapeHtml, emailShell, emailGreeting, emailParagraph, emailHighlight, emailFooterNote } from '../lib/emailTemplate.js';
 
@@ -71,12 +72,15 @@ export async function handleIntake(request, env) {
     return jsonResponse({ error: 'Too many submissions. Please try again later or call us directly.' }, 429, { 'Retry-After': String(retryAfterSeconds) });
   }
 
-  const { name, email, phone, service, firearmType, caliber, kitType, isNfa, notes } = payload || {};
+  const { name, email, phone, service, firearmType, caliber, kitType: kitTypeRaw, isNfa, notes } = payload || {};
   if (!name || !service || (!email && !phone)) {
     return jsonResponse({ error: 'Please add your name, a service type, and at least an email or phone number.' }, 400);
   }
 
   const supabase = getSupabaseAdmin(env);
+  // Customers type this freely ("PM12", "pm-12"), so map it onto the catalog
+  // name when it matches one - see src/lib/kitPlatforms.js.
+  const kitType = await canonicalKitName(supabase, kitTypeRaw);
   // Tiny retry loop for the rare unique-constraint collision on intake_code -
   // same defensive pattern as tracking-code generation in admin-dashboard.html,
   // just with random codes instead of sequential ones (no shared counter to
