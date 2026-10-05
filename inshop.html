@@ -136,6 +136,28 @@
     }
     .board-search-clear:hover { color: var(--text); }
     .board-search-wrap.has-value .board-search-clear { display: block; }
+    .board-controls {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin: -8px 0 24px;
+    }
+    .board-controls select {
+      flex: 1;
+      min-width: 180px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 11px 14px;
+      font-size: 13px;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+    }
+    .board-controls select:focus {
+      outline: none;
+      border-color: var(--gold-light);
+      box-shadow: 0 0 0 3px rgba(200, 149, 26, 0.15);
+    }
     .board-filter-note {
       font-size: 12px;
       color: var(--muted);
@@ -619,6 +641,17 @@
       <input type="text" id="boardSearch" placeholder="Search by name, type, caliber, or tracking code..." />
       <button type="button" class="board-search-clear" id="boardSearchClear" aria-label="Clear search">&times;</button>
     </div>
+    <div class="board-controls">
+      <select id="boardKit" aria-label="Filter by kit">
+        <option value="">All kits</option>
+      </select>
+      <select id="boardSort" aria-label="Sort builds">
+        <option value="stage">Furthest along first</option>
+        <option value="oldest">Oldest received first</option>
+        <option value="newest">Newest received first</option>
+        <option value="name">Name A to Z</option>
+      </select>
+    </div>
     <div class="board-filter-note" id="boardFilterNote" style="display:none;"></div>
 
     <div class="builds-list" id="buildsList"></div>
@@ -709,6 +742,8 @@
     let isAdmin = false;
     let currentFilter = 'all';
     let currentSearch = '';
+    let currentKit = '';
+    let currentSort = 'stage';
 
     const FILTER_LABELS = {
       all: 'In Shop',
@@ -726,6 +761,23 @@
         case 'ready':   return b.status === 'ready';
         default:        return b.status !== 'intake';
       }
+    }
+
+    function matchesKit(b, kit) {
+      return !kit || b.title === kit;
+    }
+
+    // One option per kit name on the board (most builds first), with how many.
+    // Rebuilt after the board loads; a kit that's no longer on the board
+    // drops out of the filter instead of leaving it stuck on nothing.
+    function renderKitOptions() {
+      const counts = {};
+      builds.filter(b => b.status !== 'intake' && b.title).forEach(b => { counts[b.title] = (counts[b.title] || 0) + 1; });
+      const names = Object.keys(counts).sort((a, b) => counts[b] - counts[a] || a.localeCompare(b));
+      if (currentKit && !counts[currentKit]) currentKit = '';
+      const sel = document.getElementById('boardKit');
+      sel.innerHTML = '<option value="">All kits</option>' + names.map(n =>
+        `<option value="${n.replace(/&/g, '&amp;').replace(/"/g, '&quot;')}"${n === currentKit ? ' selected' : ''}>${n.replace(/&/g, '&amp;').replace(/</g, '&lt;')} (${counts[n]})</option>`).join('');
     }
 
     function matchesSearch(b, q) {
@@ -780,10 +832,12 @@
       const note = document.getElementById('boardFilterNote');
       const hasFilter = currentFilter !== 'all';
       const hasSearch = !!currentSearch;
-      if (!hasFilter && !hasSearch) { note.style.display = 'none'; return; }
+      const hasKit = !!currentKit;
+      if (!hasFilter && !hasSearch && !hasKit) { note.style.display = 'none'; return; }
 
       const parts = [];
       if (hasFilter) parts.push(`status: ${FILTER_LABELS[currentFilter]}`);
+      if (hasKit) parts.push(currentKit.replace(/&/g, '&amp;').replace(/</g, '&lt;'));
       if (hasSearch) parts.push(`"${currentSearch}"`);
       note.style.display = 'block';
       note.innerHTML = `Showing ${shown} of ${total} builds (${parts.join(', ')}) &middot; <button type="button" onclick="clearBoardFilters()">Clear</button>`;
@@ -792,6 +846,8 @@
     function clearBoardFilters() {
       currentFilter = 'all';
       currentSearch = '';
+      currentKit = '';
+      document.getElementById('boardKit').value = '';
       document.getElementById('boardSearch').value = '';
       document.getElementById('boardSearchWrap').classList.remove('has-value');
       renderSummary();
@@ -804,8 +860,18 @@
       // it's no longer a selectable status (see js/main.js), but any build
       // not yet migrated to a specific stage still needs a defined sort
       // position instead of landing at the end via indexOf's -1.
-      const filtered = builds.filter(b => matchesFilter(b, currentFilter) && matchesSearch(b, currentSearch));
-      const sorted = [...filtered].sort((a, b) => order.indexOf(a.status) - order.indexOf(b.status));
+      const filtered = builds.filter(b => matchesFilter(b, currentFilter) && matchesKit(b, currentKit) && matchesSearch(b, currentSearch));
+      const recv = b => b.received || '';
+      const byTitle = (a, b) => (a.title || '').localeCompare(b.title || '');
+      const sorters = {
+        // Furthest along first; within a stage the build that's been waiting
+        // longest goes first (first come, first served).
+        stage:  (a, b) => order.indexOf(a.status) - order.indexOf(b.status) || recv(a).localeCompare(recv(b)) || byTitle(a, b),
+        oldest: (a, b) => recv(a).localeCompare(recv(b)) || byTitle(a, b),
+        newest: (a, b) => recv(b).localeCompare(recv(a)) || byTitle(a, b),
+        name:   (a, b) => byTitle(a, b) || recv(a).localeCompare(recv(b))
+      };
+      const sorted = [...filtered].sort(sorters[currentSort] || sorters.stage);
       const list = document.getElementById('buildsList');
       renderFilterNote(sorted.length, builds.length);
 
@@ -982,6 +1048,14 @@
       boardSearchWrap.classList.toggle('has-value', !!boardSearchInput.value);
       renderBuilds();
     });
+    document.getElementById('boardKit').addEventListener('change', e => {
+      currentKit = e.target.value;
+      renderBuilds();
+    });
+    document.getElementById('boardSort').addEventListener('change', e => {
+      currentSort = e.target.value;
+      renderBuilds();
+    });
     document.getElementById('boardSearchClear').addEventListener('click', () => {
       boardSearchInput.value = '';
       currentSearch = '';
@@ -1035,6 +1109,7 @@
       builds = buildsBase.map(b => ({ ...b, photos: photosByBuild[b.id] || [] }));
       renderBoardUpdated();
       renderSummary();
+      renderKitOptions();
       renderBuilds();
     }
 
