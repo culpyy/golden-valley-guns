@@ -738,6 +738,11 @@ h2.section-title {
   padding: 24px;
 }
 
+/* Already confirmed: a script in each page's <head> sets .age-ok on <html>
+   before the body is parsed, so the gate never paints (it used to flash
+   for a frame before the inline check right after it could hide it). */
+.age-ok .age-gate { display: none; }
+
 .age-gate-card {
   max-width: 480px;
   width: 100%;
