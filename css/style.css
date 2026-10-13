@@ -258,6 +258,53 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
   transition: all 0.25s;
 }
 
+/* ── SITE NOTICE (homepage banner under the fixed nav) ── */
+.site-notice {
+  margin-top: var(--nav-h);
+  background: linear-gradient(90deg, rgba(139,105,20,0.22), rgba(139,105,20,0.08));
+  border-bottom: 1px solid var(--gold);
+  border-left: 4px solid var(--gold-light);
+}
+.site-notice-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 16px 48px;
+  display: flex;
+  align-items: baseline;
+  gap: 20px;
+}
+.site-notice-label {
+  flex-shrink: 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--bg);
+  background: var(--gold-light);
+  padding: 4px 10px;
+}
+.site-notice p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text);
+}
+.site-notice p strong { color: var(--gold-glow); }
+/* The notice already clears the fixed nav, so the hero right after it
+   shouldn't add its own nav-height offset on top. */
+.site-notice + .hero { padding-top: 0; }
+
+@media (max-width: 900px) {
+  .site-notice-inner {
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px 20px;
+  }
+  .site-notice p { font-size: 14px; }
+  .site-notice + .hero { padding-top: 24px; }
+}
+
 /* ── HERO ── */
 .hero {
   position: relative;
