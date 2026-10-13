@@ -260,49 +260,89 @@ button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation
 
 /* ── SITE NOTICE (homepage banner under the fixed nav) ── */
 .site-notice {
+  position: relative;
   margin-top: var(--nav-h);
-  background: linear-gradient(90deg, rgba(139,105,20,0.22), rgba(139,105,20,0.08));
-  border-bottom: 1px solid var(--gold);
-  border-left: 4px solid var(--gold-light);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 48px;
 }
+/* Gold hairline along the top edge, fading out to the right */
+.site-notice::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--gold-light) 0%, var(--gold) 35%, transparent 100%);
+}
+/* Same frame as .hero (48px gutter) + .hero-inner (1400px max) so the notice lines up with the hero copy */
 .site-notice-inner {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 16px 48px;
+  padding: 26px 0 28px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 40px;
+  align-items: center;
+}
+.site-notice-head {
   display: flex;
-  align-items: baseline;
-  gap: 20px;
+  flex-direction: column;
+  gap: 8px;
 }
 .site-notice-label {
-  flex-shrink: 0;
-  font-family: 'JetBrains Mono', monospace;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.14em;
+  letter-spacing: 3px;
   text-transform: uppercase;
-  color: var(--bg);
+  color: var(--gold-light);
+}
+.site-notice-label::before {
+  content: '';
+  width: 24px; height: 1px;
   background: var(--gold-light);
-  padding: 4px 10px;
+}
+.site-notice-title {
+  margin: 0;
+  font-family: 'Big Shoulders Display', sans-serif;
+  font-weight: 800;
+  font-size: 24px;
+  line-height: 1.1;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--text);
+  white-space: nowrap;
 }
 .site-notice p {
   margin: 0;
+  max-width: 860px;
+  padding-left: 40px;
+  border-left: 1px solid var(--border);
   font-size: 15px;
-  line-height: 1.6;
-  color: var(--text);
+  line-height: 1.7;
+  color: var(--silver);
 }
-.site-notice p strong { color: var(--gold-glow); }
 /* The notice already clears the fixed nav, so the hero right after it
-   shouldn't add its own nav-height offset on top. */
-.site-notice + .hero { padding-top: 0; }
+   gets a normal section gap instead of its own nav-height offset. */
+.site-notice + .hero { padding-top: 40px; }
 
 @media (max-width: 900px) {
   .site-notice-inner {
-    flex-direction: column;
-    gap: 8px;
-    padding: 14px 20px;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding: 22px 0 24px;
   }
-  .site-notice p { font-size: 14px; }
-  .site-notice + .hero { padding-top: 24px; }
+  .site-notice { padding: 0 20px; }
+  .site-notice-title { font-size: 21px; white-space: normal; }
+  .site-notice p {
+    padding-left: 0;
+    border-left: 0;
+    font-size: 14px;
+    line-height: 1.65;
+  }
+  .site-notice + .hero { padding-top: 28px; }
 }
 
 /* ── HERO ── */
