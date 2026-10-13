@@ -1,5 +1,9 @@
 {
   "name": "golden-valley-guns",
+  // Pinned so deploys always target GVG's account (goldenvalleyguns@gmail.com),
+  // even when wrangler is logged in as braeden.culp@elkhorndigital.com, who
+  // is a member of this account.
+  "account_id": "3703ee87577f1ebba2428bcca949ddd2",
   "compatibility_date": "2026-07-15",
   "compatibility_flags": ["nodejs_compat"],
   "main": "src/worker.js",
