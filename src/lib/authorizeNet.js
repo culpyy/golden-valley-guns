@@ -12,11 +12,15 @@
 //   AUTHORIZENET_TRANSACTION_KEY - generated alongside the API Login ID on the same page (secret, NEVER exposed client-side)
 //   AUTHORIZENET_ENVIRONMENT     - already set as a plain var in wrangler.jsonc ("sandbox" or "production")
 //
-// NOT YET TESTED against a live account - Shawn doesn't have an Authorize.net
-// merchant account set up yet. This mirrors the shape of Authorize.net's
-// documented createTransactionRequest/JSON API; verify field names against a
-// real sandbox response the same way lipseys.js was corrected after its first
-// live test (see that file's header comment for the pattern to follow).
+// LIVE. This has taken real card charges on the Payroc-linked Authorize.net
+// gateway (credentials rotated 2026-09-10), and the refund path below,
+// including the unsettled-transaction case (error code 54), was confirmed
+// against real transactions 2026-08-05.
+//
+// Corrected 2026-10-15: this header used to say the integration was untested
+// because Shawn had no merchant account yet, which was true when it was
+// written and stopped being true without the comment being updated. A stale
+// "not tested" note at the top of a live payment file is worse than none.
 
 const ENDPOINTS = {
   sandbox: 'https://apitest.authorize.net/xml/v1/request.api',
