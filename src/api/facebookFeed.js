@@ -6,11 +6,15 @@
 // from a long-lived User token (see the setup instructions given alongside
 // this) doesn't expire on its own, unlike a plain short-lived token.
 //
-// Safe failure mode by design (same pattern as is_admin()'s placeholder
-// UUID elsewhere in this codebase): if the secret isn't set yet, this
-// returns an empty post list instead of erroring, so the merged activity
-// feed on bulletin.html just shows YouTube + bulletin ideas until the
-// token is added.
+// LIVE: the token is set and real Page posts come back (verified against
+// the deployed /api/facebook-feed 2026-10-15).
+//
+// The empty-list path below is still the safe failure mode by design: if
+// the secret is ever missing or revoked, this returns no posts instead of
+// erroring, and the merged activity feed on bulletin.html falls back to
+// YouTube + bulletin ideas rather than breaking. A revoked or expired
+// token therefore looks exactly like a quiet feed, so check this endpoint
+// directly if Facebook posts stop appearing.
 const GRAPH_VERSION = 'v19.0';
 
 export async function handleFacebookFeed(request, env) {

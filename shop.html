@@ -1386,8 +1386,9 @@
     }
 
     // Manual curation (products.is_best_seller), not computed from sales -
-    // there's no real order history to aggregate yet. Scoped to Shawn's own
-    // products only, same reasoning as builds.is_showcase: distributor items
+    // by choice, not for lack of data. There are real settled orders to
+    // aggregate now, but what gets featured stays Shawn's call. Scoped to
+    // his own products only, same reasoning as builds.is_showcase: distributor items
     // are auto-synced thousands at a time, not something he's reviewed one by
     // one. Hidden entirely (not an empty section) until at least one is set.
     function renderBestSellers(ownParts) {
