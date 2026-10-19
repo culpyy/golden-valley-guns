@@ -8,3 +8,7 @@ supabase/.temp/
 
 # Local Wrangler dev/build cache
 .wrangler/
+
+graphify-out/
+.gitattributes
+.claude/
