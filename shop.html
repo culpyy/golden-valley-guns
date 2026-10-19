@@ -780,10 +780,20 @@
     // back/forward that doesn't restore from bfcache) shows the same items
     // instead of a fresh shuffle every time.
     const SHUFFLE_SEED_TTL_MS = 3 * 60 * 1000;
+    // Shawn's own stock leads the grid, then the distributor catalog. What he
+    // physically has on the shelf is the point of the shop, and distributor
+    // rows outnumber it thousands to one, so mixing them by stock tier alone
+    // buried his inventory on page one. Within each group the stock tiers and
+    // the seeded shuffle still apply, so his out-of-stock items sink below his
+    // in-stock ones (but stay above the catalog).
     function shuffledByStockTier(items) {
       const rng = mulberry32(sessionShuffleSeed('gvg_shop_shuffle_seed', SHUFFLE_SEED_TTL_MS));
-      const tiers = [[], [], [], []];
-      items.forEach(item => tiers[STOCK_ORDER[item.stock] ?? 3].push(item));
+      const TIERS = 4; // STOCK_ORDER's size: in_stock, limited, call, out
+      const tiers = Array.from({ length: TIERS * 2 }, () => []);
+      items.forEach(item => {
+        const stock = STOCK_ORDER[item.stock] ?? TIERS - 1;
+        tiers[(itemSource(item) === 'own' ? 0 : TIERS) + stock].push(item);
+      });
       return tiers.flatMap(tier => shuffle(tier, rng));
     }
 
