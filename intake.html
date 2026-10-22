@@ -347,12 +347,12 @@
               </div>
               <p class="form-note" style="margin-top:-8px;">Give us at least one: email or phone. Add an email and we'll send your reference code there too.</p>
               <div class="form-group">
-                <label for="i-nfa">NFA / Title II</label>
+                <label for="i-nfa">NFA</label>
                 <select id="i-nfa" required>
                   <option value="" disabled selected>Select one</option>
-                  <option value="none">No NFA work</option>
-                  <option value="build_to_nfa">Convert to SBR / SBS</option>
-                  <option value="already_nfa">Shipping a registered NFA item (suppressor, SBR, SBS)</option>
+                  <option value="none">Not NFA</option>
+                  <option value="build_to_nfa">Make it an SBR / SBS (Form 1)</option>
+                  <option value="already_nfa">Already a registered NFA item (suppressor, SBR, SBS)</option>
                 </select>
               </div>
             </div>
@@ -660,7 +660,7 @@
         return;
       }
       if (!nfaSelect.value) {
-        errorEl.textContent = 'Please choose an NFA / Title II option.';
+        errorEl.textContent = 'Please choose an NFA option.';
         errorEl.style.display = 'block';
         nfaSelect.focus();
         return;
@@ -677,7 +677,7 @@
     const NFA_TYPES = ['Short-Barreled Rifle', 'Short-Barreled Shotgun', 'Suppressor'];
     const typeSelect = document.getElementById('i-type');
     const nfaSelect = document.getElementById('i-nfa');
-    const NFA_LABELS = { none: 'No NFA work', build_to_nfa: 'Convert to SBR / SBS', already_nfa: 'Registered NFA item' };
+    const NFA_LABELS = { none: 'Not NFA', build_to_nfa: 'Make into SBR / SBS (Form 1)', already_nfa: 'Registered NFA item' };
 
     // The NFA question lives on step 1 (customers were typing "NFA" into
     // their name because it only showed up on step 2), and it separates

@@ -22,8 +22,8 @@ const SERVICE_LABELS = {
 
 // Matches intake_submissions.nfa_intent's check constraint (sql/intake_nfa_intent.sql).
 const NFA_LABELS = {
-  none: 'No NFA work',
-  build_to_nfa: 'Convert to SBR / SBS',
+  none: 'Not NFA',
+  build_to_nfa: 'Make into SBR / SBS (Form 1)',
   already_nfa: 'Registered NFA item'
 };
 
