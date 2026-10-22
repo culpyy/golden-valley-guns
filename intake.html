@@ -351,8 +351,8 @@
                 <select id="i-nfa" required>
                   <option value="" disabled selected>Select one</option>
                   <option value="none">Not NFA</option>
-                  <option value="build_to_nfa">Make it an SBR / SBS (Form 1)</option>
-                  <option value="already_nfa">Already a registered NFA item (suppressor, SBR, SBS)</option>
+                  <option value="build_to_nfa">Build it into an SBR / SBS</option>
+                  <option value="already_nfa">Already an SBR, SBS or suppressor</option>
                 </select>
               </div>
             </div>
@@ -677,7 +677,7 @@
     const NFA_TYPES = ['Short-Barreled Rifle', 'Short-Barreled Shotgun', 'Suppressor'];
     const typeSelect = document.getElementById('i-type');
     const nfaSelect = document.getElementById('i-nfa');
-    const NFA_LABELS = { none: 'Not NFA', build_to_nfa: 'Make into SBR / SBS (Form 1)', already_nfa: 'Registered NFA item' };
+    const NFA_LABELS = { none: 'Not NFA', build_to_nfa: 'Build into SBR / SBS', already_nfa: 'Already SBR / SBS / suppressor' };
 
     // The NFA question lives on step 1 (customers were typing "NFA" into
     // their name because it only showed up on step 2), and it separates
