@@ -22,9 +22,9 @@ const SERVICE_LABELS = {
 
 // Matches intake_submissions.nfa_intent's check constraint (sql/intake_nfa_intent.sql).
 const NFA_LABELS = {
-  none: 'No',
-  build_to_nfa: 'Build to NFA (SBR / SBS)',
-  already_nfa: 'Shipping an NFA item'
+  none: 'No NFA work',
+  build_to_nfa: 'Convert to SBR / SBS',
+  already_nfa: 'Registered NFA item'
 };
 
 // Excludes 0/O/1/I - the whole point of this code is a customer hand-writing
