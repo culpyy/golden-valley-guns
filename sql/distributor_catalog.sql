@@ -395,3 +395,65 @@ create policy "Admin delete stock watch requests"
   on stock_watch_requests for delete
   to authenticated
   using (is_admin());
+
+-- 15) DEDUP PREFERS A LISTING WITH ITS OWN PHOTO (2026-10-22)
+-- When several distributors carry the same UPC, the shop showed the cheapest
+-- listing even when it had no photo and another distributor's listing for the
+-- same item did (~2,160 photo-less cards: Davidson's and RSR feeds carry no
+-- images). In stock still wins first; then a listing with its own photo; then
+-- price. Each photo stays on its own distributor's listing - no cross-
+-- distributor image borrowing (distributor image terms). Column order matches
+-- the live view (upc/msrp last), which differs from block 14's text above.
+create or replace view distributor_products_public as
+with markup as (
+  select coalesce(
+    (select value::numeric from site_content where key = 'catalog_markup_pct'),
+    0
+  ) as pct
+),
+priced as (
+  select
+    dp.*,
+    greatest(
+      round(dp.dealer_cost * (1 + markup.pct / 100.0), 2),
+      coalesce(dp.retail_map, 0)
+    ) as computed_price
+  from distributor_products dp
+  cross join markup
+  where dp.is_hidden = false
+),
+ranked as (
+  select
+    p.*,
+    row_number() over (
+      partition by coalesce(nullif(trim(p.upc), ''), p.id::text)
+      order by
+        (p.quantity_available > 0) desc,
+        (p.image_url is not null) desc,
+        p.computed_price asc,
+        p.id
+    ) as rn
+  from priced p
+)
+select
+  id,
+  distributor,
+  name,
+  manufacturer,
+  category,
+  caliber,
+  description,
+  computed_price as price,
+  case
+    when quantity_available > 5 then 'in_stock'
+    when quantity_available > 0 then 'limited'
+    else 'out'
+  end as stock,
+  image_url,
+  is_firearm,
+  last_synced_at,
+  firearm_type,
+  upc,
+  msrp
+from ranked
+where rn = 1;

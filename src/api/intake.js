@@ -76,6 +76,10 @@ export async function handleIntake(request, env) {
   if (!name || !service || (!email && !phone)) {
     return jsonResponse({ error: 'Please add your name, a service type, and at least an email or phone number.' }, 400);
   }
+  // Same rule as intake.html, enforced here too since a direct POST skips the page.
+  if (!(typeof kitTypeRaw === 'string' && kitTypeRaw.trim())) {
+    return jsonResponse({ error: 'Please enter the kit or platform you are sending (for example PM-63).' }, 400);
+  }
 
   const supabase = getSupabaseAdmin(env);
   // Customers type this freely ("PM12", "pm-12"), so map it onto the catalog
