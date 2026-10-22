@@ -346,9 +346,14 @@
                 <input type="email" id="i-email" placeholder="you@example.com" />
               </div>
               <p class="form-note" style="margin-top:-8px;">Give us at least one: email or phone. Add an email and we'll send your reference code there too.</p>
-              <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
-                <input type="checkbox" id="i-nfa" style="width:16px;height:16px;accent-color:var(--gold-light);cursor:pointer;" />
-                <label for="i-nfa" style="text-transform:none;letter-spacing:normal;font-size:13px;cursor:pointer;">I'm sending an NFA item (suppressor, SBR, SBS)</label>
+              <div class="form-group">
+                <label for="i-nfa">Is NFA involved?</label>
+                <select id="i-nfa" required>
+                  <option value="" disabled selected>Select one</option>
+                  <option value="none">No</option>
+                  <option value="build_to_nfa">I want my build to end up as an NFA item (SBR, SBS)</option>
+                  <option value="already_nfa">I'm shipping an item that's already NFA (suppressor, SBR, SBS)</option>
+                </select>
               </div>
             </div>
             <div class="wizard-nav">
@@ -379,6 +384,7 @@
                     <option>Rifle</option>
                     <option>Pistol</option>
                     <option>Shotgun</option>
+                    <option>Parts Kit</option>
                     <option>Short-Barreled Rifle</option>
                     <option>Short-Barreled Shotgun</option>
                     <option>Suppressor</option>
@@ -443,7 +449,7 @@
             <div class="slip-row"><span>Firearm Type</span><span id="slipType">&mdash;</span></div>
             <div class="slip-row"><span>Caliber</span><span id="slipCaliber">&mdash;</span></div>
             <div class="slip-row" id="slipKitTypeRow" style="display:none;"><span>Kit / Platform</span><span id="slipKitType">&mdash;</span></div>
-            <div class="slip-row"><span>NFA Item</span><span id="slipNfa">&mdash;</span></div>
+            <div class="slip-row"><span>NFA</span><span id="slipNfa">&mdash;</span></div>
             <div class="slip-row" id="slipNotesRow" style="display:none;flex-direction:column;align-items:flex-start;gap:6px;">
               <span>Notes</span><span id="slipNotes" style="text-align:left;"></span>
             </div>
@@ -653,6 +659,12 @@
         errorEl.style.display = 'block';
         return;
       }
+      if (!nfaSelect.value) {
+        errorEl.textContent = 'Please tell us whether NFA is involved.';
+        errorEl.style.display = 'block';
+        nfaSelect.focus();
+        return;
+      }
       errorEl.style.display = 'none';
       goToStep(2);
     });
@@ -664,16 +676,19 @@
 
     const NFA_TYPES = ['Short-Barreled Rifle', 'Short-Barreled Shotgun', 'Suppressor'];
     const typeSelect = document.getElementById('i-type');
-    const nfaCheckbox = document.getElementById('i-nfa');
+    const nfaSelect = document.getElementById('i-nfa');
+    const NFA_LABELS = { none: 'No', build_to_nfa: 'Build to NFA (SBR / SBS)', already_nfa: 'Shipping an NFA item' };
 
-    // The NFA checkbox lives on step 1 (customers were typing "NFA" into
-    // their name because the box only showed up on step 2). Step 2's
-    // Firearm Type list then only offers types that match it, so is_nfa and
-    // firearm_type can't disagree. "Other" stays available either way.
+    // The NFA question lives on step 1 (customers were typing "NFA" into
+    // their name because it only showed up on step 2), and it separates
+    // "shipping something already NFA" from "build my kit into an SBR/SBS" -
+    // different shipping and prep for Shawn. Firearm Type describes what's
+    // in the box, so it only offers NFA types when the item is already NFA.
+    // "Other" stays available either way.
     function syncNfaFromType() {
-      const nfa = nfaCheckbox.checked;
+      const shippingNfa = nfaSelect.value === 'already_nfa';
       for (const opt of typeSelect.options) {
-        const allowed = opt.value === 'Other' || NFA_TYPES.includes(opt.value) === nfa;
+        const allowed = opt.value === 'Other' || NFA_TYPES.includes(opt.value) === shippingNfa;
         opt.hidden = !allowed;
         opt.disabled = !allowed;
       }
@@ -681,7 +696,7 @@
         typeSelect.value = [...typeSelect.options].find(o => !o.disabled).value;
       }
     }
-    nfaCheckbox.addEventListener('change', syncNfaFromType);
+    nfaSelect.addEventListener('change', syncNfaFromType);
     syncNfaFromType();
 
     // Excludes 0/O/1/I, same reasoning as src/api/intake.js's server-side
@@ -726,7 +741,8 @@
       const kitTypeTyped = document.getElementById('i-kit-type').value.trim();
       const kitHit = KitCatalog.match(kitTypeTyped);
       const kitType = kitHit ? kitHit.name : kitTypeTyped;
-      const isNfa   = document.getElementById('i-nfa').checked;
+      const nfaIntent = nfaSelect.value || 'none';
+      const isNfa   = nfaIntent !== 'none';
       const notes   = document.getElementById('i-notes').value.trim();
       const gotcha  = document.getElementById('i-gotcha').value;
 
@@ -765,7 +781,7 @@
         const res = await fetch('/api/intake', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ _gotcha: gotcha, name, email, phone, service, firearmType: type, caliber, kitType, isNfa, notes }),
+          body: JSON.stringify({ _gotcha: gotcha, name, email, phone, service, firearmType: type, caliber, kitType, isNfa, nfaIntent, notes }),
           signal: controller.signal
         });
         clearTimeout(timeout);
@@ -803,7 +819,7 @@
         document.getElementById('slipKitTypeRow').style.display = '';
         document.getElementById('slipKitType').textContent = kitType;
       }
-      document.getElementById('slipNfa').textContent = isNfa ? 'Yes' : 'No';
+      document.getElementById('slipNfa').textContent = NFA_LABELS[nfaIntent];
 
       const notesRow = document.getElementById('slipNotesRow');
       if (notes) {

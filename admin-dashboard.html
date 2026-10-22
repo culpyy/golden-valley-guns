@@ -3440,7 +3440,7 @@
               <tr class="${i.is_read ? '' : 'msg-row-unread'}">
                 <td style="font-size:12px;">${new Date(i.created_at).toLocaleString()}</td>
                 <td style="font-family:'Courier New',monospace;font-size:12px;color:var(--gold-light);letter-spacing:1px;">${escapeHtml(i.intake_code) || '—'}</td>
-                <td class="title">${i.is_read ? '' : '<span class="unread-dot"></span>'}${escapeHtml(i.name)}${i.is_nfa ? ' <span class="part-badge-pill" style="position:static;display:inline-block;">NFA</span>' : ''}</td>
+                <td class="title">${i.is_read ? '' : '<span class="unread-dot"></span>'}${escapeHtml(i.name)}${i.is_nfa ? ` <span class="part-badge-pill" style="position:static;display:inline-block;">${i.nfa_intent === 'build_to_nfa' ? 'NFA BUILD' : i.nfa_intent === 'already_nfa' ? 'NFA ITEM' : 'NFA'}</span>` : ''}</td>
                 <td>${escapeHtml(INTAKE_SERVICE_LABELS[i.service] || i.service)}</td>
                 <td style="font-size:12px;">${i.kit_type ? `<strong>${escapeHtml(i.kit_type)}</strong>${intakeKitUnlisted(i) ? ' <span class="part-badge-pill" style="position:static;display:inline-block;" title="Not in the Kit Platforms list yet">NEW</span>' : ''} — ` : ''}${escapeHtml(i.firearm_type || '—')}${i.caliber ? ' · ' + escapeHtml(i.caliber) : ''}</td>
                 <td style="font-size:12px;">${i.email ? escapeHtml(i.email) : ''}${i.phone ? (i.email ? '<br>' : '') + escapeHtml(i.phone) : ''}</td>

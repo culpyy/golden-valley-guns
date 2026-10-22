@@ -20,6 +20,13 @@ const SERVICE_LABELS = {
   other: 'Other'
 };
 
+// Matches intake_submissions.nfa_intent's check constraint (sql/intake_nfa_intent.sql).
+const NFA_LABELS = {
+  none: 'No',
+  build_to_nfa: 'Build to NFA (SBR / SBS)',
+  already_nfa: 'Shipping an NFA item'
+};
+
 // Excludes 0/O/1/I - the whole point of this code is a customer hand-writing
 // it on a box, so ambiguous characters defeat the purpose.
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -72,10 +79,13 @@ export async function handleIntake(request, env) {
     return jsonResponse({ error: 'Too many submissions. Please try again later or call us directly.' }, 429, { 'Retry-After': String(retryAfterSeconds) });
   }
 
-  const { name, email, phone, service, firearmType, caliber, kitType: kitTypeRaw, isNfa, notes } = payload || {};
+  const { name, email, phone, service, firearmType, caliber, kitType: kitTypeRaw, isNfa, nfaIntent: nfaIntentRaw, notes } = payload || {};
   if (!name || !service || (!email && !phone)) {
     return jsonResponse({ error: 'Please add your name, a service type, and at least an email or phone number.' }, 400);
   }
+  // Older cached pages only send isNfa; they can't say which kind, so they
+  // stay 'none' with is_nfa still set and the admin badge shows plain NFA.
+  const nfaIntent = Object.hasOwn(NFA_LABELS, nfaIntentRaw) ? nfaIntentRaw : 'none';
   // Same rule as intake.html, enforced here too since a direct POST skips the page.
   if (!(typeof kitTypeRaw === 'string' && kitTypeRaw.trim())) {
     return jsonResponse({ error: 'Please enter the kit or platform you are sending (for example PM-63).' }, 400);
@@ -101,7 +111,8 @@ export async function handleIntake(request, env) {
       firearm_type: firearmType || null,
       caliber: caliber || null,
       kit_type: kitType || null,
-      is_nfa: !!isNfa,
+      is_nfa: nfaIntent !== 'none' || !!isNfa,
+      nfa_intent: nfaIntent,
       notes: notes || null,
       intake_code: intakeCode
     }));
@@ -127,7 +138,7 @@ export async function handleIntake(request, env) {
         firearmType ? `Firearm Type: ${firearmType}` : '',
         caliber ? `Caliber: ${caliber}` : '',
         kitType ? `Kit / Platform: ${kitType}` : '',
-        isNfa ? `NFA item: yes` : '',
+        nfaIntent !== 'none' ? `NFA: ${NFA_LABELS[nfaIntent]}` : (isNfa ? `NFA: yes` : ''),
         ``,
         notes ? `Notes:\n${notes}` : '',
         ``,
@@ -148,7 +159,7 @@ export async function handleIntake(request, env) {
   if (email) {
     try {
       const firstName = name.split(' ')[0];
-      const pdfBytes = await buildIntakeSlipPdf({ name, phone, email, intakeCode, serviceLabel, firearmType, caliber, kitType, isNfa, notes });
+      const pdfBytes = await buildIntakeSlipPdf({ name, phone, email, intakeCode, serviceLabel, firearmType, caliber, kitType, nfaLabel: nfaIntent !== 'none' ? NFA_LABELS[nfaIntent] : (isNfa ? 'Yes' : ''), notes });
       await sendEmail(env, {
         to: email,
         subject: `Your shipping reference code: ${intakeCode} - Golden Valley Guns`,

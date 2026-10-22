@@ -26,7 +26,7 @@ function wrapText(text, font, size, maxWidth) {
   return lines;
 }
 
-export async function buildIntakeSlipPdf({ name, phone, email, intakeCode, serviceLabel, firearmType, caliber, kitType, isNfa, notes }) {
+export async function buildIntakeSlipPdf({ name, phone, email, intakeCode, serviceLabel, firearmType, caliber, kitType, nfaLabel, notes }) {
   const doc = await PDFDocument.create();
   const page = doc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
   const font = await doc.embedFont(StandardFonts.Helvetica);
@@ -90,7 +90,7 @@ export async function buildIntakeSlipPdf({ name, phone, email, intakeCode, servi
   detailRow('Firearm Type', firearmType);
   detailRow('Caliber', caliber);
   detailRow('Kit / Platform', kitType);
-  detailRow('NFA Item', isNfa ? 'Yes' : '');
+  detailRow('NFA', nfaLabel);
 
   if (notes) {
     page.drawText('Notes', { x: left, y, size: 10, font, color: gray });
